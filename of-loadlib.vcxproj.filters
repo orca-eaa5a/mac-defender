@@ -15,16 +15,31 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="cb\cb.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="winapi\k32.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="winapi\ntdll.cpp">
+    <ClCompile Include="winapi\exports.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="winapi\imports.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="winapi\dlls\kernel32.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="winapi\dlls\ntdll.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="winapi\dlls\ntoskrnl.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="winapi\dlls\advapi32.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="winapi\dlls\bcrypt.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -38,13 +53,28 @@
     <ClInclude Include="wrapper.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="global.h">
+    <ClInclude Include="winapi\exports.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="winapi\ntdll.h">
+    <ClInclude Include="winapi\imports.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="winapi\utils.hpp">
+    <ClInclude Include="winapi\dlls\ntdll.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="winapi\dlls\ntoskrnl.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="winapi\dlls\utils.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="winapi\dlls\advapi32.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="winapi\dlls\kernel32.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="winapi\dlls\bcrypt.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

@@ -15,8 +15,7 @@
 #include "mpcore/scanreply.h"
 #include "mpcore/streambuffer.h"
 #include "wrapper.hpp"
-#include "global.h"
-#include "winapi/k32.h"
+#include "winapi/imports.h"
 
 #ifndef open
 #define open _open
@@ -24,52 +23,54 @@
 
 using namespace std;
 string engine_path;
-
 void* engine_base = nullptr;
+
 
 int main(int argc, char** argv) {
 	int fd = 0;
 	uint8_t* image = nullptr;
 	char cur_dir[260];
+	string cmdline;
+	ImportDLLs* dlls;
+
+	if (argc < 2)
+		console_log(MSGTYPE::CRIT, "Please input target file");
+
+	for (int i = 0; argc - 1 > i; i++)
+		cmdline += string(argv[i]) + string(" ") + string(argv[i + 1]);		
+
 	GetCurrentDirectory(
 		MAX_PATH,
 		cur_dir
 	);
+
 	engine_path = string(cur_dir) + "\\engine\\mpengine.dll";
-	printf("%s\n", engine_path.c_str());
+	engine_base = of_loadlibraryX64(engine_path);
+	MockKernel32::mpengine_base = engine_base;
+	MockKernel32::commandline = cmdline;
+	MockKernel32::wcommandline.assign(cmdline.begin(), cmdline.end());
+
+	if (!engine_base) {
+		console_log(MSGTYPE::CRIT, "Unable to load mpengine.dll");
+	}
+	of_rewrite_iat(engine_base);
+	dlls = new ImportDLLs(engine_base);
+	dlls->set_ported_apis();
+	call_dllmain(engine_base);
+	void* rsig_addr = (void*)of_getprocaddress((HMODULE)engine_base, (char*)"__rsignal");
+
 	fd = open((char*)argv[1], _O_RDONLY);
 	if (fd < 0) {
 		console_log(MSGTYPE::ERR, "Fail to open file");
 		exit(-1);
 	}
 
-	engine_base = load_temp(engine_path.c_str());
-
-	if (!engine_base) {
-		console_log(MSGTYPE::CRIT, "Unable to load mpengine.dll");
-	}
-	of_rewrite_iat(engine_base);
-	of_set_seh(engine_base);
-	of_rewrite_mp_iat(engine_base, "KERNEL32.DLL", "GetModuleHandleW", (void*)MockGetModuleHandleW);
-	of_rewrite_mp_iat(engine_base, "KERNEL32.DLL", "GetDriveTypeW", (void*)MockGetDriveTypeW);
-	of_rewrite_mp_iat(engine_base, "KERNEL32.DLL", "GetDriveTypeA", (void*)MockGetDriveTypeA);
-	of_rewrite_mp_iat(engine_base, "KERNEL32.DLL", "CreateFileA", (void*)MockCreateFileA);
-	of_rewrite_mp_iat(engine_base, "KERNEL32.DLL", "CreateFileW", (void*)MockCreateFileW);
-	of_rewrite_mp_iat(engine_base, "KERNEL32.DLL", "ReadFile", (void*)MockReadFile);
-	of_rewrite_mp_iat(engine_base, "KERNEL32.DLL", "WriteFile", (void*)MockWriteFile);
-	of_rewrite_mp_iat(engine_base, "KERNEL32.DLL", "CloseHandle", (void*)MockCloseHandle);
-	of_rewrite_mp_iat(engine_base, "KERNEL32.DLL", "GetFileSizeEx", (void*)MockGetFileSizeEx);
-	of_rewrite_mp_iat(engine_base, "KERNEL32.DLL", "SetFilePointerEx", (void*)MockSetFilePointerEx);
-	of_rewrite_mp_iat(engine_base, "KERNEL32.DLL", "SetFilePointer", (void*)MockSetFilePointer);
-	
-	call_dllmain(engine_base);
-	void* rsig_addr = (void*)of_getprocaddress((HMODULE)engine_base, (char*)"__rsignal");
-
 	RsignalWrapper* rsignal_wrapper;
 	rsignal_wrapper = new RsignalWrapper();
-	rsignal_wrapper->set_rsignal(rsig_addr);
 	rsignal_wrapper->set_notify_cb((void*)FullScanNotifyCallback);
+	rsignal_wrapper->set_rsignal(rsig_addr);
 	rsignal_wrapper->set_vdm_location("./engine");
 	rsignal_wrapper->rsig_boot_engine();
 	rsignal_wrapper->rsig_scan_stream(fd);
+	system("pause");
 }

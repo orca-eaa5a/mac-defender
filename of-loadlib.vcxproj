@@ -128,15 +128,25 @@
   <ItemGroup>
     <ClCompile Include="cb\cb.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="winapi\k32.cpp" />
-    <ClCompile Include="winapi\ntdll.cpp" />
+    <ClCompile Include="winapi\dlls\advapi32.cpp" />
+    <ClCompile Include="winapi\dlls\bcrypt.cpp" />
+    <ClCompile Include="winapi\exports.cpp" />
+    <ClCompile Include="winapi\imports.cpp" />
+    <ClCompile Include="winapi\dlls\kernel32.cpp" />
+    <ClCompile Include="winapi\dlls\ntdll.cpp" />
+    <ClCompile Include="winapi\dlls\ntoskrnl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="loader.hpp" />
     <ClInclude Include="log.hpp" />
-    <ClInclude Include="global.h" />
-    <ClInclude Include="winapi\ntdll.h" />
-    <ClInclude Include="winapi\utils.hpp" />
+    <ClInclude Include="winapi\dlls\advapi32.h" />
+    <ClInclude Include="winapi\dlls\bcrypt.h" />
+    <ClInclude Include="winapi\dlls\kernel32.h" />
+    <ClInclude Include="winapi\imports.h" />
+    <ClInclude Include="winapi\exports.h" />
+    <ClInclude Include="winapi\dlls\ntdll.h" />
+    <ClInclude Include="winapi\dlls\ntoskrnl.h" />
+    <ClInclude Include="winapi\dlls\utils.hpp" />
     <ClInclude Include="wrapper.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
