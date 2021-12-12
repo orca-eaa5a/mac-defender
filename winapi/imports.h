@@ -2,10 +2,11 @@
 #ifndef _IMP_H_
 #define _IMP_H_
 
-#include "dlls/ntoskrnl.h"
+
 #include "dlls/kernel32.h"
 #include "dlls/ntdll.h"
 #include "dlls/advapi32.h"
+#include "ntoskrnl.h"
 #include "exports.h"
 
 class ImportDLLs {

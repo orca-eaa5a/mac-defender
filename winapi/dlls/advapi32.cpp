@@ -1,5 +1,6 @@
 #include "advapi32.h"
 #include <string>
+#include <cassert>
 
 using namespace std;
 
@@ -24,16 +25,6 @@ bool __stdcall MockAdvapi::LookupPrivilegeValueA(char* lpSystemName, char* lpNam
 }
 
 bool __stdcall MockAdvapi::LookupPrivilegeValueW(wchar_t* lpSystemName, wchar_t* lpName, void* lpLuid) {
-	auto convert_wstr_to_str = [](wchar_t* wstr)->char* {
-		wstring std_wstr = wstring(wstr);
-		string std_str;
-		std_str.assign(std_wstr.begin(), std_wstr.end());
-		char* new_str = new char[std_str.length() + 1];
-		unsigned long long max_len = std_str.length() + 1;
-		strcpy_s(new_str, max_len, std_str.c_str());
-
-		return new_str;
-	};
 	char* system_name = nullptr;
 	char* name = nullptr;
 	if (!lpName)
@@ -51,4 +42,228 @@ bool __stdcall MockAdvapi::LookupPrivilegeValueW(wchar_t* lpSystemName, wchar_t*
 
 bool __stdcall MockAdvapi::AdjustTokenPrivileges(void* TokenHandle, bool DisableAllPrivileges, void* NewState, unsigned int BufferLength, void* PreviousState, unsigned int* ReturnLength) {
 	return true;
+}
+
+long __stdcall MockAdvapi::RegCreateKeyExW(
+	/*
+	Creates the specified registry key.
+	If the key already exists, the function opens it. 
+	Note that key names are not case sensitive.
+	*/
+	void* hKey, 
+	wchar_t* lpSubKey, 
+	unsigned int Reserved, 
+	void* lpClass, 
+	unsigned int dwOptions, 
+	void* samDesired, 
+	void* lpSecurityAttributes, 
+	void* phkResult, 
+	unsigned int* lpdwDisposition) {
+	wstring wstr = wstring(lpSubKey);
+	string hive;
+	string sub_key_str;
+	sub_key_str.assign(wstr.begin(), wstr.end());
+	switch ((unsigned long long)hKey)
+	{
+	case HKEY_LOCAL_MACHINE:
+		hive = "hklm";
+		break;
+	case HKEY_CLASSES_ROOT:
+	case HKEY_CURRENT_CONFIG:
+	case HKEY_CURRENT_USER:
+	case HKEY_USERS:
+		hive = "not imp";
+		break;
+	default:
+		break;
+	}
+	vector<string> splitted = split_string((char*)sub_key_str.c_str(), '\\');
+	Json::Value key = MockNTKrnl::mock_reg[hive];
+	if (!key) {
+		return ERROR_FILE_NOT_FOUND;
+	}
+
+	bool exist= true;
+	for (auto const subk : splitted) { // check key exist
+		string s = str_tolower((char*)subk.c_str());
+		key = key[s];
+		if (key.isObject())
+			continue;
+		if (!key) {
+			key[subk] = Json::objectValue;
+		}
+	}
+	
+	unsigned long long new_k = MockNTKrnl::CreateNewRegHandle(hive, sub_key_str, key);
+	memmove(phkResult, &new_k, sizeof(new_k));
+	
+
+	return 0;
+}
+
+long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, wchar_t* lpSubKey, unsigned int ulOptions, unsigned int samDesired, void** phkResult) {
+	wstring wstr = wstring(lpSubKey);
+	string hive;
+	string sub_key_str;
+	string key_str;
+	sub_key_str.assign(wstr.begin(), wstr.end());
+	Json::Value key;
+	switch ((unsigned long long)hKey)
+	{
+	case HKEY_LOCAL_MACHINE:
+		hive = "hklm";
+		key = MockNTKrnl::mock_reg[hive];
+		break;
+	case HKEY_CLASSES_ROOT:
+	case HKEY_CURRENT_CONFIG:
+	case HKEY_CURRENT_USER:
+	case HKEY_USERS:
+		hive = "not imp";
+		break;
+	default:
+		tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(unsigned int)hKey];
+		break;
+	}
+	vector<string> splitted = split_string((char*)sub_key_str.c_str(), '\\');
+	
+	if (!key) {
+		return ERROR_FILE_NOT_FOUND;
+	}
+
+	for (auto const subk : splitted) { // check key exist
+		string s = str_tolower((char*)subk.c_str());
+		key = key[s];
+		if (key.isObject())
+			continue;
+		if (!key) {
+			return ERROR_FILE_NOT_FOUND;
+		}
+	}
+	
+	unsigned long long new_k = MockNTKrnl::CreateNewRegHandle(hive, sub_key_str, key);
+	memmove(phkResult, &new_k, sizeof(new_k));
+	
+	return 0;
+}
+
+long __stdcall MockAdvapi::RegQueryInfoKeyW(
+	void* hKey,
+	wchar_t* lpClass,
+	unsigned int* lpcClass,
+	unsigned int* lpReserved,
+	unsigned int* lpcSubKeys,
+	unsigned int* lpcMaxSubKeyLen,
+	unsigned int* lpcMaxClassLen,
+	unsigned int* lpcValues,
+	unsigned int* lpcMaxValueNameLen,
+	unsigned int* lpcMaxValueLen,
+	unsigned int* lpcbSecurityDescriptor,
+	void* lpftLastWriteTime
+) {
+	string hive;
+	string key_str;
+	Json::Value key;
+	tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(unsigned int)hKey];
+	unsigned int subkeys = 0;
+	unsigned int key_values = 0;
+	unsigned int max_valuename_len = 0;
+	unsigned int max_subkey_len = 0;
+	for (auto it = key.begin(); it != key.end(); ++it)
+	{
+		string subkey_str = it.key().asString();
+		size_t subkey_str_len = subkey_str.length();
+		if (key[it.key().asString()].isObject()){
+			if (subkey_str_len > max_subkey_len)
+				max_subkey_len = subkey_str_len;
+			subkeys++;
+		}
+		else {
+			if (subkey_str_len > max_valuename_len)
+				max_valuename_len = subkey_str_len;
+			key_values++;
+		}
+	}
+	if (lpClass) {
+		assert(0); // not implemented yet
+	}
+	if (lpcClass) {
+		assert(0); // not implemented yet
+	}
+	if (lpcSubKeys) {
+		*lpcSubKeys = subkeys;
+	}
+	if (lpcMaxSubKeyLen) {
+		*lpcMaxSubKeyLen = max_subkey_len;
+	}
+	if (lpcMaxClassLen) {
+		assert(0); // not implemented yet
+	}
+	if (lpcValues) {
+		/*number of values in key*/
+		*lpcValues = key_values;
+	}
+	 
+	if (lpcMaxValueNameLen) {
+		*lpcMaxValueNameLen = max_valuename_len;
+	}
+	if (lpcMaxValueLen) {
+		assert(0); // not implemented yet
+	}
+	if (lpcbSecurityDescriptor) {
+		assert(0); // not implemented yet
+	}
+
+	return 0;
+}
+
+long __stdcall MockAdvapi::RegEnumKeyExW(void* hKey, unsigned int dwIndex, wchar_t* lpName, unsigned int* lpcchName, void* lpReserved, wchar_t* lpClass, unsigned int* lpcchClass, void* lpftLastWriteTime) {
+	string hive;
+	string key_str;
+	Json::Value key;
+	tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(unsigned int)hKey];
+	
+	unsigned int idx = 0;
+	auto it = key.begin();
+	for (; it != key.end(); ++it) {
+		if (!key[it.key().asString()].isObject())
+			continue;
+		if (idx == dwIndex)
+			break;
+		idx++;
+	}
+
+	key_str = it.key().asString();
+	auto subkey = key[key_str];
+
+	if (it == key.end()) {
+		/*can't get value of target index*/
+		return 0x80070103; // ERROR_NO_MORE_ITEMS;
+	}
+	
+	if (lpName) {
+		copy_str_to_wstr((char*)key_str.c_str(), lpName, key_str.length());
+	}
+	if (lpcchName) {
+		*lpcchName = key_str.length();
+	}
+	if (lpClass) {
+		assert(0); // not impemented yet
+	}
+	if (lpcchClass) {
+		assert(0); // not impemented yet
+	}
+
+
+	return 0;
+}
+
+
+long __stdcall MockAdvapi::RegCloseKey(void* hKey) {
+	unsigned int k = (unsigned int)hKey;
+	MockNTKrnl::RemoveRegHandle(k);
+	return 0;
+}
+
+long __stdcall MockAdvapi::RegNotifyChangeKeyValue(void* hKey, bool bWatchSubtree, unsigned int dwNotifyFilter, void* hEvent, bool fAsynchronous) {
+	return 0;
 }

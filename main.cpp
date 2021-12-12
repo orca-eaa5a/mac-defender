@@ -16,6 +16,7 @@
 #include "mpcore/streambuffer.h"
 #include "wrapper.hpp"
 #include "winapi/imports.h"
+#include "winapi/ntoskrnl.h"
 
 #ifndef open
 #define open _open
@@ -32,7 +33,7 @@ int main(int argc, char** argv) {
 	char cur_dir[260];
 	string cmdline;
 	ImportDLLs* dlls;
-
+	MockNTKrnl mtosknl;
 	if (argc < 2)
 		console_log(MSGTYPE::CRIT, "Please input target file");
 

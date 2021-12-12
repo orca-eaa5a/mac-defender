@@ -1,0 +1,109 @@
+{
+  "hklm": {
+    "software": {
+      "policies": {
+        "microsoft": {
+          "windows advanced threat protection": {
+
+          },
+          "windows defender": {
+
+          }
+        }
+      },
+      "microsoft": {
+        "windows": {
+          "currentversion": {
+            "commonfilesdir": "C:\\Program Files\\Common Files",
+            "programfilespath": "%ProgramFiles%",
+            "programfilesdir": "C:\\Program Files",
+            "explorer": {
+              "shell folders": {
+                "common desktop": "C:\\Users\\Public\\Desktop",
+                "common appdata": "C:\\ProgramData"
+              },
+              "user shell folders": {
+                "common appdata": "%ProgramData%",
+                "common documents": "%PUBLIC%\\Documents",
+                "backup": {
+                  "appdata": "%USERPROFILE%\\AppData\\Roaming",
+                  "desktop": "%USERPROFILE%\\Desktop"
+                }
+              }
+            }
+          },
+          "appmodelunlock": {
+            "(default)": ""
+          }
+        },
+        "windows nt": {
+          "currentversion": {
+            "installtime": 132611518302062034,
+            "ubr": 544,
+            "buildbranch": "vb_release",
+            "profilelist": {
+              "s-1-5-18": {
+                "flags": 12,
+                "refcount": 1,
+                "sid": 1001,
+                "state": 0
+              },
+              "s-1-5-19": {
+                "flags": 0,
+                "state": 0
+              },
+              "s-1-5-20": {
+                "flags": 0,
+                "state": 0
+              },
+              "s-1-5-21-3826975614-3287876503-4250936272-1001": {
+                "flags": 0,
+                "fullprofile": 1,
+                "profileimagepath": "C:\\Users\\orca",
+                "sid": 1000
+              }
+            }
+          }
+        },
+        "windowsruntime": {
+          "activatableclassid": {
+            "Windows.Management.Deployment.PackageManager": {
+
+            }
+          }
+        },
+        "windows defender": {
+          "features": {
+
+          }
+        },
+        "windows advanced threat protection": {
+
+        }
+      }
+    },
+    "system": {
+      "currentcontrolset": {
+        "control": {
+          "session manager": {
+            "environment": {
+              "os": "Windows_NT",
+              "number_of_processors": "8",
+              "processor_architecture": "amd64",
+              "processor_identifier": "Intel64 Family 6 Model 142 Stepping 11, GenuineIntel",
+              "processor_level": "6",
+              "processor_revision": "36363",
+              "windir": "%SystemRoot%",
+              "username": "SYSTEM"
+            }
+          },
+          "hivelist":{
+            "\\registry\\machine\\system" : "\\Device\\HarddiskVolume3\\Windows\\System32\\config\\SYSTEM",
+            "\\registry\\machine\\security" : "\\Device\\HarddiskVolume3\\Windows\\System32\\config\\SECURITY",
+            "\\registry\\machine\\hardware" : "",
+          }
+        }
+      }
+    }
+  }
+}

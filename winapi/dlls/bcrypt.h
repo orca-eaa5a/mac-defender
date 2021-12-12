@@ -13,7 +13,7 @@ public:
 	function<void(void)> set_k32_hookaddr = [](void) {
 		APIExports::add_hook_info("bcrypt.dll", "BCryptOpenAlgorithmProvider", (void*)MockBcrypt::BCryptOpenAlgorithmProvider);
 		APIExports::add_hook_info("bcrypt.dll", "BCryptCloseAlgorithmProvider", (void*)MockBcrypt::BCryptCloseAlgorithmProvider);
-		APIExports::add_hook_info("bcrypt.dll", "GetStartupInfoA", (void*)MockBcrypt::BCryptGenRandom);
+		APIExports::add_hook_info("bcrypt.dll", "BCryptGenRandom", (void*)MockBcrypt::BCryptGenRandom);
 	};
 
 	static NTSTATUS __stdcall BCryptOpenAlgorithmProvider(void* phAlgorithm, wchar_t* pszAlgId, wchar_t* pszImplementation, unsigned int dwFlags);

@@ -6,7 +6,8 @@
 #include <thread>
 #include <algorithm>
 #include "kernel32.h"
-#include "utils.hpp"
+#include "../strutils.hpp"
+
 using namespace std;
 
 void* MockKernel32::mpengine_base = nullptr;
@@ -200,8 +201,15 @@ bool __stdcall MockKernel32::DeleteFile(char* lpFileName) {
 	return remove(lpFileName);
 }
 
-bool __stdcall MockKernel32::CloseHandle(void* hObject) {
+bool __stdcall MockKernel32::MyCloseHandle(void* hObject) {
+	if (hObject == (void*)'EVNT'
+		|| hObject == INVALID_HANDLE_VALUE
+		|| hObject == (void*) 'SEMA')
+		return true;
+
+	// fake close, but not safe
 	return true;
+	//return CloseHandle((HANDLE)hObject);
 }
 
 unsigned int __stdcall MockKernel32::GetDriveTypeA(char* lpRootPathName) {
@@ -210,6 +218,10 @@ unsigned int __stdcall MockKernel32::GetDriveTypeA(char* lpRootPathName) {
 
 unsigned int __stdcall MockKernel32::GetDriveTypeW(wchar_t* lpRootPathName) {
 	return MockKernel32::GetDriveTypeA(nullptr);
+}
+
+unsigned int __stdcall MockKernel32::GetLogicalDrives() {
+	return 4;
 }
 
 unsigned int __stdcall MockKernel32::GetFileSizeEx(void* hFile, PLARGE_INTEGER lpFileSize) {
@@ -272,8 +284,12 @@ unsigned int __stdcall MockKernel32::GetFileAttributesExW(wchar_t* lpFileName, u
 }
 
 
-void __stdcall MockKernel32::GetSystemTimeAsFileTime(PVOID lpSystemTimeAsFileTime)
+void __stdcall MockKernel32::GetSystemTimeAsFileTime(void* lpSystemTimeAsFileTime)
 {
+	memset(lpSystemTimeAsFileTime, 0, sizeof(FILETIME));
+}
+
+void __stdcall MockKernel32::GetSystemTimePreciseAsFileTime(void* lpSystemTimeAsFileTime) {
 	memset(lpSystemTimeAsFileTime, 0, sizeof(FILETIME));
 }
 
@@ -747,54 +763,7 @@ unsigned int __stdcall MockKernel32::ExpandEnvironmentStringsW(wchar_t* lpSrc, w
 
 	return 0;
 }
-/*
-STATIC DWORD WINAPI ExpandEnvironmentStringsW(PWCHAR lpSrc, PWCHAR lpDst, DWORD nSize)
-{
-	PCHAR AnsiString = CreateAnsiFromWide(lpSrc);
-	DWORD Result;
-	struct {
-		PCHAR   Src;
-		PWCHAR  Dst;
-	} KnownPaths[] = {
-		{ "%ProgramFiles%", L"C:\\Program Files" },
-		{ "%AllUsersProfile%", L"C:\\ProgramData" },
-		{ "%PATH%", L"C:\\Path" },
-		{ "%windir%", L"C:\\Windows" },
-		{ "%ProgramFiles(x86)%", L"C:\\Program Files" },
-		{ "%WINDIR%\\system32\\drivers", L"C:\\WINDOWS\\system32\\drivers" },
-		{ "%windir%\\temp", L"C:\\WINDOWS\\temp" },
-		{ "%CommonProgramFiles%", L"C:\\CommonProgramFiles" },
-		{ NULL },
-	};
 
-	DebugLog("%p [%s], %p, %u", lpSrc, AnsiString, lpDst, nSize);
-
-	for (int i = 0; KnownPaths[i].Src; i++) {
-		if (strcmp(AnsiString, KnownPaths[i].Src) == 0) {
-			Result = CountWideChars(KnownPaths[i].Dst) + 1;
-			if (nSize < Result) {
-				goto finish;
-			}
-			memcpy(lpDst, KnownPaths[i].Dst, Result * 2);
-			goto finish;
-		}
-	}
-
-	free(AnsiString);
-
-	if (nSize < CountWideChars(lpSrc) + 1) {
-		return CountWideChars(lpSrc) + 1;
-	}
-
-	memcpy(lpDst, lpSrc, (1 + CountWideChars(lpSrc)) * 2);
-
-	return CountWideChars(lpSrc) + 1;
-
-finish:
-	free(AnsiString);
-	return Result;
-}
-*/
 bool __stdcall MockKernel32::FreeEnvironmentStringsA(char* penv) {
 	delete penv;
 	return true;
@@ -825,6 +794,20 @@ unsigned long long __stdcall MockKernel32::GetTickCount64() {
 	return ++MockKernel32::tick_counter;
 }
 
+bool __stdcall MockKernel32::DeviceIoControl(
+	void* hDevice,
+	unsigned int dwIoControlCode,
+	void* lpInBuffer,
+	unsigned int nInBufferSize,
+	void* lpOutBufferm,
+	unsigned int nOutBufferSize,
+	unsigned int* lpBytesReturend,
+	void* lpOverlapped
+) {
+	return false;
+}
+
+
 unsigned int __stdcall MockKernel32::GetSystemDirectoryA(char* lpBuffer, unsigned int uSize) {
 	size_t buf_sz = sizeof("C:\\Windows\\System32");
 	char* system_dir = "C:\\Windows\\System32";
@@ -845,6 +828,24 @@ unsigned int __stdcall MockKernel32::GetSystemDirectoryW(wchar_t* lpBuffer, unsi
 	return buf_sz;
 }
 
+bool __stdcall MockKernel32::GetProductInfo(unsigned int dwOSMajorVersion, unsigned int dwOSMinorVersion, unsigned int dwSpMajorVersion, unsigned int dwSpMinorVersion, unsigned int * pdwReturnedProductType) {
+	*pdwReturnedProductType = 0x65; //PRODUCT_CORE
+	return true;
+}
+
+void __stdcall MockKernel32::GetSystemInfo(LPSYSTEM_INFO lpSystemInfo) {
+	lpSystemInfo->wProcessorArchitecture = 9; //PROCESSOR_ARCHITECTURE_AMD64
+	lpSystemInfo->dwPageSize = 0x1000; //Default PageSize of Mac & Win
+	lpSystemInfo->dwNumberOfProcessors = 4;
+	lpSystemInfo->dwProcessorType = 8664; // PROCESSOR_AMD_X8664
+	lpSystemInfo->dwAllocationGranularity = 0x10000;
+
+}
+
+unsigned int __stdcall MockKernel32::GetFullPathNameW(wchar_t* lpFileName, unsigned int nBufferLength, wchar_t* lpBuffer, wchar_t** lpFilePart) {
+	return 1;
+}
+
 unsigned int __stdcall MockKernel32::GetTempPathW(unsigned int nBufferLength, wchar_t* lpBuffer) {
 	size_t buf_sz = sizeof(L".\\TEMP");
 	wchar_t* temp_dir = L".\\TEMP";
@@ -855,6 +856,14 @@ unsigned int __stdcall MockKernel32::GetTempPathW(unsigned int nBufferLength, wc
 	return buf_sz;
 }
 
+unsigned int __stdcall MockKernel32::QueryDosDeviceA(void* lpDeviceName, void* lpTargetPath, unsigned int ucchMax) {
+	return 0;
+}
+
+unsigned int __stdcall MockKernel32::QueryDosDeviceW(void* lpDeviceName, void* lpTargetPath, unsigned int ucchMax) {
+	return 0;
+}
+
 bool __stdcall MockKernel32::VirtualLock(void* lpAddress, unsigned int dwSize) {
 	return true;
 }
@@ -863,8 +872,8 @@ bool __stdcall MockKernel32::VirtualProtect(void* lpAddress, size_t dwSize, unsi
 	return true;
 }
 
-void* __stdcall MockKernel32::SetThreadpoolTimer(void* pfnti, void* pv, void* pcbe) {
-	return (void*)0x90909090;
+void __stdcall MockKernel32::SetThreadpoolTimer(void* pfnti, void* pv, unsigned int msPeriod, unsigned int msWindowLength) {
+	return;
 }
 
 void __stdcall MockKernel32::WaitForThreadpoolTimerCallbacks(void* ptr, bool fCancelPendingCallbacks) {
@@ -872,7 +881,7 @@ void __stdcall MockKernel32::WaitForThreadpoolTimerCallbacks(void* ptr, bool fCa
 }
 
 void* __stdcall MockKernel32::CreateThreadpoolTimer(void* pfnti, void* pv, void* pcbe) {
-	return (void*)"roka";
+	return (void*)0x41414141;
 }
 
 void __stdcall MockKernel32::CloseThreadpoolTimer(void* ptr) {
@@ -880,6 +889,31 @@ void __stdcall MockKernel32::CloseThreadpoolTimer(void* ptr) {
 }
 
 void* __stdcall MockKernel32::CreateThreadpoolWork(void* pfnwk, void* pv, void* pcbe) {
-	return (void*)"army";
+	return (void*)0x41414141;
 }
+
+void* __stdcall MockKernel32::CreateSemaphoreW(void* lpSemaphoreAttributes, long lInitialCount, long lMaximumCount, wchar_t* lpName) {
+	return (HANDLE) 'SEMA';
+}
+
+void* __stdcall MockKernel32::CreateEventW(void* lpEventAttributes, bool bManualReset, bool bInitialState, wchar_t* lpName) {
+	return (HANDLE) 'EVNT';
+}
+
+bool __stdcall MockKernel32::SetEvent(void* hEvent) {
+	return true;
+}
+
+bool __stdcall MockKernel32::ReSetEvent(void* hEvent) {
+	return true;
+}
+
+bool __stdcall MockKernel32::RegisterWaitForSingleObject(void** phNewWaitObject, void* hObject, void* Callback, void* Context, unsigned long dwMilliseconds, unsigned long dwFlags) {
+	return true;
+}
+
+unsigned int __stdcall MockKernel32::WaitForSingleObject(void* hHandle, unsigned int dwMilliseconds) {
+	return 0xFFFFFFFF;
+}
+
 

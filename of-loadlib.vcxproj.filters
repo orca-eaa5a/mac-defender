@@ -33,13 +33,19 @@
     <ClCompile Include="winapi\dlls\ntdll.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="winapi\dlls\ntoskrnl.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="winapi\dlls\advapi32.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="winapi\dlls\bcrypt.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="winapi\ntoskrnl.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="include\jsoncpp\jsoncpp.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="winapi\strutils.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -62,12 +68,6 @@
     <ClInclude Include="winapi\dlls\ntdll.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="winapi\dlls\ntoskrnl.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="winapi\dlls\utils.hpp">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="winapi\dlls\advapi32.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -75,6 +75,12 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="winapi\dlls\bcrypt.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="winapi\ntoskrnl.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="winapi\strutils.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
