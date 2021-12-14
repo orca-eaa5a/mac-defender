@@ -19,18 +19,16 @@ public:
 	static map<std::string, string> m_env_variable;
 	static map<unsigned int, tuple<string, string, Json::Value>> m_reg_handle;
 	static map<unsigned int,
-			tuple<
-				unsigned int,
-				unsigned int,
-				unsigned int,
-				vector<
-					tuple<
+				tuple<
+					unsigned int,
+					unsigned int,
+					unsigned int,
+					map<
 						unsigned long long,
 						unsigned int
-						>
 					>
-				>
-			> m_heap_handle;
+				> 
+			>m_heap_handle;
 	static unsigned int process_heap_handle;
 	static Json::Value mock_reg;
 	static unsigned int handle_count;

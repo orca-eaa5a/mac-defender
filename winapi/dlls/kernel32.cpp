@@ -961,14 +961,17 @@ unsigned int __stdcall MockKernel32::WaitForSingleObject(void* hHandle, unsigned
 
 void* __stdcall MockKernel32::GetProcessHeap() {
 	unsigned int proc_heap = (unsigned int)'NAHH';
+	/*
 	if (MockNTKrnl::m_heap_handle.find(proc_heap) == MockNTKrnl::m_heap_handle.end()) {
 		unsigned int init_sz = 0x100000;
-		//unsigned long long membase = (unsigned long long)malloc(init_sz);
-		vector<tuple<unsigned long long, unsigned int>> v;
-		//v.push_back({ membase, init_sz });
-		MockNTKrnl::m_heap_handle[proc_heap] = { init_sz, 0, 0,  v };
+
+		map<unsigned long long, unsigned int> m;
+		tuple<unsigned int, unsigned int, unsigned int, map<unsigned long long, unsigned int>> new_t = { init_sz, 0, 0, m };
+		MockNTKrnl::m_heap_handle[proc_heap] = new_t;
+
 		return (void*)proc_heap;
 	}
+	*/
 	return (void*)proc_heap;
 };
 
@@ -981,14 +984,31 @@ void* __stdcall MockKernel32::HeapCreate(unsigned int flOptions, size_t dwInitia
 
 
 void* __stdcall MockKernel32::HeapAlloc(void* hHeap, unsigned int dwFlags, size_t dwBytes) {
+	if (hHeap == (void*)'NAHH') {
+		if (dwFlags & HEAP_ZERO_MEMORY)
+			return calloc(dwBytes, 1);
+		else
+			return malloc(dwBytes);
+	}
+		
 	return MockNTKrnl::AllocHeapMemory((unsigned int)hHeap, dwFlags & HEAP_ZERO_MEMORY, dwBytes);
 }
 
 void* __stdcall MockKernel32::HeapReAlloc(void* hHeap, unsigned int dwFlags, void* lpMem, size_t dwBytes) {
+	if (hHeap == (void*)'NAHH') {
+		void* mem_ptr = realloc(lpMem, dwBytes);
+		if (dwFlags & HEAP_ZERO_MEMORY)
+			memset(mem_ptr, 0, dwBytes);
+		return mem_ptr;
+	}
+	
 	return MockNTKrnl::ResizeHeap((unsigned int)hHeap, dwFlags & HEAP_ZERO_MEMORY, lpMem, dwBytes);
 }
 
 bool __stdcall MockKernel32::HeapFree(void* hHeap, unsigned int dwFlags, void* lpMem) {
+	if (hHeap == (void*)'NAHH') {
+		free(lpMem);
+	}
 	return MockNTKrnl::FreeHeap((unsigned int)hHeap, lpMem);
 }
 
@@ -997,16 +1017,23 @@ bool __stdcall MockKernel32::HeapDestroy(void* hHeap) {
 }
 
 size_t __stdcall MockKernel32::HeapSize(void* hHeap, unsigned int dwFlags, void* lpMem) {
-	unsigned int heap_handle = (unsigned int)hHeap;
-	vector<tuple<unsigned long long, unsigned int>> heap_list = std::get<3>(MockNTKrnl::m_heap_handle[heap_handle]);
-	unsigned long long mem_ptr;
-	unsigned long memblock_sz;
-	for (auto h : heap_list) {
-		tie(mem_ptr, memblock_sz) = h;
-		if ((void*)mem_ptr == lpMem)
-			return memblock_sz;
+	if (hHeap == (void*)'NAHH') {
+#ifdef _WIN64
+		return _msize(lpMem);
+#else
+		return malloc_usable_size(lpMem);
+#endif // _WIN64
+
 	}
-	return -1;	
+	unsigned int heap_handle = (unsigned int)hHeap;
+	map<unsigned long long, unsigned int> heap_list = std::get<3>(MockNTKrnl::m_heap_handle[heap_handle]);
+	
+	unsigned long long mem_ptr = (unsigned long long)lpMem;
+	unsigned long memblock_sz;
+	if (heap_list.find(mem_ptr) != heap_list.end()) {
+		return heap_list[mem_ptr];
+	}
+	return -1;
 }
 
 void* __stdcall MockKernel32::LocalAlloc(unsigned int uFlags, size_t uBytes) {
