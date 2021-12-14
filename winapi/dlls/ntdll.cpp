@@ -148,3 +148,11 @@ NTSTATUS __stdcall MockNtdll::NtQueryValueKey(void* KeyHandle, void* ValueName, 
 	return 0;
 }
 
+void* __stdcall MockNtdll::RtlCreateHeap(unsigned long Flags, void* HeapBase, size_t ReserveSize, size_t CommitSize, void* Lock, void* Parameters) {
+	return (void*)'HEAP';
+}
+
+void* __stdcall MockNtdll::RtlAllocateHeap(void* HeapHandle, unsigned long Flags, size_t Size) {
+	return NULL;
+}
+

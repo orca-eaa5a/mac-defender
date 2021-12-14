@@ -46,6 +46,7 @@ int main(int argc, char** argv) {
 	);
 
 	engine_path = string(cur_dir) + "\\engine\\mpengine.dll";
+	
 	engine_base = of_loadlibraryX64(engine_path);
 	MockKernel32::mpengine_base = engine_base;
 	MockKernel32::commandline = cmdline;
@@ -59,8 +60,12 @@ int main(int argc, char** argv) {
 	dlls->set_ported_apis();
 	call_dllmain(engine_base);
 	void* rsig_addr = (void*)of_getprocaddress((HMODULE)engine_base, (char*)"__rsignal");
-
-	fd = open((char*)argv[1], _O_RDONLY);
+	
+	/*
+	engine_base = LoadLibrary(engine_path.c_str());
+	void* rsig_addr = (void*)GetProcAddress((HMODULE)engine_base, "__rsignal");
+	*/
+	fd = open((char*)argv[1], _O_BINARY | _O_RDONLY, _S_IREAD);
 	if (fd < 0) {
 		console_log(MSGTYPE::ERR, "Fail to open file");
 		exit(-1);

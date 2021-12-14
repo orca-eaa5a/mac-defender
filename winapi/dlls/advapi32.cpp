@@ -62,11 +62,15 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 	wstring wstr = wstring(lpSubKey);
 	string hive;
 	string sub_key_str;
+	string key_str;
+	Json::Value key;
+
 	sub_key_str.assign(wstr.begin(), wstr.end());
 	switch ((unsigned long long)hKey)
 	{
 	case HKEY_LOCAL_MACHINE:
 		hive = "hklm";
+		key = MockNTKrnl::mock_reg[hive];
 		break;
 	case HKEY_CLASSES_ROOT:
 	case HKEY_CURRENT_CONFIG:
@@ -75,10 +79,11 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 		hive = "not imp";
 		break;
 	default:
+		tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(unsigned int)hKey];
 		break;
 	}
 	vector<string> splitted = split_string((char*)sub_key_str.c_str(), '\\');
-	Json::Value key = MockNTKrnl::mock_reg[hive];
+	//Json::Value key = MockNTKrnl::mock_reg[hive];
 	if (!key) {
 		return ERROR_FILE_NOT_FOUND;
 	}
@@ -213,6 +218,63 @@ long __stdcall MockAdvapi::RegQueryInfoKeyW(
 		assert(0); // not implemented yet
 	}
 
+	return 0;
+}
+
+long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, wchar_t* lpValueName, unsigned int* lpReserved, unsigned int* lpType, unsigned char*  lpData, unsigned int* lpcbData) {
+	string hive;
+	string key_str;
+	Json::Value key;
+	string value;
+	wstring value_w = wstring(lpValueName);
+	value.assign(value_w.begin(), value_w.end());
+
+	switch ((unsigned long long)hKey)
+	{
+	case HKEY_LOCAL_MACHINE:
+		hive = "hklm";
+		key = MockNTKrnl::mock_reg[hive];
+		break;
+	case HKEY_CLASSES_ROOT:
+	case HKEY_CURRENT_CONFIG:
+	case HKEY_CURRENT_USER:
+	case HKEY_USERS:
+		hive = "not imp";
+		break;
+	default:
+		tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(unsigned int)hKey];
+		break;
+	}
+
+	if (key.isMember(value)) {
+		auto subkey = key[value];
+		unsigned int regtype;
+		size_t data_sz = 0;
+		
+		if (subkey.isString()) {
+			regtype = 0x2; //REG_EXPAND_SZ;
+			wstring value;
+			data_sz = subkey.asString().length();
+			
+			value.assign(subkey.asString().begin(), subkey.asString().end());
+			if (data_sz > *lpcbData) {
+				*lpcbData = data_sz;
+				return 234; //ERROR_MORE_DATA
+			}
+			memmove(lpData, value.c_str(), (data_sz+1)*sizeof(wchar_t));
+			
+			*lpcbData = (data_sz + 1) * sizeof(wchar_t);
+		}
+		else if (subkey.isInt64() || subkey.isInt()) {
+			regtype = 0x4; //REG_DWORD
+			data_sz = 4;
+		}
+		*lpType = regtype;
+		
+	}
+	else {
+		return ERROR_FILE_NOT_FOUND;
+	}
 	return 0;
 }
 

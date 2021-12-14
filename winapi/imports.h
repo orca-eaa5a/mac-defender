@@ -6,6 +6,7 @@
 #include "dlls/kernel32.h"
 #include "dlls/ntdll.h"
 #include "dlls/advapi32.h"
+#include "dlls/bcrypt.h"
 #include "ntoskrnl.h"
 #include "exports.h"
 
@@ -29,6 +30,7 @@ private:
 	MockKernel32 kernel32;
 	MockNtdll ntdll;
 	MockAdvapi advapi;
+	MockBcrypt bcrypt;
 	void* engine_base;
 
 };

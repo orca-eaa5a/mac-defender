@@ -10,14 +10,14 @@
 
 class MockBcrypt {
 public:
-	function<void(void)> set_k32_hookaddr = [](void) {
+	function<void(void)> set_bcrypt_hookaddr = [](void) {
 		APIExports::add_hook_info("bcrypt.dll", "BCryptOpenAlgorithmProvider", (void*)MockBcrypt::BCryptOpenAlgorithmProvider);
 		APIExports::add_hook_info("bcrypt.dll", "BCryptCloseAlgorithmProvider", (void*)MockBcrypt::BCryptCloseAlgorithmProvider);
 		APIExports::add_hook_info("bcrypt.dll", "BCryptGenRandom", (void*)MockBcrypt::BCryptGenRandom);
 	};
 
-	static NTSTATUS __stdcall BCryptOpenAlgorithmProvider(void* phAlgorithm, wchar_t* pszAlgId, wchar_t* pszImplementation, unsigned int dwFlags);
-	static NTSTATUS __stdcall BCryptCloseAlgorithmProvider(void* hAlgorithm, unsigned long dwFlags);
+	static NTSTATUS __stdcall MockBcrypt::BCryptOpenAlgorithmProvider(void* phAlgorithm, wchar_t* pszAlgId, wchar_t* pszImplementation, unsigned int dwFlags);
+	static NTSTATUS __stdcall MockBcrypt::BCryptCloseAlgorithmProvider(void* hAlgorithm, unsigned long dwFlags);
 	static NTSTATUS __stdcall MockBcrypt::BCryptGenRandom(void* phAlgorithm, unsigned char* pbBuffer, unsigned long cbBuffer, unsigned long dwFlags);
 };
 #endif // !_BCRYPT_H_

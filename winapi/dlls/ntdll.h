@@ -49,15 +49,19 @@ public:
 	function<void(void)> set_ntdll_hookaddr = [](void) {
 		APIExports::add_hook_info("ntdll.dll", "RtlGetVersion", (void*)MockNtdll::RtlGetVersion);
 		APIExports::add_hook_info("ntdll.dll", "EventRegister", (void*)MockNtdll::EtwRegister);
-		APIExports::add_hook_info("ntdll.dll", "EventUnRegister", (void*)MockNtdll::EtwUnregister);
+		APIExports::add_hook_info("ntdll.dll", "EventUnregister", (void*)MockNtdll::EtwUnregister);
 		APIExports::add_hook_info("ntdll.dll", "NtEnumerateValueKey", (void*)MockNtdll::NtEnumerateValueKey);
 		APIExports::add_hook_info("ntdll.dll", "NtQueryValueKey", (void*)MockNtdll::NtQueryValueKey);
+		APIExports::add_hook_info("ntdll.dll", "RtlCreateHeap", (void*)MockNtdll::RtlCreateHeap);
+		APIExports::add_hook_info("ntdll.dll", "RtlAllocateHeap", (void*)MockNtdll::RtlAllocateHeap);
 	};
 	static NTSTATUS __stdcall MockNtdll::RtlGetVersion(PRTL_OSVERSIONINFOW lpVersionInformation);
 	static NTSTATUS __stdcall MockNtdll::EtwRegister(void* ProviderId, void* EnableCallback, void* CallbackContext, void* RegHandle);
 	static NTSTATUS __stdcall MockNtdll::EtwUnregister(void* RegHandle);
 	static NTSTATUS __stdcall MockNtdll::NtEnumerateValueKey(void* KeyHandle, unsigned long Index, KEY_VALUE_INFORMATION_CLASS KeyValueInformationClass, void* KeyValueInformation, unsigned long Length, unsigned long* ResultLength);
 	static NTSTATUS __stdcall MockNtdll::NtQueryValueKey(void* KeyHandle, void* ValueName, KEY_VALUE_INFORMATION_CLASS KeyValueInformationClass, void* KeyValueInformation, unsigned long Length, unsigned long* ResultLength);
+	static void* __stdcall MockNtdll::RtlCreateHeap(unsigned long Flags, void* HeapBase, size_t ReserveSize, size_t CommitSize, void* Lock, void* Parameters);
+	static void* __stdcall MockNtdll::RtlAllocateHeap(void* HeapHandle, unsigned long Flags, size_t Size);
 };
 
 #endif

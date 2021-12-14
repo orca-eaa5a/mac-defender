@@ -10,19 +10,20 @@
 class MockAdvapi {
 	public:
 		function<void(void)> set_advapi_hookaddr = [](void) {
-			APIExports::add_hook_info("Advapi32.DLL", "RegisterTraceGuidsW", (void*)MockAdvapi::RegisterTraceGuidsW);
-			APIExports::add_hook_info("Advapi32.DLL", "EventSetInformation", (void*)MockAdvapi::EventSetInformation);
-			APIExports::add_hook_info("Advapi32.DLL", "LookupPrivilegeValueA", (void*)MockAdvapi::LookupPrivilegeValueA);
-			APIExports::add_hook_info("Advapi32.DLL", "LookupPrivilegeValueW", (void*)MockAdvapi::LookupPrivilegeValueW);
-			APIExports::add_hook_info("Advapi32.DLL", "AdjustTokenPrivileges", (void*)MockAdvapi::AdjustTokenPrivileges);
+			APIExports::add_hook_info("advapi32.DLL", "RegisterTraceGuidsW", (void*)MockAdvapi::RegisterTraceGuidsW);
+			APIExports::add_hook_info("advapi32.DLL", "EventSetInformation", (void*)MockAdvapi::EventSetInformation);
+			APIExports::add_hook_info("advapi32.DLL", "LookupPrivilegeValueA", (void*)MockAdvapi::LookupPrivilegeValueA);
+			APIExports::add_hook_info("advapi32.DLL", "LookupPrivilegeValueW", (void*)MockAdvapi::LookupPrivilegeValueW);
+			APIExports::add_hook_info("advapi32.DLL", "AdjustTokenPrivileges", (void*)MockAdvapi::AdjustTokenPrivileges);
 			
 			
-			APIExports::add_hook_info("Advapi32.DLL", "RegCreateKeyExW", (void*)MockAdvapi::RegCreateKeyExW);
-			APIExports::add_hook_info("Advapi32.DLL", "RegOpenKeyExW", (void*)MockAdvapi::RegOpenKeyExW);
-			APIExports::add_hook_info("Advapi32.DLL", "RegQueryInfoKeyW", (void*)MockAdvapi::RegQueryInfoKeyW);
-			APIExports::add_hook_info("Advapi32.DLL", "RegEnumKeyExW", (void*)MockAdvapi::RegEnumKeyExW);
-			APIExports::add_hook_info("Advapi32.DLL", "RegCloseKey", (void*)MockAdvapi::RegCloseKey);
-			APIExports::add_hook_info("Advapi32.DLL", "RegNotifyChangeKeyValue", (void*)MockAdvapi::RegNotifyChangeKeyValue);
+			APIExports::add_hook_info("advapi32.DLL", "RegCreateKeyExW", (void*)MockAdvapi::RegCreateKeyExW);
+			APIExports::add_hook_info("advapi32.DLL", "RegOpenKeyExW", (void*)MockAdvapi::RegOpenKeyExW);
+			APIExports::add_hook_info("advapi32.DLL", "RegQueryInfoKeyW", (void*)MockAdvapi::RegQueryInfoKeyW);
+			APIExports::add_hook_info("advapi32.DLL", "RegEnumKeyExW", (void*)MockAdvapi::RegEnumKeyExW);
+			APIExports::add_hook_info("advapi32.DLL", "RegCloseKey", (void*)MockAdvapi::RegCloseKey);
+			APIExports::add_hook_info("advapi32.DLL", "RegQueryValueExW", (void*)MockAdvapi::RegQueryValueExW);
+			APIExports::add_hook_info("advapi32.DLL", "RegNotifyChangeKeyValue", (void*)MockAdvapi::RegNotifyChangeKeyValue);
 			
 			
 		};
@@ -58,6 +59,7 @@ class MockAdvapi {
 			unsigned int* lpcbSecurityDescriptor,
 			void* lpftLastWriteTime
 		);
+		static long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, wchar_t* lpValueName, unsigned int* lpReserved, unsigned int* lpType, unsigned char*  lpData, unsigned int* lpcbData);
 		static long __stdcall MockAdvapi::RegEnumKeyExW(void* hkey, unsigned int dwIndex, wchar_t* lpName, unsigned int* lpcchName, void* lpReserved, wchar_t* lpClass, unsigned int* lpcchClass, void* lpftLastWriteTime);
 		static long __stdcall MockAdvapi::RegNotifyChangeKeyValue(void* hKey, bool bWatchSubtree, unsigned int dwNotifyFilter, void* hEvent, bool fAsynchronous);
 		

@@ -16,4 +16,3 @@ NTSTATUS __stdcall MockBcrypt::BCryptGenRandom(void* phAlgorithm, unsigned char*
 	}
 	return 0;
 }
-

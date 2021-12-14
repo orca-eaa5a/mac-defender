@@ -18,6 +18,20 @@ public:
 	static int errcode;
 	static map<std::string, string> m_env_variable;
 	static map<unsigned int, tuple<string, string, Json::Value>> m_reg_handle;
+	static map<unsigned int,
+			tuple<
+				unsigned int,
+				unsigned int,
+				unsigned int,
+				vector<
+					tuple<
+						unsigned long long,
+						unsigned int
+						>
+					>
+				>
+			> m_heap_handle;
+	static unsigned int process_heap_handle;
 	static Json::Value mock_reg;
 	static unsigned int handle_count;
 
@@ -31,6 +45,11 @@ public:
 	}
 	static unsigned int MockNTKrnl::CreateNewRegHandle(string hive, string key, Json::Value v);
 	static void MockNTKrnl::RemoveRegHandle(unsigned int hKey);
+	static unsigned int MockNTKrnl::CreateNewHeapHandle(size_t init_sz, size_t max_sz);
+	static void* MockNTKrnl::AllocHeapMemory(unsigned int heap_handle, bool zeroize, size_t mem_size);
+	static void* MockNTKrnl::ResizeHeap(unsigned int heap_handle, bool zeroize, void* heap_base, size_t mem_size);
+	static bool MockNTKrnl::FreeHeap(unsigned int heap_handle, void* heap_base);
+	static bool MockNTKrnl::DestroyHeap(unsigned int heap_handle);
 
 private:
 	void MockNTKrnl::parse_mock_reg_info();

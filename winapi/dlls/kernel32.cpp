@@ -86,12 +86,14 @@ bool __stdcall MockKernel32::GetModuleHandleExW(unsigned int dwFlags, wchar_t* l
 
 void* __stdcall MockKernel32::MyGetProcAddress(void* hModule, char* lpProcName) {
 	for (auto const& mod_name : APIExports::exports) {
-		for (auto const& proc_name : APIExports::exports[mod_name.first]) {
+		string l_modname = string(str_tolower((char*)mod_name.first.c_str()));
+		for (auto const& proc_name : APIExports::exports[l_modname]) {
 			if (strcmp(proc_name.first.c_str(), lpProcName) == 0) {
 				return proc_name.second;
 			}
 		}
 	}
+
 	return GetProcAddress((HMODULE)hModule, lpProcName);
 }
 
@@ -208,8 +210,8 @@ bool __stdcall MockKernel32::MyCloseHandle(void* hObject) {
 		return true;
 
 	// fake close, but not safe
-	return true;
-	//return CloseHandle((HANDLE)hObject);
+	//return true;
+	return CloseHandle((HANDLE)hObject);
 }
 
 unsigned int __stdcall MockKernel32::GetDriveTypeA(char* lpRootPathName) {
@@ -223,6 +225,11 @@ unsigned int __stdcall MockKernel32::GetDriveTypeW(wchar_t* lpRootPathName) {
 unsigned int __stdcall MockKernel32::GetLogicalDrives() {
 	return 4;
 }
+
+unsigned int __stdcall MockKernel32::GetSystemDefaultLCID(){
+	return 0x0800; //locale-system-default
+}
+
 
 unsigned int __stdcall MockKernel32::GetFileSizeEx(void* hFile, PLARGE_INTEGER lpFileSize) {
 	long curpos = ftell((FILE*)hFile);
@@ -326,6 +333,21 @@ bool __stdcall MockKernel32::QueryPerformanceCounter(LARGE_INTEGER *lpPerformanc
 	
 	lpPerformanceCount->LowPart = tm.tv_nsec;
 
+	return true;
+}
+
+bool __stdcall MockKernel32::QueryPerformanceFrequency(LARGE_INTEGER *lpFrequency) {
+#ifdef _WIN64
+	lpFrequency->QuadPart = 2433535;
+	lpFrequency->LowPart = 2433535;
+#else
+	struct timespec tm;
+	if (clock_getres(CLOCK_MONOTONIC_RAW, &tm) != 0)
+		return FALSE;
+	lpFrequency->LowPart = tm.tv_nsec & 0xffffffff;
+	lpFrequency->HighPart = tm.tv_nsec & 0xffffffff00000000;
+	lpFrequency->QuadPart = tm.tv_nsec;
+#endif // _WIN64
 	return true;
 }
 
@@ -828,6 +850,19 @@ unsigned int __stdcall MockKernel32::GetSystemDirectoryW(wchar_t* lpBuffer, unsi
 	return buf_sz;
 }
 
+unsigned int __stdcall MockKernel32::GetSystemWindowsDirectoryW(wchar_t* lpBuffer, unsigned int uSize) {
+	size_t req_sz = sizeof(L"C:\\Windows");
+	if (uSize < req_sz) {
+		return req_sz + 2;
+	}
+	memmove(lpBuffer, L"C:\\Windows", req_sz);
+	return req_sz + 2;
+}
+
+unsigned int __stdcall MockKernel32::GetSystemWow64DirectoryW(wchar_t* lpBuffer, unsigned int uSize) {
+	return 0;
+}
+
 bool __stdcall MockKernel32::GetProductInfo(unsigned int dwOSMajorVersion, unsigned int dwOSMinorVersion, unsigned int dwSpMajorVersion, unsigned int dwSpMinorVersion, unsigned int * pdwReturnedProductType) {
 	*pdwReturnedProductType = 0x65; //PRODUCT_CORE
 	return true;
@@ -888,8 +923,16 @@ void __stdcall MockKernel32::CloseThreadpoolTimer(void* ptr) {
 	return;
 }
 
+void __stdcall MockKernel32::WaitForThreadpoolWorkCallbacks(void* pwk, bool fCancelPendingCallbacks) {
+	return;
+}
+
 void* __stdcall MockKernel32::CreateThreadpoolWork(void* pfnwk, void* pv, void* pcbe) {
 	return (void*)0x41414141;
+}
+
+void __stdcall MockKernel32::CloseThreadpoolWork(void* pfnwk) {
+	return;
 }
 
 void* __stdcall MockKernel32::CreateSemaphoreW(void* lpSemaphoreAttributes, long lInitialCount, long lMaximumCount, wchar_t* lpName) {
@@ -916,4 +959,68 @@ unsigned int __stdcall MockKernel32::WaitForSingleObject(void* hHandle, unsigned
 	return 0xFFFFFFFF;
 }
 
+void* __stdcall MockKernel32::GetProcessHeap() {
+	unsigned int proc_heap = (unsigned int)'NAHH';
+	if (MockNTKrnl::m_heap_handle.find(proc_heap) == MockNTKrnl::m_heap_handle.end()) {
+		unsigned int init_sz = 0x100000;
+		//unsigned long long membase = (unsigned long long)malloc(init_sz);
+		vector<tuple<unsigned long long, unsigned int>> v;
+		//v.push_back({ membase, init_sz });
+		MockNTKrnl::m_heap_handle[proc_heap] = { init_sz, 0, 0,  v };
+		return (void*)proc_heap;
+	}
+	return (void*)proc_heap;
+};
+
+void* __stdcall MockKernel32::HeapCreate(unsigned int flOptions, size_t dwInitialSize, size_t dwMaximumSize){
+	bool isFixed = false;
+	if (dwMaximumSize != 0)
+		isFixed = true;
+	return (void*)MockNTKrnl::CreateNewHeapHandle(dwInitialSize, dwMaximumSize);
+}
+
+
+void* __stdcall MockKernel32::HeapAlloc(void* hHeap, unsigned int dwFlags, size_t dwBytes) {
+	return MockNTKrnl::AllocHeapMemory((unsigned int)hHeap, dwFlags & HEAP_ZERO_MEMORY, dwBytes);
+}
+
+void* __stdcall MockKernel32::HeapReAlloc(void* hHeap, unsigned int dwFlags, void* lpMem, size_t dwBytes) {
+	return MockNTKrnl::ResizeHeap((unsigned int)hHeap, dwFlags & HEAP_ZERO_MEMORY, lpMem, dwBytes);
+}
+
+bool __stdcall MockKernel32::HeapFree(void* hHeap, unsigned int dwFlags, void* lpMem) {
+	return MockNTKrnl::FreeHeap((unsigned int)hHeap, lpMem);
+}
+
+bool __stdcall MockKernel32::HeapDestroy(void* hHeap) {
+	return MockNTKrnl::DestroyHeap((unsigned int)hHeap);
+}
+
+size_t __stdcall MockKernel32::HeapSize(void* hHeap, unsigned int dwFlags, void* lpMem) {
+	unsigned int heap_handle = (unsigned int)hHeap;
+	vector<tuple<unsigned long long, unsigned int>> heap_list = std::get<3>(MockNTKrnl::m_heap_handle[heap_handle]);
+	unsigned long long mem_ptr;
+	unsigned long memblock_sz;
+	for (auto h : heap_list) {
+		tie(mem_ptr, memblock_sz) = h;
+		if ((void*)mem_ptr == lpMem)
+			return memblock_sz;
+	}
+	return -1;	
+}
+
+void* __stdcall MockKernel32::LocalAlloc(unsigned int uFlags, size_t uBytes) {
+	if (uFlags & LMEM_ZEROINIT) {
+		return calloc(uBytes, 1);
+	}
+	else {
+		return malloc(uBytes);
+	}
+}
+
+void* __stdcall MockKernel32::LocalFree(void* hMem) {
+	if(hMem)
+		free(hMem);
+	return NULL;
+}
 
