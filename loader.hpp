@@ -289,11 +289,8 @@ auto winmap = [](string lib_name) -> void* {
 		hFile, // paging file
 		nullptr, SEC_IMAGE | PAGE_READONLY, 0,
 		0, nullptr);
-
-	img_base = MapViewOfFile(
-		hMap, FILE_MAP_READ,
-		0, 0, 0
-	);
+	
+	img_base = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
 	opt_header = get_optheader((uint8_t*)img_base);
 	set_all_priv(img_base, opt_header->SizeOfImage);
 	return img_base;

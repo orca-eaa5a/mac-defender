@@ -24,10 +24,12 @@ unsigned int MockKernel32::tick_counter = 0;
 static unsigned int errcode = 0;
 void __stdcall MockKernel32::MySetLastError(unsigned int dwErrCode) {
 	errcode = dwErrCode;
+	//SetLastError(dwErrCode);
 }
 
 unsigned int __stdcall MockKernel32::MyGetLastError(){
 	return errcode;
+	//return GetLastError();
 }
 
 
@@ -132,6 +134,7 @@ void* __stdcall MockKernel32::MyGetProcAddress(void* hModule, char* lpProcName) 
 	}
 
 	unsigned int i = rand();
+	//printf("%s --> 0x%x\n", lpProcName, i);
 	return (void*)i;
 }
 

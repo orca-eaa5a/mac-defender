@@ -22,6 +22,8 @@ public:
 	static unsigned int tick_counter;
 
 	function<void(void)> set_k32_hookaddr = [](void){
+		
+		
 		APIExports::add_hook_info("kernel32.dll", "SetLastError", (void*)MockKernel32::MySetLastError);
 		APIExports::add_hook_info("kernel32.dll", "GetLastError", (void*)MockKernel32::MyGetLastError);
 		
@@ -177,6 +179,7 @@ public:
 		APIExports::add_hook_info("kernel32.dll", "GlobalFree", (void*)MockKernel32::LocalFree);
 		
 		APIExports::add_hook_info("kernel32.dll", "CompareStringOrdinal", (void*)MockKernel32::CompareStringOrdinal);
+		
 	};
 
 	static void __stdcall MockKernel32::MySetLastError(unsigned int dwErrCode);
