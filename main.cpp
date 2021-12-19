@@ -34,6 +34,7 @@ int main(int argc, char** argv) {
 	string cmdline;
 	ImportDLLs* dlls;
 	MockNTKrnl mtosknl;
+
 	if (argc < 2)
 		console_log(MSGTYPE::CRIT, "Please input target file");
 

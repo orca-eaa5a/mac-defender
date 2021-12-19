@@ -4,9 +4,10 @@
 unsigned short MockNTKrnl::major = 10;
 unsigned short MockNTKrnl::minor = 0;
 unsigned int MockNTKrnl::build_version = 19042;
-int MockNTKrnl::errcode = 0;
 unsigned int MockNTKrnl::handle_count = 0x0188;
 Json::Value MockNTKrnl::mock_reg;
+unsigned int MockNTKrnl::page_alignment = 0x1000;
+
 
 map<unsigned int, tuple<string, string, Json::Value>> MockNTKrnl::m_reg_handle;
 map<unsigned int,

@@ -1,6 +1,7 @@
 #include "advapi32.h"
 #include <string>
 #include <cassert>
+#include <evntprov.h>
 
 using namespace std;
 
@@ -328,4 +329,38 @@ long __stdcall MockAdvapi::RegCloseKey(void* hKey) {
 
 long __stdcall MockAdvapi::RegNotifyChangeKeyValue(void* hKey, bool bWatchSubtree, unsigned int dwNotifyFilter, void* hEvent, bool fAsynchronous) {
 	return 0;
+}
+
+unsigned long __stdcall MockAdvapi::LsaNtStatusToWinError(unsigned long Status) {
+	return Status;
+}
+
+unsigned long __stdcall MockAdvapi::EventWriteEx(
+	void* EventDescriptor,
+	unsigned long long Filter,
+	unsigned long Flags,
+	void* ActivityId,
+	void* RelatedActivityId,
+	unsigned long UserDataCount,
+	void* UserData) {
+	return 0;
+}
+
+unsigned long __stdcall MockAdvapi::EventWriteTransfer(
+	void* RegHandle,
+	void* EventDescriptor,
+	void* ActivityId,
+	void* RelatedActivityId,
+	unsigned long UserDataCount,
+	void* UserData
+) {
+	return 0;
+}
+
+unsigned long __stdcall MockAdvapi::MyEventActivityIdControl(
+	unsigned long ControlCode,
+	void* ActivityId
+) {
+	return 0;
+	//return 0;
 }

@@ -108,3 +108,15 @@ unsigned int copy_wstr_to_str(wchar_t* src, char* dst, unsigned int max_len) {
 	dst[i++] = '\0';
 	return i;
 }
+
+size_t get_wide_string_length(void* ptr) {
+	size_t i = 0;
+	wchar_t *p = (wchar_t*)ptr;
+
+	if (!p) return 0;
+
+	while (*p++)
+		i++;
+
+	return i;
+}

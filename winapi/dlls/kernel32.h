@@ -22,8 +22,9 @@ public:
 	static unsigned int tick_counter;
 
 	function<void(void)> set_k32_hookaddr = [](void){
-		//APIExports::add_hook_info("kernel32.dll", "SetLastError", (void*)MockKernel32::SetLastError);
-		//APIExports::add_hook_info("kernel32.dll", "GetLastError", (void*)MockKernel32::GetLastError);
+		APIExports::add_hook_info("kernel32.dll", "SetLastError", (void*)MockKernel32::MySetLastError);
+		APIExports::add_hook_info("kernel32.dll", "GetLastError", (void*)MockKernel32::MyGetLastError);
+		
 		APIExports::add_hook_info("kernel32.dll", "GetStartupInfoA", (void*)MockKernel32::GetStartupInfoA);
 		APIExports::add_hook_info("kernel32.dll", "GetStartupInfoW", (void*)MockKernel32::GetStartupInfoW);
 		APIExports::add_hook_info("kernel32.dll", "GetStringTypeA", (void*)MockKernel32::GetStringTypeA);
@@ -31,8 +32,24 @@ public:
 		APIExports::add_hook_info("kernel32.dll", "GetModuleFileNameA", (void*)MockKernel32::GetModuleFileNameA);
 
 		APIExports::add_hook_info("kernel32.dll", "GetStdHandle", (void*)MockKernel32::GetStdHandle);
+		//APIExports::add_hook_info("kernel32.dll", "LoadLibraryA", (void*)MockKernel32::LoadLibraryA);
+		APIExports::add_hook_info("kernel32.dll", "LoadLibraryW", (void*)MockKernel32::LoadLibraryW);
 		APIExports::add_hook_info("kernel32.dll", "LoadLibraryExW", (void*)MockKernel32::LoadLibraryExW);
-		//APIExports::add_hook_info("kernel32.dll", "GetModuleHandleA", (void*)MockKernel32::GetModuleHandleA);
+		APIExports::add_hook_info("kernel32.dll", "FreeLibrary", (void*)MockKernel32::FreeLibrary);
+
+		APIExports::add_hook_info("kernel32.dll", "CreateFileA", (void*)MockKernel32::CreateFileA);
+		APIExports::add_hook_info("kernel32.dll", "CreateFileW", (void*)MockKernel32::CreateFileW);
+		APIExports::add_hook_info("kernel32.dll", "ReadFile", (void*)MockKernel32::ReadFile);
+		APIExports::add_hook_info("kernel32.dll", "WriteFile", (void*)MockKernel32::WriteFile);
+		APIExports::add_hook_info("kernel32.dll", "GetFileSizeEx", (void*)MockKernel32::GetFileSizeEx);
+		APIExports::add_hook_info("kernel32.dll", "GetFileSGetFileAttributesWizeEx", (void*)MockKernel32::GetFileAttributesW);
+		APIExports::add_hook_info("kernel32.dll", "GetFileAttributesExA", (void*)MockKernel32::GetFileAttributesExA);
+		APIExports::add_hook_info("kernel32.dll", "GetFileAttributesExW", (void*)MockKernel32::GetFileAttributesExW);
+		APIExports::add_hook_info("kernel32.dll", "SetFilePointer", (void*)MockKernel32::SetFilePointer);
+		APIExports::add_hook_info("kernel32.dll", "SetFilePointerEx", (void*)MockKernel32::SetFilePointerEx);
+
+
+		APIExports::add_hook_info("kernel32.dll", "GetModuleHandleA", (void*)MockKernel32::MyGetModuleHandleA);
 		APIExports::add_hook_info("kernel32.dll", "GetModuleHandleW", (void*)MockKernel32::GetModuleHandleW);
 		APIExports::add_hook_info("kernel32.dll", "GetModuleHandleExW", (void*)MockKernel32::GetModuleHandleExW);
 		APIExports::add_hook_info("kernel32.dll", "CloseHandle", (void*)MockKernel32::MyCloseHandle);
@@ -52,13 +69,14 @@ public:
 		APIExports::add_hook_info("kernel32.dll", "GetCurrentProcessID", (void*)MockKernel32::GetCurrentProcessID);
 		APIExports::add_hook_info("kernel32.dll", "GetCurrentThreadID", (void*)MockKernel32::GetCurrentThreadID);
 
+		APIExports::add_hook_info("kernel32.dll", "SetProcessInformation", (void*)MockKernel32::MySetProcessInformation);
 		APIExports::add_hook_info("kernel32.dll", "GetSystemTimeAsFileTime", (void*)MockKernel32::GetSystemTimeAsFileTime);
 		APIExports::add_hook_info("kernel32.dll", "GetSystemTimePreciseAsFileTime", (void*)MockKernel32::GetSystemTimePreciseAsFileTime);
 		APIExports::add_hook_info("kernel32.dll", "QueryPerformanceFrequency", (void*)MockKernel32::QueryPerformanceFrequency);
 		APIExports::add_hook_info("kernel32.dll", "QueryPerformanceCounter", (void*)MockKernel32::QueryPerformanceCounter);
 		APIExports::add_hook_info("kernel32.dll", "GetTickCount", (void*)MockKernel32::GetTickCount);
 		APIExports::add_hook_info("kernel32.dll", "GetTickCount64", (void*)MockKernel32::GetTickCount64);
-
+		
 		APIExports::add_hook_info("kernel32.dll", "DeviceIoControl", (void*)MockKernel32::DeviceIoControl);
 
 		APIExports::add_hook_info("kernel32.dll", "GetCommandLineA", (void*)MockKernel32::GetCommandLineA);
@@ -94,7 +112,7 @@ public:
 		APIExports::add_hook_info("kernel32.dll", "LeaveCriticalSection", (void*)MockKernel32::LeaveCriticalSection);
 		APIExports::add_hook_info("kernel32.dll", "DeleteCriticalSection", (void*)MockKernel32::DeleteCriticalSection);
 
-
+		
 		APIExports::add_hook_info("kernel32.dll", "ExpandEnvironmentStringsW", (void*)MockKernel32::ExpandEnvironmentStringsW);
 		APIExports::add_hook_info("kernel32.dll", "GetEnvironmentVariableA", (void*)MockKernel32::GetEnvironmentVariableA);
 		APIExports::add_hook_info("kernel32.dll", "GetEnvironmentVariableW", (void*)MockKernel32::GetEnvironmentVariableW);
@@ -102,27 +120,33 @@ public:
 		APIExports::add_hook_info("kernel32.dll", "GetEnvironmentStringsW", (void*)MockKernel32::GetEnvironmentStringsW);
 		APIExports::add_hook_info("kernel32.dll", "FreeEnvironmentStringsA", (void*)MockKernel32::FreeEnvironmentStringsA);
 		APIExports::add_hook_info("kernel32.dll", "FreeEnvironmentStringsW", (void*)MockKernel32::FreeEnvironmentStringsW);
-
+		
 		APIExports::add_hook_info("kernel32.dll", "AcquireSRWLockExclusive", (void*)MockKernel32::AcquireSRWLockExclusive);
 		APIExports::add_hook_info("kernel32.dll", "ReleaseSRWLockExclusive", (void*)MockKernel32::ReleaseSRWLockExclusive);
 		APIExports::add_hook_info("kernel32.dll", "InitializeSRWLock", (void*)MockKernel32::InitializeSRWLock);
-
+		
+		APIExports::add_hook_info("kernel32.dll", "VirtualAlloc", (void*)MockKernel32::VirtualAlloc);
 		APIExports::add_hook_info("kernel32.dll", "VirtualLock", (void*)MockKernel32::VirtualLock);
-		APIExports::add_hook_info("kernel32.dll", "VirtualProtect", (void*)MockKernel32::VirtualProtect);
-
+		APIExports::add_hook_info("kernel32.dll", "VirtualProtect", (void*)MockKernel32::MyVirtualProtect);
+		
+		
 		APIExports::add_hook_info("kernel32.dll", "GetFileAttributesW", (void*)MockKernel32::GetFileAttributesW);
 		APIExports::add_hook_info("kernel32.dll", "GetFileAttributesExA", (void*)MockKernel32::GetFileAttributesExA);
 		APIExports::add_hook_info("kernel32.dll", "GetFileAttributesExW", (void*)MockKernel32::GetFileAttributesExW);
-
+		
+		
 		APIExports::add_hook_info("kernel32.dll", "GetSystemWindowsDirectoryW", (void*)MockKernel32::GetSystemWindowsDirectoryW);
 		APIExports::add_hook_info("kernel32.dll", "GetSystemWow64DirectoryW", (void*)MockKernel32::GetSystemWow64DirectoryW);
 		APIExports::add_hook_info("kernel32.dll", "GetSystemDirectoryA", (void*)MockKernel32::GetSystemDirectoryA);
 		APIExports::add_hook_info("kernel32.dll", "GetSystemDirectoryW", (void*)MockKernel32::GetSystemDirectoryW);
 		APIExports::add_hook_info("kernel32.dll", "GetTempPathW", (void*)MockKernel32::GetTempPathW);
 		APIExports::add_hook_info("kernel32.dll", "GetFullPathNameW", (void*)MockKernel32::GetFullPathNameW);
+		APIExports::add_hook_info("kernel32.dll", "GetComputerNameExW", (void*)MockKernel32::GetComputerNameExW);
+		APIExports::add_hook_info("kernel32.dll", "GetProcessTimes", (void*)MockKernel32::GetProcessTimes);
 		APIExports::add_hook_info("kernel32.dll", "QueryDosDeviceA", (void*)MockKernel32::QueryDosDeviceA);
 		APIExports::add_hook_info("kernel32.dll", "QueryDosDeviceW", (void*)MockKernel32::QueryDosDeviceW);
-
+		
+		
 		APIExports::add_hook_info("kernel32.dll", "CreateThreadpoolTimer", (void*)MockKernel32::CreateThreadpoolTimer);
 		APIExports::add_hook_info("kernel32.dll", "SetThreadpoolTimer", (void*)MockKernel32::SetThreadpoolTimer);
 		APIExports::add_hook_info("kernel32.dll", "WaitForThreadpoolTimerCallbacks", (void*)MockKernel32::WaitForThreadpoolTimerCallbacks);
@@ -130,7 +154,7 @@ public:
 		APIExports::add_hook_info("kernel32.dll", "CloseThreadpoolWork", (void*)MockKernel32::CloseThreadpoolWork);
 		APIExports::add_hook_info("kernel32.dll", "CreateThreadpoolWork", (void*)MockKernel32::CreateThreadpoolWork);
 		APIExports::add_hook_info("kernel32.dll", "WaitForThreadpoolWorkCallbacks", (void*)MockKernel32::WaitForThreadpoolWorkCallbacks);
-
+		
 		APIExports::add_hook_info("kernel32.dll", "CreateSemaphoreW", (void*)MockKernel32::CreateSemaphoreW);
 		APIExports::add_hook_info("kernel32.dll", "CreateEventW", (void*)MockKernel32::CreateEventW);
 		APIExports::add_hook_info("kernel32.dll", "SetEvent", (void*)MockKernel32::SetEvent);
@@ -152,23 +176,27 @@ public:
 		APIExports::add_hook_info("kernel32.dll", "GlobalAlloc", (void*)MockKernel32::LocalAlloc);
 		APIExports::add_hook_info("kernel32.dll", "GlobalFree", (void*)MockKernel32::LocalFree);
 		
-		
+		APIExports::add_hook_info("kernel32.dll", "CompareStringOrdinal", (void*)MockKernel32::CompareStringOrdinal);
 	};
-	static void __stdcall MockKernel32::SetLastError(unsigned int dwErrCode);
-	static unsigned int __stdcall MockKernel32::GetLastError();
+
+	static void __stdcall MockKernel32::MySetLastError(unsigned int dwErrCode);
+	static unsigned int __stdcall MockKernel32::MyGetLastError();
 
 	static void __stdcall MockKernel32::GetStartupInfoA(LPSTARTUPINFOA lpStartupInfo);
 	static void __stdcall MockKernel32::GetStartupInfoW(LPSTARTUPINFOW lpStartupInfo);
 	
 	static void* __stdcall MockKernel32::GetStdHandle(uint32_t nStdHandle);
-	//static void* __stdcall MockKernel32::GetModuleHandleA(char* lpModuleName);
+	//static void* __stdcall MockKernel32::LoadLibraryA(char* lpLibFileName);
+	static void* __stdcall MockKernel32::LoadLibraryW(wchar_t* lpLibFileName);
+	static void* __stdcall MockKernel32::LoadLibraryExW(wchar_t* lpLibFileName, void* hFile, unsigned int dwFlags);
+	static bool __stdcall MockKernel32::FreeLibrary(void* hLibModule);
+	static void* __stdcall MockKernel32::MyGetModuleHandleA(char* lpModuleName);
 	static void* __stdcall MockKernel32::GetModuleHandleW(wchar_t* lpModuleName);
 	static bool __stdcall MockKernel32::GetModuleHandleExA(unsigned int dwFlags, char* lpModuleName, void* phModule);
 	static bool __stdcall MockKernel32::GetModuleHandleExW(unsigned int dwFlags, wchar_t* lpModuleName, void* phModule);
 	static void* __stdcall MockKernel32::MyGetProcAddress(void* hModule, char* lpProcName);
 	static unsigned int __stdcall MockKernel32::GetModuleFileNameA(void* hModule, char* lpFilename, unsigned int nSize);
 	static unsigned int __stdcall MockKernel32::GetModuleFileNameW(void* hModule, wchar_t* lpFilename, unsigned int nSize);
-	static void* __stdcall MockKernel32::LoadLibraryExW(wchar_t* lpLibFileName, void* hFile, unsigned int dwFlags);
 	
 	static unsigned int __stdcall MockKernel32::SetFilePointer(void* hFile, long lDistanceToMove, long* lpDistanceToMoveHigh, unsigned int dwMoveMethod);
 	static bool __stdcall MockKernel32::SetFilePointerEx(void* hFile, unsigned long long liDistanceToMove, unsigned long long* lpNewFilePointer, unsigned int dwMoveMethod);
@@ -193,6 +221,7 @@ public:
 	static unsigned int __stdcall MockKernel32::GetCurrentThreadID();
 	static unsigned int __stdcall MockKernel32::GetCurrentProcessID();
 	
+	static bool __stdcall MockKernel32::MySetProcessInformation(void* hProces, PROCESS_INFORMATION_CLASS ProcessInformationClass, void* ProcessInformation, unsigned int ProcessInformationSize);
 	static void __stdcall MockKernel32::GetSystemTimeAsFileTime(void* lpSystemTimeAsFileTime);
 	static void __stdcall MockKernel32::GetSystemTimePreciseAsFileTime(void* lpSystemTimeAsFileTime);
 	static bool __stdcall MockKernel32::QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount);
@@ -267,10 +296,13 @@ public:
 	static unsigned int __stdcall MockKernel32::GetSystemDirectoryW(wchar_t* lpBuffer, unsigned int uSize);
 	static unsigned int __stdcall MockKernel32::GetFullPathNameW(wchar_t* lpFileName, unsigned int nBufferLength, wchar_t* lpBuffer, wchar_t** lpFilePart);
 	static unsigned int __stdcall MockKernel32::GetTempPathW(unsigned int nBufferLength, wchar_t* lpBuffer);
+	static bool __stdcall MockKernel32::GetComputerNameExW(unsigned int NameType, wchar_t* lpBuffer, unsigned int* lpnSize);
+	static bool __stdcall MockKernel32::GetProcessTimes(void* hProcess, void* lpCreationTime, void* lpExitTime, void* lpKernelTime, void* lpUserTime);
 	static unsigned int __stdcall MockKernel32::QueryDosDeviceA(void* lpDeviceName, void* lpTargetPath, unsigned int ucchMax);
 	static unsigned int __stdcall MockKernel32::QueryDosDeviceW(void* lpDeviceName, void* lpTargetPath, unsigned int ucchMax);
 
-	static bool __stdcall MockKernel32::VirtualProtect(void* lpAddress, size_t dwSize, unsigned int flNewProtect, void* lpflOldProtect);
+	static void* __stdcall MockKernel32::VirtualAlloc(void* lpAddress, size_t dwSize, unsigned int flAllocationType, unsigned int flProtect);
+	static bool __stdcall MockKernel32::MyVirtualProtect(void* lpAddress, size_t dwSize, unsigned int flNewProtect, void* lpflOldProtect);
 	static bool __stdcall MockKernel32::VirtualLock(void* lpAddress, unsigned int dwSize);
 	
 	static void* __stdcall MockKernel32::CreateThreadpoolTimer(void* pfnti, void* pv, void* pcbe);
@@ -298,5 +330,7 @@ public:
 
 	static void* __stdcall MockKernel32::LocalAlloc(unsigned int uFlags, size_t uBytes);
 	static void* __stdcall MockKernel32::LocalFree(void* hMem);
+
+	static int __stdcall MockKernel32::CompareStringOrdinal(void* lpString1, int cchCount1, void* lpString2, int cchCount2, bool bIgnoreCase);
 };
 #endif // !_KERNEL32_H_

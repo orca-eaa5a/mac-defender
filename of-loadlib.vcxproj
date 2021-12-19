@@ -131,6 +131,10 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="winapi\dlls\advapi32.cpp" />
     <ClCompile Include="winapi\dlls\bcrypt.cpp" />
+    <ClCompile Include="winapi\dlls\crypt32.cpp" />
+    <ClCompile Include="winapi\dlls\version.cpp" />
+    <ClCompile Include="winapi\dlls\wintrust.cpp" />
+    <ClCompile Include="winapi\dlls\wofutil.cpp" />
     <ClCompile Include="winapi\exports.cpp" />
     <ClCompile Include="winapi\imports.cpp" />
     <ClCompile Include="winapi\dlls\kernel32.cpp" />
@@ -143,7 +147,11 @@
     <ClInclude Include="log.hpp" />
     <ClInclude Include="winapi\dlls\advapi32.h" />
     <ClInclude Include="winapi\dlls\bcrypt.h" />
+    <ClInclude Include="winapi\dlls\crypt32.h" />
     <ClInclude Include="winapi\dlls\kernel32.h" />
+    <ClInclude Include="winapi\dlls\version.h" />
+    <ClInclude Include="winapi\dlls\wintrust.h" />
+    <ClInclude Include="winapi\dlls\wofutil.h" />
     <ClInclude Include="winapi\imports.h" />
     <ClInclude Include="winapi\exports.h" />
     <ClInclude Include="winapi\dlls\ntdll.h" />

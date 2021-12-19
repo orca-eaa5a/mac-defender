@@ -148,11 +148,110 @@ NTSTATUS __stdcall MockNtdll::NtQueryValueKey(void* KeyHandle, void* ValueName, 
 	return 0;
 }
 
+NTSTATUS __stdcall MockNtdll::NtQuerySystemInformation(unsigned int SystemInformationClass, void* SystemInformation, unsigned long SystemInformationLength, unsigned long* ReturnLength) {
+	return -1;
+}
+
+NTSTATUS __stdcall MockNtdll::NtOpenSymbolicLinkObject(void** LinkHandle, unsigned int DesiredAccess, void* ObjectAttributes) {
+	// this is unsafe
+	*LinkHandle = (void*)'swc';
+	return 0;
+}
+
+NTSTATUS __stdcall MockNtdll::NtQuerySymbolicLinkObject(void* LinkHandle, UNICODE_STRING* LinkTarget, unsigned long* ReturnedLength) {
+	if (LinkHandle == (void*)INVALID_HANDLE_VALUE)
+		return 0xC0000008;
+	return 0;
+}
+
+
+NTSTATUS __stdcall MockNtdll::NtClose(void* Handle) {
+	if (Handle == (void*)INVALID_HANDLE_VALUE)
+		return 0xC0000008;
+	return 0;
+}
+
 void* __stdcall MockNtdll::RtlCreateHeap(unsigned long Flags, void* HeapBase, size_t ReserveSize, size_t CommitSize, void* Lock, void* Parameters) {
-	return (void*)'HEAP';
+	return NULL;
 }
 
 void* __stdcall MockNtdll::RtlAllocateHeap(void* HeapHandle, unsigned long Flags, size_t Size) {
 	return NULL;
 }
 
+void __stdcall MockNtdll::RtlInitUnicodeString(PUNICODE_STRING DestinationString, wchar_t* SourceString) {
+	size_t wstr_len = 0;
+	for (; SourceString[wstr_len] != '\0'; wstr_len++) {}
+	DestinationString->Length = wstr_len * sizeof(wchar_t);
+	DestinationString->Buffer = SourceString;
+	DestinationString->MaximumLength = (wstr_len + 1) * sizeof(wchar_t);
+}
+
+#define RTL_IMAGE_NT_HEADER_EX_FLAG_NO_RANGE_CHECK 1
+
+void* __stdcall MockNtdll::RtlImageNtHeader(void* ModuleAddress) {
+	PIMAGE_NT_HEADERS NtHeaders = NULL;
+	MockNtdll::RtlImageNtHeaderEx(RTL_IMAGE_NT_HEADER_EX_FLAG_NO_RANGE_CHECK, ModuleAddress, 0, &NtHeaders);
+	return NtHeaders;
+}
+
+unsigned int __stdcall MockNtdll::RtlImageNtHeaderEx(unsigned long Flags, void* Base, unsigned long long Size, PIMAGE_NT_HEADERS * OutHeaders) {
+	PIMAGE_NT_HEADERS NtHeaders = 0;
+	ULONG e_lfanew = 0;
+	BOOLEAN RangeCheck = 0;
+	NTSTATUS Status = 0;
+	const ULONG ValidFlags = 1;
+
+	if (OutHeaders != NULL) {
+		*OutHeaders = NULL;
+	}
+	if (OutHeaders == NULL) {
+		Status = STATUS_INVALID_PARAMETER;
+		goto Exit;
+	}
+	if ((Flags & ~ValidFlags) != 0) {
+		Status = STATUS_INVALID_PARAMETER;
+		goto Exit;
+	}
+	if (Base == NULL || Base == (PVOID)(LONG_PTR)-1) {
+		Status = STATUS_INVALID_PARAMETER;
+		goto Exit;
+	}
+
+	RangeCheck = ((Flags & RTL_IMAGE_NT_HEADER_EX_FLAG_NO_RANGE_CHECK) == 0);
+	if (RangeCheck) {
+		if (Size < sizeof(IMAGE_DOS_HEADER)) {
+			Status = 0xC000007B;
+			goto Exit;
+		}
+	}
+
+	//
+	// Exception handling is not available in the boot loader, and exceptions
+	// were not historically caught here in kernel mode. Drivers are considered
+	// trusted, so we can't get an exception here due to a bad file, but we
+	// could take an inpage error.
+	//
+#define EXIT goto Exit
+	if (((PIMAGE_DOS_HEADER)Base)->e_magic != IMAGE_DOS_SIGNATURE) {
+		Status = 0xC000007B;
+		EXIT;
+	}
+	e_lfanew = ((PIMAGE_DOS_HEADER)Base)->e_lfanew;
+
+	NtHeaders = (PIMAGE_NT_HEADERS)((PCHAR)Base + e_lfanew);
+
+	
+
+	if (NtHeaders->Signature != IMAGE_NT_SIGNATURE) {
+		Status = 0xC000007B;
+		EXIT;
+	}
+	Status = 0;
+
+Exit:
+	if (!Status) {
+		*OutHeaders = NtHeaders;
+	}
+	return Status;
+}

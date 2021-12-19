@@ -48,6 +48,18 @@
     <ClCompile Include="winapi\strutils.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="winapi\dlls\version.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="winapi\dlls\crypt32.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="winapi\dlls\wofutil.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="winapi\dlls\wintrust.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="loader.hpp">
@@ -81,6 +93,18 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="winapi\strutils.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="winapi\dlls\version.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="winapi\dlls\crypt32.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="winapi\dlls\wofutil.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="winapi\dlls\wintrust.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

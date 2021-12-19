@@ -44,7 +44,7 @@ bool APIExports::hook_as_ported_api(void* imgbase, char* targ_module, char* targ
 				pThunkRef = pFuncRef;
 			for (; *pThunkRef; pThunkRef++, pFuncRef++) {
 				IMAGE_IMPORT_BY_NAME* imp_by_name = (IMAGE_IMPORT_BY_NAME*)(_imgbase + *pThunkRef);
-				if (_stricmp(imp_by_name->Name, targ_api) == 0) {
+				if (strcmp(imp_by_name->Name, targ_api) == 0) {
 					*pFuncRef = (unsigned long long)hook_addr;
 					return true;
 				}

@@ -7,6 +7,10 @@
 #include "dlls/ntdll.h"
 #include "dlls/advapi32.h"
 #include "dlls/bcrypt.h"
+#include "dlls/version.h"
+#include "dlls/crypt32.h"
+#include "dlls/wofutil.h"
+#include "dlls/wintrust.h"
 #include "ntoskrnl.h"
 #include "exports.h"
 
@@ -31,6 +35,10 @@ private:
 	MockNtdll ntdll;
 	MockAdvapi advapi;
 	MockBcrypt bcrypt;
+	MockVersion version;
+	MockCrypt32 crypt32;
+	MockWofUtil wofutil;
+	MockWintrust wintrust;
 	void* engine_base;
 
 };

@@ -5,8 +5,12 @@
 #include <ctime>
 #include <thread>
 #include <algorithm>
+#include <string.h>
 #include "kernel32.h"
 #include "../strutils.hpp"
+#ifndef _WIN64
+#include <sys/mman.h>
+#endif // _WIN64
 
 using namespace std;
 
@@ -15,16 +19,17 @@ string MockKernel32::commandline;
 wstring MockKernel32::wcommandline;
 unsigned long long MockKernel32::ThreadLocalStorage[1024];
 PFLS_CALLBACK_FUNCTION MockKernel32::FlsCallbacks[1024];
-unsigned int MockKernel32::tls_index = 1;
+unsigned int MockKernel32::tls_index = 2;
 unsigned int MockKernel32::tick_counter = 0;
-
-void __stdcall MockKernel32::SetLastError(unsigned int dwErrCode) {
-	MockNTKrnl::errcode = dwErrCode;
+static unsigned int errcode = 0;
+void __stdcall MockKernel32::MySetLastError(unsigned int dwErrCode) {
+	errcode = dwErrCode;
 }
 
-unsigned int __stdcall MockKernel32::GetLastError() {
-	return MockNTKrnl::errcode;
+unsigned int __stdcall MockKernel32::MyGetLastError(){
+	return errcode;
 }
+
 
 void __stdcall MockKernel32::GetStartupInfoA(LPSTARTUPINFOA lpStartupInfo) {
 	//lpStartupInfo->cb = sizeof(STARTUPINFOA);
@@ -34,40 +39,72 @@ void __stdcall MockKernel32::GetStartupInfoW(LPSTARTUPINFOW lpStartupInfo) {
 	//lpStartupInfo->cb = sizeof(STARTUPINFOW);
 	return;
 }
+
 /*
-void* __stdcall MockKernel32::GetModuleHandleA(char* lpModuleName) {
-	if (lpModuleName && memcmp(lpModuleName, "mpengine.dll", strlen("mpengine.dll")) == 0)
-		return MockKernel32::mpengine_base;
-	else if (lpModuleName && memcmp(lpModuleName, "bcrypt.dll", strlen("bcrypt.dll")) == 0)
-		return (void*)'orca';
-	else if (lpModuleName && memcmp(lpModuleName, "KERNEL32.DLL", strlen("KERNEL32.DLL")) == 0)
-		return (void*)'evil';
-	else if (lpModuleName && memcmp(lpModuleName, "kernel32.dll", strlen("kernel32.dll")) == 0)
-		return (void*)'mali';
-	else if (lpModuleName && memcmp(lpModuleName, "version.dll", strlen("version.dll")) == 0)
-		return (void*)'hack';
-	else
-		return (void*)NULL;
+void* __stdcall MockKernel32::LoadLibraryA(char* lpLibFileName) {
+	return MockKernel32::MyGetModuleHandleA(lpLibFileName);
 }
 */
+
+void* __stdcall MockKernel32::LoadLibraryW(wchar_t* lpLibFileName) {
+	//return MockKernel32::GetModuleHandleW(lpLibFileName);
+	
+	char *name = convert_wstr_to_str(lpLibFileName);
+	HINSTANCE mod = LoadLibraryA(name);
+	delete name;
+	return (void*)mod;
+}
+
+void* __stdcall MockKernel32::LoadLibraryExW(wchar_t* lpLibFileName, void* hFile, unsigned int dwFlags) {
+	char *name = convert_wstr_to_str(lpLibFileName);
+	if (strstr(name, "win-core") ||
+		strstr(name, "wofutil") ||
+		strstr(name, "wintrust")){
+		return INVALID_HANDLE_VALUE;
+	}
+	void* mod = nullptr;
+	mod = MockKernel32::GetModuleHandleW(lpLibFileName);
+	delete name;
+
+	return (void*)mod;
+}
+
+bool __stdcall MockKernel32::FreeLibrary(void* hLibModule) {
+	return true;
+}
+
+void* __stdcall MockKernel32::MyGetModuleHandleA(char* lpModuleName) {
+	void* mock_mod = nullptr;
+	if (lpModuleName && strstr(lpModuleName, "mpengine.dll"))
+		mock_mod = MockKernel32::mpengine_base;
+	else if (lpModuleName && strstr(lpModuleName, "bcrypt.dll"))
+		mock_mod = (void*)'bcry';
+	else if (lpModuleName && strstr(lpModuleName, "KERNEL32.DLL"))
+		mock_mod = (void*)'kern';
+	else if (lpModuleName && strstr(lpModuleName, "kernel32.dll"))
+		mock_mod = (void*)'kern';
+	else if (lpModuleName && strstr(lpModuleName, "ntdll.dll"))
+		mock_mod = (void*)'ntdl';
+	else if (lpModuleName && strstr(lpModuleName, "advapi32.dll"))
+		mock_mod = (void*)'adva';
+	else if (lpModuleName && strstr(lpModuleName, "version.dll"))
+		mock_mod = (void*)'vers';
+	else if (lpModuleName && strstr(lpModuleName, "crypt32.dll"))
+		mock_mod = (void*)'cryp';
+	else 
+		return (void*)NULL;
+	
+
+	return mock_mod;
+}
 
 void* __stdcall MockKernel32::GetModuleHandleW(wchar_t* lpModuleName)
 {
 	char *name = convert_wstr_to_str(lpModuleName);
-	HANDLE mod = GetModuleHandle(name);
+	void* mock_mod = MockKernel32::MyGetModuleHandleA(name);
+
 	delete name;
-	if (lpModuleName && memcmp(lpModuleName, L"mpengine.dll", sizeof(L"mpengine.dll")) == 0)
-		return MockKernel32::mpengine_base;
-	else if (lpModuleName && memcmp(lpModuleName, L"bcrypt.dll", sizeof(L"bcrypt.dll")) == 0)
-		return (void*)mod;
-	else if (lpModuleName && memcmp(lpModuleName, L"KERNEL32.DLL", sizeof(L"KERNEL32.DLL")) == 0)
-		return (void*)mod;
-	else if (lpModuleName && memcmp(lpModuleName, L"kernel32.dll", sizeof(L"kernel32.dll")) == 0)
-		return (void*)mod;
-	else if (lpModuleName && memcmp(lpModuleName, L"version.dll", sizeof(L"version.dll")) == 0)
-		return (void*)mod;
-	else
-		return (void*)NULL;
+	return mock_mod;
 }
 
 bool __stdcall MockKernel32::GetModuleHandleExA(unsigned int dwFlags, char* lpModuleName, void* phModule) {
@@ -94,7 +131,8 @@ void* __stdcall MockKernel32::MyGetProcAddress(void* hModule, char* lpProcName) 
 		}
 	}
 
-	return GetProcAddress((HMODULE)hModule, lpProcName);
+	unsigned int i = rand();
+	return (void*)i;
 }
 
 
@@ -118,14 +156,6 @@ unsigned int __stdcall MockKernel32::GetModuleFileNameW(void* hModule, wchar_t* 
 	}
 	return 0; // never reached
 }
-
-void* __stdcall MockKernel32::LoadLibraryExW(wchar_t* lpLibFileName, void* hFile, unsigned int dwFlags) {
-	char *name = convert_wstr_to_str(lpLibFileName);
-	HINSTANCE mod = LoadLibraryA(name);
-	delete name;
-	return (void*)mod;
-}
-
 
 void* __stdcall MockKernel32::CreateFileA(char* lpFileName, unsigned int dwDesiredAccess, unsigned int dwShareMode, void* lpSecurityAttributes, unsigned int dwCreationDisposition, unsigned int dwFlagsAndAttributes, void* hTemplateFile) {
 	//UNIX
@@ -178,6 +208,7 @@ void* __stdcall MockKernel32::CreateFileA(char* lpFileName, unsigned int dwDesir
 		abort();
 	}
 #endif
+	MockKernel32::MySetLastError(ERROR_FILE_NOT_FOUND); // I don't know why this way is working
 	return FileHandle ? FileHandle : INVALID_HANDLE_VALUE;
 }
 
@@ -210,8 +241,7 @@ bool __stdcall MockKernel32::MyCloseHandle(void* hObject) {
 		return true;
 
 	// fake close, but not safe
-	//return true;
-	return CloseHandle((HANDLE)hObject);
+	return true;
 }
 
 unsigned int __stdcall MockKernel32::GetDriveTypeA(char* lpRootPathName) {
@@ -234,11 +264,8 @@ unsigned int __stdcall MockKernel32::GetSystemDefaultLCID(){
 unsigned int __stdcall MockKernel32::GetFileSizeEx(void* hFile, PLARGE_INTEGER lpFileSize) {
 	long curpos = ftell((FILE*)hFile);
 	fseek((FILE*)hFile, 0, SEEK_END);
-
 	lpFileSize->LowPart = ftell((FILE*)hFile);
-
 	fseek((FILE*)hFile, curpos, SEEK_SET);
-
 
 	return 1;
 }
@@ -291,6 +318,11 @@ unsigned int __stdcall MockKernel32::GetFileAttributesExW(wchar_t* lpFileName, u
 }
 
 
+bool __stdcall MockKernel32::MySetProcessInformation(void* hProcess, PROCESS_INFORMATION_CLASS ProcessInformationClass, void* ProcessInformation, unsigned int ProcessInformationSize) {
+	
+	return true;
+}
+
 void __stdcall MockKernel32::GetSystemTimeAsFileTime(void* lpSystemTimeAsFileTime)
 {
 	memset(lpSystemTimeAsFileTime, 0, sizeof(FILETIME));
@@ -324,15 +356,13 @@ unsigned int __stdcall MockKernel32::GetCurrentProcessID() {
 bool __stdcall MockKernel32::QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount){
 	struct timespec tm;
 #ifdef _WIN64
-	
 	timespec_get(&tm, clock());
 #else
 	if (clock_gettime(CLOCK_MONOTONIC_RAW, &tm) != 0)
 		return false;
 #endif // _WIN64
-	
 	lpPerformanceCount->LowPart = tm.tv_nsec;
-
+	MockKernel32::MySetLastError(0);
 	return true;
 }
 
@@ -348,6 +378,7 @@ bool __stdcall MockKernel32::QueryPerformanceFrequency(LARGE_INTEGER *lpFrequenc
 	lpFrequency->HighPart = tm.tv_nsec & 0xffffffff00000000;
 	lpFrequency->QuadPart = tm.tv_nsec;
 #endif // _WIN64
+	MockKernel32::MySetLastError(0);
 	return true;
 }
 
@@ -499,7 +530,6 @@ bool __stdcall MockKernel32::GetStringTypeA(unsigned int dwInfoType, char* lpSrc
 }
 
 bool __stdcall MockKernel32::GetStringTypeW(unsigned int dwInfoType, wchar_t* lpSrcStr, int cchSrc, unsigned short* lpCharType) {
-	
 	int idx = 0;
 	wstring input_wstr = wstring(lpSrcStr);
 	if (cchSrc <= 0) {
@@ -549,6 +579,8 @@ int __stdcall MockKernel32::LCMapStringA(LCID Locale, unsigned int dwMapFlags, c
 }
 
 int __stdcall MockKernel32::LCMapStringW(LCID Locale, unsigned int dwMapFlags, wchar_t* lpSrcStr, int cchSrc, wchar_t*  lpDestStr, int cchDest) {
+	if (lpDestStr == NULL)
+		return 0;
 	memmove(lpDestStr, lpSrcStr, cchSrc);
 	return wstring(lpSrcStr).length();
  }
@@ -693,7 +725,7 @@ unsigned int __stdcall MockKernel32::GetEnvironmentVariableA(char* lpName, char*
 			return i;
 		}
 	}
-	//SetLastError(ERROR_ENVVAR_NOT_FOUND);
+	MockKernel32::MySetLastError(ERROR_ENVVAR_NOT_FOUND);
 	return 0;
 }
 
@@ -712,6 +744,7 @@ unsigned int __stdcall MockKernel32::GetEnvironmentVariableW(wchar_t* lpName, wc
 			return i * sizeof(wchar_t);
 		}
 	}
+	MockKernel32::MySetLastError(ERROR_ENVVAR_NOT_FOUND);
 	delete str;
 	return 0;
 }
@@ -728,6 +761,7 @@ char* __stdcall MockKernel32::GetEnvironmentStrings() {
 
 	return env_str;
 }
+
 wchar_t* __stdcall MockKernel32::GetEnvironmentStringsW() {
 	std::wstring env_str_tmp;
 	for (auto const &v : MockNTKrnl::m_env_variable) {
@@ -891,6 +925,22 @@ unsigned int __stdcall MockKernel32::GetTempPathW(unsigned int nBufferLength, wc
 	return buf_sz;
 }
 
+bool __stdcall MockKernel32::GetComputerNameExW(unsigned int NameType, wchar_t* lpBuffer, unsigned int* lpnSize) {
+	if (lpBuffer == NULL)
+		return false;
+
+	size_t wstr_sz = sizeof(L"DESKTOP-orca");
+	memmove(lpBuffer, L"DESKTOP-orca", wstr_sz);
+
+	return true;
+}
+
+bool __stdcall MockKernel32::GetProcessTimes(void* hProcess, void* lpCreationTime, void* lpExitTime, void* lpKernelTime, void* lpUserTime) {
+	MockKernel32::MySetLastError(0);
+	return false;
+}
+
+
 unsigned int __stdcall MockKernel32::QueryDosDeviceA(void* lpDeviceName, void* lpTargetPath, unsigned int ucchMax) {
 	return 0;
 }
@@ -899,12 +949,36 @@ unsigned int __stdcall MockKernel32::QueryDosDeviceW(void* lpDeviceName, void* l
 	return 0;
 }
 
+
+void* __stdcall MockKernel32::VirtualAlloc(void* lpAddress, size_t dwSize, unsigned int flAllocationType, unsigned int flProtect) {
+	
+	//if (flAllocationType & ~(MEM_COMMIT | MEM_RESERVE)) {
+	//	return NULL;
+	//}
+	void* page_base = nullptr;
+	unsigned resized_sz = dwSize;
+	if(resized_sz%MockNTKrnl::page_alignment != 0)
+		resized_sz = resized_sz - (dwSize % MockNTKrnl::page_alignment) + MockNTKrnl::page_alignment;
+	// alloc read/write
+#ifdef _WIN64
+	unsigned old_prot;
+	page_base = _aligned_malloc(resized_sz, MockNTKrnl::page_alignment);
+	memset(page_base, 0, resized_sz);
+	VirtualProtect(page_base, resized_sz, PAGE_EXECUTE_READWRITE, (PDWORD)&old_prot);
+#else
+	page_base = aligned_malloc(resized_sz, MockNTKrnl::page_alignment);
+	mprotect(page_base, resized_sz, PROT_EXEC | PROT_WRITE | PROT_READ);
+#endif
+	return page_base;
+}
+
 bool __stdcall MockKernel32::VirtualLock(void* lpAddress, unsigned int dwSize) {
 	return true;
 }
 
-bool __stdcall MockKernel32::VirtualProtect(void* lpAddress, size_t dwSize, unsigned int flNewProtect, void* lpflOldProtect) {
+bool __stdcall MockKernel32::MyVirtualProtect(void* lpAddress, size_t dwSize, unsigned int flNewProtect, void* lpflOldProtect) {
 	return true;
+	//return VirtualProtect(lpAddress, dwSize, flNewProtect, (PDWORD)lpflOldProtect);
 }
 
 void __stdcall MockKernel32::SetThreadpoolTimer(void* pfnti, void* pv, unsigned int msPeriod, unsigned int msWindowLength) {
@@ -940,6 +1014,7 @@ void* __stdcall MockKernel32::CreateSemaphoreW(void* lpSemaphoreAttributes, long
 }
 
 void* __stdcall MockKernel32::CreateEventW(void* lpEventAttributes, bool bManualReset, bool bInitialState, wchar_t* lpName) {
+	MockKernel32::MySetLastError(0);
 	return (HANDLE) 'EVNT';
 }
 
@@ -1051,3 +1126,40 @@ void* __stdcall MockKernel32::LocalFree(void* hMem) {
 	return NULL;
 }
 
+int __stdcall MockKernel32::CompareStringOrdinal(void* lpString1, int cchCount1, void* lpString2, int cchCount2, bool bIgnoreCase)
+{
+	int Result;
+	int Length;
+	void* lpt1;
+	void* lpt2;
+
+	if (cchCount1 == -1)
+		cchCount1 = get_wide_string_length(lpString1);
+
+	if (cchCount2 == -1)
+		cchCount1 = get_wide_string_length(lpString2);
+
+	lpt1 = calloc(cchCount1 + 1, sizeof(wchar_t));
+	lpt2 = calloc(cchCount2 + 1, sizeof(wchar_t));
+
+	if (!lpt1 || !lpt2) {
+		free(lpt1);
+		free(lpt2);
+		return 0;
+	}
+
+	memcpy(lpt1, lpString1, cchCount1 * 2);
+	memcpy(lpt2, lpString2, cchCount2 * 2);
+
+	Result = bIgnoreCase ? wcsicmp((const wchar_t*)lpt1, (const wchar_t*)lpt2) : wcscmp((const wchar_t*)lpt1, (const wchar_t*)lpt2);
+
+	free(lpt1);
+	free(lpt2);
+
+	if (Result < 0)
+		return CSTR_LESS_THAN;
+	if (Result == 0)
+		return CSTR_EQUAL;
+
+	return CSTR_GREATER_THAN;
+}

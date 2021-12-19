@@ -15,7 +15,7 @@ public:
 	static unsigned short major;
 	static unsigned short minor;
 	static unsigned int build_version;
-	static int errcode;
+	//static int errcode;
 	static map<std::string, string> m_env_variable;
 	static map<unsigned int, tuple<string, string, Json::Value>> m_reg_handle;
 	static map<unsigned int,
@@ -32,6 +32,7 @@ public:
 	static unsigned int process_heap_handle;
 	static Json::Value mock_reg;
 	static unsigned int handle_count;
+	static unsigned int page_alignment;
 
 #ifdef _WIN64
 	string mock_reg_path = ".\\reg\\mock_reg.json";

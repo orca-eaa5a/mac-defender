@@ -24,7 +24,11 @@ class MockAdvapi {
 			APIExports::add_hook_info("advapi32.DLL", "RegCloseKey", (void*)MockAdvapi::RegCloseKey);
 			APIExports::add_hook_info("advapi32.DLL", "RegQueryValueExW", (void*)MockAdvapi::RegQueryValueExW);
 			APIExports::add_hook_info("advapi32.DLL", "RegNotifyChangeKeyValue", (void*)MockAdvapi::RegNotifyChangeKeyValue);
-			
+			APIExports::add_hook_info("advapi32.DLL", "LsaNtStatusToWinError", (void*)MockAdvapi::LsaNtStatusToWinError);
+
+			APIExports::add_hook_info("advapi32.DLL", "EventWriteEx", (void*)MockAdvapi::EventWriteEx);
+			APIExports::add_hook_info("advapi32.DLL", "EventWriteTransfer", (void*)MockAdvapi::EventWriteTransfer);
+			APIExports::add_hook_info("advapi32.DLL", "EventActivityIdControl", (void*)MockAdvapi::MyEventActivityIdControl);
 			
 		};
 		static unsigned long __stdcall MockAdvapi::RegisterTraceGuidsW(void* RequestAddress, void* RequestContext, void* ControlGuid, unsigned long GuidCOunt, void* TraceGuidReg, wchar_t* MofImagePath, wchar_t* MofResourceName, void* RegistrationHandle);
@@ -62,7 +66,28 @@ class MockAdvapi {
 		static long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, wchar_t* lpValueName, unsigned int* lpReserved, unsigned int* lpType, unsigned char*  lpData, unsigned int* lpcbData);
 		static long __stdcall MockAdvapi::RegEnumKeyExW(void* hkey, unsigned int dwIndex, wchar_t* lpName, unsigned int* lpcchName, void* lpReserved, wchar_t* lpClass, unsigned int* lpcchClass, void* lpftLastWriteTime);
 		static long __stdcall MockAdvapi::RegNotifyChangeKeyValue(void* hKey, bool bWatchSubtree, unsigned int dwNotifyFilter, void* hEvent, bool fAsynchronous);
-		
+
+		static unsigned long __stdcall MockAdvapi::LsaNtStatusToWinError(unsigned long Status);
+		static unsigned long __stdcall MockAdvapi::EventWriteEx(
+			void* EventDescriptor, 
+			unsigned long long Filter, 
+			unsigned long Flags, 
+			void* ActivityId, 
+			void* RelatedActivityId,
+			unsigned long UserDataCount,
+			void* UserData);
+		static unsigned long __stdcall MockAdvapi::EventWriteTransfer(
+			void* RegHandle,
+			void* EventDescriptor,
+			void* ActivityId,
+			void* RelatedActivityId,
+			unsigned long UserDataCount,
+			void* UserData
+		);
+		static unsigned long __stdcall MockAdvapi::MyEventActivityIdControl(
+			unsigned long ControlCode,
+			void* ActivityId
+		);
 
 };
 #endif // !_ADVAPI_H_

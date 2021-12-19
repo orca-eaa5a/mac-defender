@@ -14,6 +14,7 @@
 #include "mpcore/streambuffer.h"
 #include "log.hpp"
 
+
 #define _ZEROMEMORY_(buf, sz) memset(buf, 0, sz)
 
 using namespace std;
@@ -52,6 +53,7 @@ public:
 			console_log(MSGTYPE::CRIT, "Please set signature location first, show RsignalWrapper::set_vdm_location");
 			return false;
 		}
+		
 		uint32_t res = this->_rsignal(
 			&this->kernel_handle,
 			RSIG_BOOTENGINE,
