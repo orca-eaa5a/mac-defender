@@ -276,6 +276,45 @@ auto of_rewrite_iat = [](void* imgbase) {
 	}
 };
 
+
+auto of_get_runtime_function_AMD = [](RUNTIME_FUNCTION *func, uint64_t addr) {
+	return func->EndAddress;
+};
+
+auto of_RtlAddFunctionTable = [](RUNTIME_FUNCTION *table, uint32_t count, uint64_t addr) {
+	struct list
+	{
+		struct list *next;
+		struct list *prev;
+	};
+
+	struct dynamic_unwind_entry
+	{
+		struct list entry;
+		uint64_t base;
+		uint64_t end;
+		RUNTIME_FUNCTION *table;
+		uint32_t count;
+		uint32_t max_count;
+		void* callback;
+		void* context;
+	};
+	struct dynamic_unwind_entry *entry;
+
+	entry = (dynamic_unwind_entry*)calloc(sizeof(dynamic_unwind_entry), sizeof(uint8_t));
+	if (!entry)
+		return false;
+	entry->base = addr;
+	entry->end = addr + (count ? of_get_runtime_function_AMD(&table[count - 1], addr) : 0);
+	entry->table = table;
+	entry->count = count;
+	entry->max_count = 0;
+	entry->callback = NULL;
+	entry->context = NULL;
+
+	//list_add_tail(&dynamic_unwind_list, &entry->entry);
+};
+
 auto of_set_seh = [](void* imgbase) {
 	uint8_t* _imgbase = (uint8_t*)imgbase;
 	uint16_t platform = 0xffff;
@@ -315,11 +354,9 @@ auto winmap = [](string lib_name) -> void* {
 		0, nullptr);
 	
 	img_base = MapViewOfFileEx(hMap, FILE_MAP_READ, 0, 0, 0, (void*)0x75a100000);
-	//img_base = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
 	opt_header = (IMAGE_OPTIONAL_HEADER64*)get_optheader((uint8_t*)img_base);
 	set_all_priv(img_base, opt_header->SizeOfImage);
 	reloc_pe_image(img_base);
-	of_set_seh(img_base);
 	return img_base;
 };
 #endif
@@ -339,7 +376,7 @@ auto of_loadlibraryX64 = [](string libname) {
 	case PLATFORM::X64_PLATFORM:
 #if defined(__WINDOWS__)
 		image_base = winmap(libname);
-		//of_set_seh(image_base);
+		of_set_seh(image_base);
 #else
 		if (!check_valid_pe(raw)) {
 			console_log(MSGTYPE::CRIT, "target module is not valid pe");

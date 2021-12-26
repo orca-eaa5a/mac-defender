@@ -5,6 +5,7 @@ uint16_t MockNTKrnl::major = 10;
 uint16_t MockNTKrnl::minor = 0;
 uint32_t MockNTKrnl::build_version = 19042;
 uint64_t MockNTKrnl::handle_count = 0x0188;
+uint64_t MockNTKrnl::engine_base = 0;
 Json::Value MockNTKrnl::mock_reg;
 uint32_t MockNTKrnl::page_alignment = 0x1000;
 

@@ -29,7 +29,6 @@ typedef void (__stdcall *PFLS_CALLBACK_FUNCTION) (void*);
 class MockKernel32 {
 
 public:
-	static void* mpengine_base;
 	static std::string commandline;
 	static std::wstring wcommandline;	
 	
@@ -95,6 +94,8 @@ public:
 
 		APIExports::add_hook_info("kernel32.dll", "GetThreadTimes", (void*)GetThreadTimes);
 		APIExports::add_hook_info("kernel32.dll", "CreateTimerQueueTimer", (void*)CreateTimerQueueTimer);
+		APIExports::add_hook_info("kernel32.dll", "GetSystemTime", (void*)GetSystemTime);
+		APIExports::add_hook_info("kernel32.dll", "SystemTimeToFileTime", (void*)SystemTimeToFileTime);
 		APIExports::add_hook_info("kernel32.dll", "GetSystemTimeAsFileTime", (void*)GetSystemTimeAsFileTime);
 		APIExports::add_hook_info("kernel32.dll", "GetSystemTimePreciseAsFileTime", (void*)GetSystemTimePreciseAsFileTime);
 		APIExports::add_hook_info("kernel32.dll", "QueryPerformanceFrequency", (void*)QueryPerformanceFrequency);
@@ -256,8 +257,11 @@ public:
 	static bool __stdcall MockKernel32::SetProcessInformation(void* hProces, PROCESS_INFORMATION_CLASS ProcessInformationClass, void* ProcessInformation, uint32_t ProcessInformationSize);
 
 	static bool __stdcall MockKernel32::CreateTimerQueueTimer(void** phNewTimer, void* TimerQueue, void* Callback, void* Parameter, uint32_t DueTime, uint32_t Period, uint32_t Flags);
+	static void __stdcall MockKernel32::GetSystemTime(PSYSTEMTIME lpSystemTime);
+	static bool __stdcall MockKernel32::SystemTimeToFileTime(SYSTEMTIME *lpSystemTime, PFILETIME lpFileTime);
 	static void __stdcall MockKernel32::GetSystemTimeAsFileTime(void* lpSystemTimeAsFileTime);
 	static void __stdcall MockKernel32::GetSystemTimePreciseAsFileTime(void* lpSystemTimeAsFileTime);
+	
 	static bool __stdcall MockKernel32::QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount);
 	static bool __stdcall MockKernel32::QueryPerformanceFrequency(LARGE_INTEGER *lpFrequency);
 	static uint32_t __stdcall MockKernel32::GetTickCount();
@@ -390,11 +394,11 @@ public:
 	static void* __stdcall LoadLibraryW(wchar_t* lpLibFileName);
 	static void* __stdcall LoadLibraryExW(wchar_t* lpLibFileName, void* hFile, uint32_t dwFlags);
 	static bool __stdcall FreeLibrary(void* hLibModule);
-	static void* __stdcall GetModuleHandleA(char* lpModuleName);
+	static void* __stdcall MockGetModuleHandleA(char* lpModuleName);
 	static void* __stdcall GetModuleHandleW(wchar_t* lpModuleName);
 	static bool __stdcall GetModuleHandleExA(uint32_t dwFlags, char* lpModuleName, void* phModule);
 	static bool __stdcall GetModuleHandleExW(uint32_t dwFlags, wchar_t* lpModuleName, void* phModule);
-	static void* __stdcall GetProcAddress(void* hModule, char* lpProcName);
+	static void* __stdcall MockGetProcAddress(void* hModule, char* lpProcName);
 	static uint32_t __stdcall GetModuleFileNameA(void* hModule, char* lpFilename, uint32_t nSize);
 	static uint32_t __stdcall GetModuleFileNameW(void* hModule, wchar_t* lpFilename, uint32_t nSize);
 
@@ -428,6 +432,8 @@ public:
 	static bool __stdcall GetThreadTimes(void* hThread, void* lpCreationTime, void* lpExitTime, void* lpKernelTime, void* lpUserTime);
 	static bool __stdcall CreateTimerQueueTimer(void** phNewTimer, void* TimerQueue, void* Callback, void* Parameter, uint32_t DueTime, uint32_t Period, uint32_t Flags);
 	static bool __stdcall SetProcessInformation(void* hProces, PROCESS_INFORMATION_CLASS ProcessInformationClass, void* ProcessInformation, uint32_t ProcessInformationSize);
+	static void __stdcall GetSystemTime(PSYSTEMTIME lpSystemTime);
+	static bool __stdcall SystemTimeToFileTime(SYSTEMTIME *lpSystemTime, PFILETIME lpFileTime);
 	static void __stdcall GetSystemTimeAsFileTime(void* lpSystemTimeAsFileTime);
 	static void __stdcall GetSystemTimePreciseAsFileTime(void* lpSystemTimeAsFileTime);
 	static bool __stdcall QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount);

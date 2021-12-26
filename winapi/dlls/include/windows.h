@@ -19,16 +19,16 @@ typedef struct _SINGLE_LIST_ENTRY
 
 typedef struct _SLIST_HEADER
 {
-     union
-     {
-          UINT64 Alignment;
-          struct
-          {
-               SINGLE_LIST_ENTRY Next;
-               WORD Depth;
-               WORD Sequence;
-          };
-     };
+	 union
+	 {
+		  UINT64 Alignment;
+		  struct
+		  {
+			   SINGLE_LIST_ENTRY Next;
+			   WORD Depth;
+			   WORD Sequence;
+		  };
+	 };
 } SLIST_HEADER, *PSLIST_HEADER;
 
 typedef struct _RTL_SRWLOCK {
@@ -48,7 +48,7 @@ typedef struct _IO_STATUS_BLOCK{
 		int Status;
 		void*    Pointer;
 	};
-    
+	
 	ULONG_PTR Information;
 } IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
 
@@ -106,25 +106,25 @@ typedef struct _OSVERSIONINFOW {
 } OSVERSIONINFOW, *POSVERSIONINFOW, *LPOSVERSIONINFOW, RTL_OSVERSIONINFOW, *PRTL_OSVERSIONINFOW;
 
 typedef struct _IMAGE_DOS_HEADER {
-    WORD  e_magic;      /* 00: MZ Header signature */
-    WORD  e_cblp;       /* 02: Bytes on last page of file */
-    WORD  e_cp;         /* 04: Pages in file */
-    WORD  e_crlc;       /* 06: Relocations */
-    WORD  e_cparhdr;    /* 08: Size of header in paragraphs */
-    WORD  e_minalloc;   /* 0a: Minimum extra paragraphs needed */
-    WORD  e_maxalloc;   /* 0c: Maximum extra paragraphs needed */
-    WORD  e_ss;         /* 0e: Initial (relative) SS value */
-    WORD  e_sp;         /* 10: Initial SP value */
-    WORD  e_csum;       /* 12: Checksum */
-    WORD  e_ip;         /* 14: Initial IP value */
-    WORD  e_cs;         /* 16: Initial (relative) CS value */
-    WORD  e_lfarlc;     /* 18: File address of relocation table */
-    WORD  e_ovno;       /* 1a: Overlay number */
-    WORD  e_res[4];     /* 1c: Reserved words */
-    WORD  e_oemid;      /* 24: OEM identifier (for e_oeminfo) */
-    WORD  e_oeminfo;    /* 26: OEM information; e_oemid specific */
-    WORD  e_res2[10];   /* 28: Reserved words */
-    DWORD e_lfanew;     /* 3c: Offset to extended header */
+	WORD  e_magic;      /* 00: MZ Header signature */
+	WORD  e_cblp;       /* 02: Bytes on last page of file */
+	WORD  e_cp;         /* 04: Pages in file */
+	WORD  e_crlc;       /* 06: Relocations */
+	WORD  e_cparhdr;    /* 08: Size of header in paragraphs */
+	WORD  e_minalloc;   /* 0a: Minimum extra paragraphs needed */
+	WORD  e_maxalloc;   /* 0c: Maximum extra paragraphs needed */
+	WORD  e_ss;         /* 0e: Initial (relative) SS value */
+	WORD  e_sp;         /* 10: Initial SP value */
+	WORD  e_csum;       /* 12: Checksum */
+	WORD  e_ip;         /* 14: Initial IP value */
+	WORD  e_cs;         /* 16: Initial (relative) CS value */
+	WORD  e_lfarlc;     /* 18: File address of relocation table */
+	WORD  e_ovno;       /* 1a: Overlay number */
+	WORD  e_res[4];     /* 1c: Reserved words */
+	WORD  e_oemid;      /* 24: OEM identifier (for e_oeminfo) */
+	WORD  e_oeminfo;    /* 26: OEM information; e_oemid specific */
+	WORD  e_res2[10];   /* 28: Reserved words */
+	DWORD e_lfanew;     /* 3c: Offset to extended header */
 } IMAGE_DOS_HEADER, *PIMAGE_DOS_HEADER;
 /* Wine extension */
 #define IMAGE_DOS_SIGNATURE    0x5A4D     /* MZ   */
@@ -297,8 +297,8 @@ typedef PIMAGE_OPTIONAL_HEADER32 PIMAGE_OPTIONAL_HEADER;
 typedef struct _IMAGE_SECTION_HEADER {
   BYTE  Name[IMAGE_SIZEOF_SHORT_NAME];
   union {
-    DWORD PhysicalAddress;
-    DWORD VirtualSize;
+	DWORD PhysicalAddress;
+	DWORD VirtualSize;
   } Misc;
   DWORD VirtualAddress;
   DWORD SizeOfRawData;
@@ -314,7 +314,7 @@ typedef struct _IMAGE_SECTION_HEADER {
 
 #define IMAGE_FIRST_SECTION(ntheader) \
   ((PIMAGE_SECTION_HEADER)(ULONG_PTR)((const BYTE *)&((const IMAGE_NT_HEADERS *)(ntheader))->OptionalHeader + \
-                           ((const IMAGE_NT_HEADERS *)(ntheader))->FileHeader.SizeOfOptionalHeader))
+						   ((const IMAGE_NT_HEADERS *)(ntheader))->FileHeader.SizeOfOptionalHeader))
 
 typedef struct _IMAGE_EXPORT_DIRECTORY {
 	DWORD	Characteristics;
@@ -405,12 +405,12 @@ typedef struct _IMAGE_BASE_RELOCATION
 
 typedef struct _IMAGE_RELOCATION
 {
-    union {
-        DWORD   VirtualAddress;
-        DWORD   RelocCount;
-    } DUMMYUNIONNAME;
-    DWORD   SymbolTableIndex;
-    WORD    Type;
+	union {
+		DWORD   VirtualAddress;
+		DWORD   RelocCount;
+	} DUMMYUNIONNAME;
+	DWORD   SymbolTableIndex;
+	WORD    Type;
 } IMAGE_RELOCATION, *PIMAGE_RELOCATION;
 
 #define IMAGE_SIZEOF_RELOCATION 10
@@ -453,13 +453,13 @@ typedef struct _IMAGE_RELOCATION
 #define FILE_ALL_ACCESS           (STANDARD_RIGHTS_REQUIRED|SYNCHRONIZE|0x1ff)
 
 #define FILE_GENERIC_READ         (STANDARD_RIGHTS_READ | FILE_READ_DATA | \
-                                   FILE_READ_ATTRIBUTES | FILE_READ_EA | \
-                                   SYNCHRONIZE)
+								   FILE_READ_ATTRIBUTES | FILE_READ_EA | \
+								   SYNCHRONIZE)
 #define FILE_GENERIC_WRITE        (STANDARD_RIGHTS_WRITE | FILE_WRITE_DATA | \
-                                   FILE_WRITE_ATTRIBUTES | FILE_WRITE_EA | \
-                                   FILE_APPEND_DATA | SYNCHRONIZE)
+								   FILE_WRITE_ATTRIBUTES | FILE_WRITE_EA | \
+								   FILE_APPEND_DATA | SYNCHRONIZE)
 #define FILE_GENERIC_EXECUTE      (STANDARD_RIGHTS_EXECUTE | FILE_EXECUTE | \
-                                   FILE_READ_ATTRIBUTES | SYNCHRONIZE)
+								   FILE_READ_ATTRIBUTES | SYNCHRONIZE)
 
 #define DUPLICATE_CLOSE_SOURCE     0x00000001
 #define DUPLICATE_SAME_ACCESS      0x00000002
@@ -533,23 +533,23 @@ typedef struct _STARTUPINFOW {
 
 typedef union _LARGE_INTEGER {
   struct {
-    unsigned int LowPart;
-    long  HighPart;
+	unsigned int LowPart;
+	long  HighPart;
   } DUMMYSTRUCTNAME;
   struct {
-    unsigned int LowPart;
-    long  HighPart;
+	unsigned int LowPart;
+	long  HighPart;
   } u;
   long long QuadPart;
 } LARGE_INTEGER, *PLARGE_INTEGER;
 
 typedef struct _SYSTEM_INFO {
   union {
-    unsigned int dwOemId;
-    struct {
-      unsigned short wProcessorArchitecture;
-      unsigned short wReserved;
-    } DUMMYSTRUCTNAME;
+	unsigned int dwOemId;
+	struct {
+	  unsigned short wProcessorArchitecture;
+	  unsigned short wReserved;
+	} DUMMYSTRUCTNAME;
   } DUMMYUNIONNAME;
   unsigned int     dwPageSize;
   void*    lpMinimumApplicationAddress;
@@ -671,6 +671,12 @@ typedef struct in_addr {
 #endif /* WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP | WINAPI_PARTITION_SYSTEM) */
 
 #define DECLSPEC_ALIGN(x)   __declspec(align(x))
+
+typedef struct DECLSPEC_ALIGN(16) _M128A {
+	ULONGLONG Low;
+	LONGLONG High;
+} M128A, *PM128A;
+
 typedef struct DECLSPEC_ALIGN(16) _CONTEXT {
 
 	//
@@ -790,5 +796,22 @@ typedef struct DECLSPEC_ALIGN(16) _CONTEXT {
 	DWORD64 LastExceptionFromRip;
 } CONTEXT, *PCONTEXT;
 
+typedef struct _SYSTEMTIME {
+	uint16_t wYear;
+	uint16_t wMonth;
+	uint16_t wDayOfWeek;
+	uint16_t wDay;
+	uint16_t wHour;
+	uint16_t wMinute;
+	uint16_t wSecond;
+	uint16_t wMilliseconds;
+} SYSTEMTIME, *PSYSTEMTIME, *LPSYSTEMTIME;
+
+typedef struct _FILETIME {
+	DWORD dwLowDateTime;
+	DWORD dwHighDateTime;
+} FILETIME, *PFILETIME, *LPFILETIME;
+
+typedef struct _IMAGE_RUNTIME_FUNCTION_ENTRY RUNTIME_FUNCTION, *PRUNTIME_FUNCTION;
 #endif
 #endif

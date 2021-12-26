@@ -1,3 +1,4 @@
+#if defined(__APPLE__) || defined(__LINUX__)
 typedef unsigned char BYTE;
 typedef unsigned int DWORD;
 typedef bool BOOL;
@@ -11,6 +12,7 @@ typedef int *PINT,*LPINT;
 typedef WORD *PWORD,*LPWORD;
 typedef long *LPLONG;
 typedef DWORD *PDWORD,*LPDWORD;
+typedef uint64_t DWORD64;
 typedef void *PVOID,*LPVOID;
 typedef const void *PCVOID,*LPCVOID;
 typedef int INT;
@@ -32,4 +34,5 @@ typedef unsigned long long UINT64;
 #endif
 
 typedef PVOID HANDLE;
+#endif
 

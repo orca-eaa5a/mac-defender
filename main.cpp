@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 	string cmdline;
 	ImportDLLs* dlls;
 	MockNTKrnl mtosknl;
-
+	
 	if (argc < 2)
 		console_log(MSGTYPE::CRIT, "Please input target file");
 
@@ -59,14 +59,14 @@ int main(int argc, char** argv) {
 #endif
 	
 	engine_base = of_loadlibraryX64(engine_path);
-	MockKernel32::mpengine_base = engine_base;
+	MockNTKrnl::engine_base = (uint64_t)engine_base;
 	MockKernel32::commandline = cmdline;
 	MockKernel32::wcommandline.assign(cmdline.begin(), cmdline.end());
 	if (!engine_base) {
 		console_log(MSGTYPE::CRIT, "Unable to load mpengine.dll");
 	}
 	
-	of_rewrite_iat(engine_base);
+	//of_rewrite_iat(engine_base);
 	dlls = new ImportDLLs(engine_base);
 	
 	dlls->set_ported_apis();

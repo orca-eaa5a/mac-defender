@@ -12,7 +12,6 @@
 
 using namespace std;
 
-void* MockKernel32::mpengine_base = nullptr;
 string MockKernel32::commandline;
 wstring MockKernel32::wcommandline;
 uint64_t MockKernel32::ThreadLocalStorage[1024];
@@ -76,7 +75,7 @@ bool __stdcall MockKernel32::FreeLibrary(void* hLibModule) {
 void* __stdcall MockKernel32::MockGetModuleHandleA(char* lpModuleName) {
 	void* mock_mod = nullptr;
 	if (lpModuleName && strstr(lpModuleName, "mpengine.dll"))
-		return MockKernel32::mpengine_base;
+		return (void*)MockNTKrnl::engine_base;
 	else if (lpModuleName && strstr(lpModuleName, "bcrypt.dll"))
 		mock_mod = (void*)'bcry';
 	else if (lpModuleName && strstr(lpModuleName, "KERNEL32.DLL"))
@@ -130,7 +129,7 @@ void* __stdcall MockKernel32::MockGetProcAddress(void* hModule, char* lpProcName
 	}
 
 	uint32_t i = rand();
-	printf("%s --> 0x%x\n", lpProcName, i);
+	//printf("%s --> 0x%x\n", lpProcName, i);
 	return (void*)i;
 }
 
@@ -349,6 +348,18 @@ bool __stdcall MockKernel32::GetThreadTimes(void* hThread, void* lpCreationTime,
 bool __stdcall MockKernel32::CreateTimerQueueTimer(void** phNewTimer, void* TimerQueue, void* Callback, void* Parameter, uint32_t DueTime, uint32_t Period, uint32_t Flags) {
 	return true;
 }
+
+void __stdcall MockKernel32::GetSystemTime(PSYSTEMTIME lpSystemTime)
+{
+	memset(lpSystemTime, 0, sizeof(SYSTEMTIME));
+	return;
+}
+
+bool __stdcall MockKernel32::SystemTimeToFileTime(SYSTEMTIME *lpSystemTime, PFILETIME lpFileTime) {
+	memset(lpFileTime, 0, sizeof(FILETIME));
+	return TRUE;
+}
+
 
 void __stdcall MockKernel32::GetSystemTimeAsFileTime(void* lpSystemTimeAsFileTime)
 {

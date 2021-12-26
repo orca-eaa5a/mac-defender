@@ -14,6 +14,7 @@ public:
 	static uint16_t major;
 	static uint16_t minor;
 	static uint32_t build_version;
+	static uint64_t engine_base;
 	//static int errcode;
 	static map<std::string, string> m_env_variable;
 	static map<uint64_t, tuple<string, string, Json::Value>> m_reg_handle; //hKey is void*

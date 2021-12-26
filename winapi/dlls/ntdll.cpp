@@ -2,9 +2,6 @@
 #include "../ntoskrnl.h"
 #include <cassert>
 
-
-
-
 NTSTATUS __stdcall MockNtdll::RtlGetVersion(PRTL_OSVERSIONINFOW lpVersionInformation) {
 	lpVersionInformation->dwMajorVersion = MockNTKrnl::major;
 	lpVersionInformation->dwMinorVersion = MockNTKrnl::minor;
@@ -293,6 +290,23 @@ Exit:
 	return Status;
 }
 
+PRUNTIME_FUNCTION __stdcall MockNtdll::RtlLookupFunctionTable(uint64_t ControlPc, uint64_t* ImageBase, uint32_t* Length) {
+	void* Table;
+	uint32_t Size;
+
+	/* Find corresponding file header from code address */
+	if (!MockNtdll::RtlPcToFileHeader((void*)ControlPc, (void**)ImageBase))
+	{
+		/* Nothing found */
+		return NULL;
+	}
+
+	/* Locate the exception directory */
+	Table = RtlImageDirectoryEntryToData((void*)*ImageBase, true, IMAGE_DIRECTORY_ENTRY_EXCEPTION, &Size);
+	*Length = Size / sizeof(RUNTIME_FUNCTION);
+	return (PRUNTIME_FUNCTION)Table;
+}
+
 bool __stdcall MockNtdll::RtlAddFunctionTable(void* FunctionTable, uint32_t EntryCount, uint64_t BaseAddress) {
 	return true;
 }
@@ -302,9 +316,49 @@ bool __stdcall MockNtdll::RtlDeleteFunctionTable(void* FunctionTable) {
 }
 
 void* __stdcall MockNtdll::RtlLookupFunctionEntry(uint64_t ControlPc, uint64_t* ImageBase, void* HistoryTable) {
+	PRUNTIME_FUNCTION FunctionTable, FunctionEntry;
+	uint32_t TableLength;
+	uint32_t IndexLo, IndexHi, IndexMid;
+
+	FunctionTable = MockNtdll::RtlLookupFunctionTable(ControlPc, ImageBase, &TableLength);
+
+	/* Fail, if no table is found */
+	if (!FunctionTable)
+	{
+		return NULL;
+	}
+
+	/* Use relative virtual address */
+	ControlPc -= *ImageBase;
+
+	/* Do a binary search */
+	IndexLo = 0;
+	IndexHi = TableLength;
+	while (IndexHi > IndexLo)
+	{
+		IndexMid = (IndexLo + IndexHi) / 2;
+		FunctionEntry = &FunctionTable[IndexMid];
+
+		if (ControlPc < FunctionEntry->BeginAddress)
+		{
+			/* Continue search in lower half */
+			IndexHi = IndexMid;
+		}
+		else if (ControlPc >= FunctionEntry->EndAddress)
+		{
+			/* Continue search in upper half */
+			IndexLo = IndexMid + 1;
+		}
+		else
+		{
+			/* ControlPc is within limits, return entry */
+			return FunctionEntry;
+		}
+	}
+
+	/* Nothing found, return NULL */
 	return NULL;
 }
-
 
 wchar_t __stdcall MockNtdll::RtlpUpcaseUnicodeChar(wchar_t Source){
 	uint16_t Offset;
@@ -362,8 +416,53 @@ wchar_t* __stdcall MockNtdll::RtlIpv4AddressToStringW(in_addr *Addr, wchar_t* S)
 	return End;
 }
 
-void __stdcall MockNtdll::RtlCaptureContext(void* ContextRecord) {
-#if defined (__WINDOWS__)
+void* __stdcall MockNtdll::RtlPcToFileHeader(void* PcValue, void** BaseOfImage) {
+	*BaseOfImage = (void*)MockNTKrnl::engine_base;
+	return (void*)MockNTKrnl::engine_base; // there is only one module
+}
+
+void* __stdcall MockNtdll::RtlImageDirectoryEntryToData(void* BaseAddress, bool MappedAsImage, uint16_t Directory, uint32_t* Size) {
+	PIMAGE_NT_HEADERS nt_header;
+	IMAGE_DOS_HEADER* dos_hdr;
+	PIMAGE_OPTIONAL_HEADER64 opt_hdr;
+	uint32_t Va;
+	uint64_t base_addr = (uint64_t)BaseAddress;
+	/* Magic flag for non-mapped images. */
+	if ((uint64_t)BaseAddress & 1)
+	{
+		BaseAddress = (void*)((uint64_t)BaseAddress & ~1);
+		MappedAsImage = false;
+	}
+	dos_hdr = (IMAGE_DOS_HEADER*)base_addr;
+	nt_header = (IMAGE_NT_HEADERS64*)(base_addr + dos_hdr->e_lfanew);
+	
+	if (nt_header == NULL)
+		return NULL;
+
+	if (nt_header->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+		opt_hdr = (PIMAGE_OPTIONAL_HEADER64)&nt_header->OptionalHeader;
+		if (Directory >= opt_hdr->NumberOfRvaAndSizes)
+			return NULL;
+		Va = opt_hdr->DataDirectory[Directory].VirtualAddress;
+		if (Va == 0)
+			return NULL;
+		*Size = opt_hdr->DataDirectory[Directory].Size;
+		if (MappedAsImage || Va < opt_hdr->SizeOfHeaders)
+			return (void*)(base_addr + Va);
+	}
+	else {
+		assert(0); //unsupported arch
+	}
+
+	/* Image mapped as ordinary file, we must find raw pointer */
+	return NULL; //RtlImageRvaToVa(NtHeader, BaseAddress, Va, NULL);
+}
+
+void __stdcall MockNtdll::MockRtlCaptureContext(void* ContextRecord) {
+#if defined (__WINDOWS__) //testing
+	HANDLE hThread = GetCurrentThread();
+	GetThreadContext(hThread, (LPCONTEXT)ContextRecord);
+	CloseHandle(hThread);
 #else
 	ucontext_t uctx;
 	int res = getcontext(&uctx);
@@ -371,11 +470,64 @@ void __stdcall MockNtdll::RtlCaptureContext(void* ContextRecord) {
 	return;
 }
 
-void* __stdcall MockNtdll::RtlVirtualUnwind(uint32_t HandlerType, uint64_t ImageBase, uint64_t ControlPc, void* FunctionEntry, void* ContextRecord, void** HanderData, uint64_t* EstablisherFrame, void* ContextPointers) {
+
+uint64_t GetEstablisherFrame(PCONTEXT Context, PUNWIND_INFO UnwindInfo, uint64_t CodeOffset) {
+	return 0;
+}
+
+void* __stdcall MockNtdll::RtlVirtualUnwind(uint32_t HandlerType, uint64_t ImageBase, uint64_t ControlPc, PRUNTIME_FUNCTION FunctionEntry, PCONTEXT ContextRecord, void** HandlerData, uint64_t* EstablisherFrame, void* ContextPointers) {
+	PUNWIND_INFO UnwindInfo;
+	uint64_t CodeOffset;
+	uint32_t i, Offset;
+	UNWIND_CODE UnwindCode;
+	uint8_t Reg;
+	uint32_t* LanguageHandler;
+
+	/* Use relative virtual address */
+	ControlPc -= ImageBase;
+
+	/* Sanity checks */
+	if ((ControlPc < FunctionEntry->BeginAddress) ||
+		(ControlPc >= FunctionEntry->EndAddress))
+	{
+		return NULL;
+	}
+
+	/* Get a pointer to the unwind info */
+	UnwindInfo = (PUNWIND_INFO)(ImageBase + FunctionEntry->UnwindData);
+
+	/* The language specific handler data follows the unwind info */
+	LanguageHandler = (uint32_t*)ALIGN_UP_POINTER_BY(&UnwindInfo->UnwindCode[UnwindInfo->CountOfCodes], sizeof(uint32_t));
+	*HandlerData = (LanguageHandler + 1);
+
+	/* Calculate relative offset to function start */
+	CodeOffset = ControlPc - FunctionEntry->BeginAddress;
+
+	*EstablisherFrame = GetEstablisherFrame(ContextRecord, UnwindInfo, CodeOffset);
+
+	
 	return NULL;
 }
-void __stdcall MockNtdll::RtlUnwindEx(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue, void* ContextRecord, void* HistoryTable) {
-	return;
+void __stdcall MockNtdll::MockRtlUnwindEx(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue, void* ContextRecord, void* HistoryTable) {
+	//it is directly called, not called by RtlDispatchException
+#if defined(__WINDOWS__)
+	EXCEPTION_RECORD LocalExceptionRecord;
+	RtlCaptureContext((PCONTEXT)ContextRecord);
+	PCONTEXT pCtx = (PCONTEXT)ContextRecord;
+	if (ExceptionRecord == NULL)
+	{
+		/* No exception record was passed, so set up a local one */
+		LocalExceptionRecord.ExceptionCode = 0xC0000027;
+		LocalExceptionRecord.ExceptionAddress = (PVOID)pCtx->Rip;
+		LocalExceptionRecord.ExceptionRecord = NULL;
+		LocalExceptionRecord.NumberParameters = 0;
+		ExceptionRecord = &LocalExceptionRecord;
+	}	
+
+#else
+
+#endif
+	RtlUnwindEx(TargetFrame, TargetIp, (PEXCEPTION_RECORD)ExceptionRecord, ReturnValue, (PCONTEXT)ContextRecord, (PUNWIND_HISTORY_TABLE)HistoryTable);
 }
 
 uint32_t __stdcall MockNtdll::RtlNtStatusToDosError(NTSTATUS Status) {
