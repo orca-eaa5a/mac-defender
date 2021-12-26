@@ -1,5 +1,5 @@
 #include "wofutil.h"
 
-void* __stdcall MockWofUtil::WofShouldCompressBinaries(wchar_t* Volume, unsigned long* Algorithm) {
+bool __stdcall MockWofUtil::WofShouldCompressBinaries(wchar_t* Volume, uint32_t* Algorithm) {
 	return false;
 }

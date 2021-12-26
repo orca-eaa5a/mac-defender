@@ -1,8 +1,10 @@
+#if defined(__WINDOWS__)
 #pragma once
+#endif
 #ifndef _MPCORE_H_
 #define _MPCORE_H_
-#include "scanreply.h"
 #include <cstdint>
+#include "scanreply.h"
 typedef struct _pe_vars_t {
 	SCAN_REPLY* pScanReply;
 	void* unk1;

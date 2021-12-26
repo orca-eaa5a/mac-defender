@@ -1,9 +1,14 @@
-#pragma once
 #ifndef _API_H_
 #define _API_H_
 #include <string>
 #include <map>
 #include <functional>
+
+#if defined(__APPLE__) || defined(__LINUX__)
+#include "dlls/include/windows.h"
+#else
+#include <windows.h>
+#endif
 
 using namespace std;
 class APIExports {

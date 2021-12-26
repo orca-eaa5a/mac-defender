@@ -1,11 +1,17 @@
+#if defined(__WINDOWS__)
 #pragma warning(disable: 4996)
+#endif
 
 #include <stdio.h>
 #include <cstdint>
 #include <string>
+#if defined(__WINDOWS__) || defined(__LINUX__)
 #include <io.h>
+#elif defined(__APPLE__)
+#include <sys/uio.h>
+#include <unistd.h>
+#endif
 #include <fcntl.h>
-#include <windows.h>
 #include "loader.hpp"
 #include "log.hpp"
 #include "mpcore/engineboot.h"
@@ -18,9 +24,11 @@
 #include "winapi/imports.h"
 #include "winapi/ntoskrnl.h"
 
-#ifndef open
-#define open _open
-#endif // !open
+#if defined(__WINDOWS__)
+	#ifndef open
+	#define open _open
+	#endif // !open
+#endif
 
 using namespace std;
 string engine_path;
@@ -29,7 +37,6 @@ void* engine_base = nullptr;
 
 int main(int argc, char** argv) {
 	int fd = 0;
-	uint8_t* image = nullptr;
 	char cur_dir[260];
 	string cmdline;
 	ImportDLLs* dlls;
@@ -40,35 +47,39 @@ int main(int argc, char** argv) {
 
 	for (int i = 0; argc - 1 > i; i++)
 		cmdline += string(argv[i]) + string(" ") + string(argv[i + 1]);		
-
+#if defined(__WINDOWS__)
 	GetCurrentDirectory(
 		MAX_PATH,
 		cur_dir
 	);
-
 	engine_path = string(cur_dir) + "\\engine\\mpengine.dll";
+#else
+	getcwd(cur_dir, sizeof(cur_dir));
+	engine_path = string(cur_dir) + "/engine/mpengine.dll";
+#endif
 	
 	engine_base = of_loadlibraryX64(engine_path);
-	//engine_base = LoadLibrary(engine_path.c_str());
 	MockKernel32::mpengine_base = engine_base;
 	MockKernel32::commandline = cmdline;
 	MockKernel32::wcommandline.assign(cmdline.begin(), cmdline.end());
-
 	if (!engine_base) {
 		console_log(MSGTYPE::CRIT, "Unable to load mpengine.dll");
 	}
+	
 	of_rewrite_iat(engine_base);
 	dlls = new ImportDLLs(engine_base);
+	
 	dlls->set_ported_apis();
-	call_dllmain(engine_base);
-	
-	void* rsig_addr = (void*)of_getprocaddress((HMODULE)engine_base, (char*)"__rsignal");
-	
+	bool res = call_dllmain(engine_base);
+	void* rsig_addr = (void*)of_getprocaddress(engine_base, (char*)"__rsignal");
 	
 	//engine_base = LoadLibrary(engine_path.c_str());
 	//void* rsig_addr = (void*)GetProcAddress((HMODULE)engine_base, "__rsignal");
-	
+#if defined(__WINDOWS__)
 	fd = open((char*)argv[1], _O_BINARY | _O_RDONLY, _S_IREAD);
+#else
+	fd = open((char*)argv[1], O_RDONLY, S_IREAD);
+#endif
 	if (fd < 0) {
 		console_log(MSGTYPE::ERR, "Fail to open file");
 		exit(-1);

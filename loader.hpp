@@ -1,12 +1,15 @@
-#pragma once
+
 #ifndef _LOADER_H_
 #define _LOADER_H_
-
-#include <windows.h>
 #include <string>
 #include <fstream>
 #include <cstdint>
-
+#if defined(__APPLE__) || defined(__LINUX__)
+#include <sys/mman.h>
+#include "winapi/dlls/include/windows.h"
+#else
+#include <windows.h>
+#endif 
 #include "log.hpp"
 using namespace std;
 
@@ -59,7 +62,8 @@ auto call_dllmain = [](void* imgbase) -> bool {
 	else {
 		console_log(MSGTYPE::CRIT, "target module is unsupported platform binary");
 	}
-	return d_main(imgbase, 1, 0);
+	d_main(imgbase, 1, 0);
+	return true;
 };
 
 auto of_getprocaddress = [](void* imgbase, string proc_name) {
@@ -86,12 +90,12 @@ auto of_getprocaddress = [](void* imgbase, string proc_name) {
 	else {
 		exit(-1);
 	}
-	unsigned int *name_rva = (unsigned int*)(_imgbase + exp_dir->AddressOfNames);
+	uint32_t *name_rva = (uint32_t*)(_imgbase + exp_dir->AddressOfNames);
 	for (int i = 0; i < exp_dir->NumberOfNames; i++) {
 		char* name = (char*)(_imgbase + name_rva[i]);
 		if (proc_name.compare(name) == 0) {
-			unsigned short name_ordin = ((unsigned short*)(_imgbase + exp_dir->AddressOfNameOrdinals))[i];
-			unsigned int addr = ((unsigned int*)(_imgbase + exp_dir->AddressOfFunctions))[name_ordin];
+			uint16_t name_ordin = ((uint16_t*)(_imgbase + exp_dir->AddressOfNameOrdinals))[i];
+			uint32_t addr = ((uint32_t*)(_imgbase + exp_dir->AddressOfFunctions))[name_ordin];
 			if (addr > exp_dir_va && addr < exp_dir_va + exp_dir_sz) {
 				return (void*)0;
 			}
@@ -102,7 +106,123 @@ auto of_getprocaddress = [](void* imgbase, string proc_name) {
 	}
 	return (void*)0;
 };
+auto of_readfile = [](string filename, size_t* dwread) {
+	size_t file_sz = 0;
+	uint8_t* fbuf = nullptr;
+	FILE* fp = nullptr;
+	errno_t err;
+	ifstream _stream(filename, ios::binary | ios::in);
+	_stream.seekg(0, ios::beg);
+	_stream.seekg(0, ios::end);
+	file_sz = _stream.tellg();
+	_stream.close();
 
+	fbuf = new uint8_t[file_sz];
+#if defined(__WINDOWS__)
+	err = fopen_s(&fp, filename.c_str(), "rb");
+	if (err) {
+		console_log(MSGTYPE::CRIT, "fopen_s error");
+	}
+	fread_s(fbuf, file_sz, sizeof(uint8_t), file_sz, fp);
+#else
+	fp = fopen(filename.c_str(), "rb");
+	if(!fp)
+		console_log(MSGTYPE::CRIT, "fopen error");
+	fread(fbuf, file_sz, sizeof(uint8_t), fp);
+#endif
+	fclose(fp);
+
+	*dwread = file_sz;
+
+	return fbuf;
+};
+
+auto get_imagebase = [](uint8_t* pe_bin) {
+	IMAGE_DOS_HEADER* dos_hdr = (IMAGE_DOS_HEADER*)pe_bin;
+	IMAGE_NT_HEADERS64* nt_hdr = (IMAGE_NT_HEADERS64*)(pe_bin + dos_hdr->e_lfanew);
+
+	return nt_hdr->OptionalHeader.ImageBase;
+};
+
+auto get_entrypoint = [](uint8_t* pe_bin) {
+	IMAGE_DOS_HEADER* dos_hdr = (IMAGE_DOS_HEADER*)pe_bin;
+	IMAGE_NT_HEADERS64* nt_hdr = (IMAGE_NT_HEADERS64*)(pe_bin + dos_hdr->e_lfanew);
+
+	return nt_hdr->OptionalHeader.AddressOfEntryPoint;
+};
+
+auto get_ntheader = [](uint8_t* pe_bin) -> IMAGE_NT_HEADERS64* {
+	IMAGE_DOS_HEADER* dos_hdr = (IMAGE_DOS_HEADER*)pe_bin;
+	IMAGE_NT_HEADERS64* nt_hdr = (IMAGE_NT_HEADERS64*)(pe_bin + dos_hdr->e_lfanew);
+	
+	return nt_hdr;
+};
+
+auto get_optheader = [](uint8_t* pe_bin) {
+	IMAGE_DOS_HEADER* dos_hdr = (IMAGE_DOS_HEADER*)pe_bin;
+	IMAGE_NT_HEADERS64* nt_hdr = (IMAGE_NT_HEADERS64*)(pe_bin + dos_hdr->e_lfanew);
+	IMAGE_OPTIONAL_HEADER64* opt_header = &nt_hdr->OptionalHeader;
+
+	return opt_header;
+};
+
+auto map_as_iamge = [](uint8_t* pe_bin, void* _image_base) {
+	uint8_t* image_base = (uint8_t*)_image_base;
+	IMAGE_NT_HEADERS64* nt_header = (IMAGE_NT_HEADERS64*)get_ntheader(pe_bin);
+	IMAGE_FILE_HEADER* file_header = &nt_header->FileHeader;
+	IMAGE_SECTION_HEADER* section_header = nullptr;
+	section_header = IMAGE_FIRST_SECTION(nt_header);
+#if defined(__WINDOWS__)
+	memmove_s(image_base, nt_header->OptionalHeader.SizeOfHeaders, pe_bin, nt_header->OptionalHeader.SizeOfHeaders);
+#else
+	memmove(image_base, pe_bin, nt_header->OptionalHeader.SizeOfHeaders);
+#endif
+
+	for (int i = 0; file_header->NumberOfSections > i; i++) {
+#if defined(__WINDOWS__)
+		memmove_s((image_base + section_header->VirtualAddress), section_header->SizeOfRawData, (pe_bin + section_header->PointerToRawData), section_header->SizeOfRawData);
+#else
+		memmove((image_base + section_header->VirtualAddress), (pe_bin + section_header->PointerToRawData), section_header->SizeOfRawData);
+#endif
+		section_header = (IMAGE_SECTION_HEADER*)((uint8_t*)section_header + sizeof(IMAGE_SECTION_HEADER));
+	}
+};
+
+auto reloc_pe_image = [](void* _image_base) {
+	uint8_t* image_base = (uint8_t*)_image_base;
+	IMAGE_OPTIONAL_HEADER64* opt_header = (IMAGE_OPTIONAL_HEADER64*)get_optheader(image_base);
+	uint64_t delta = (uint64_t)image_base - (uint64_t)opt_header->ImageBase;
+	uint32_t reloc_dir_size = opt_header->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size;
+	uint64_t reloc_dir_va = opt_header->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress;
+	if (delta) {
+		if (reloc_dir_size) {
+			IMAGE_BASE_RELOCATION* cur_reloc_dir = (IMAGE_BASE_RELOCATION*)(image_base + reloc_dir_va);
+			IMAGE_BASE_RELOCATION* reloc_dir_end = (IMAGE_BASE_RELOCATION*)((uint8_t*)cur_reloc_dir + reloc_dir_size);
+			while (cur_reloc_dir < reloc_dir_end && cur_reloc_dir->SizeOfBlock) {
+				uint32_t number_of_etry = (cur_reloc_dir->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(uint16_t);
+				uint16_t* info = (uint16_t*)(cur_reloc_dir + 1);
+				for (int i = 0; number_of_etry > i; i++, info++) {
+					if ((*info >> 0xC) == IMAGE_REL_BASED_DIR64) {
+						uint64_t* addr = (uint64_t*)(image_base + cur_reloc_dir->VirtualAddress + ((*info) & 0xfff));
+						*addr += delta;
+					}
+				}
+				cur_reloc_dir = (IMAGE_BASE_RELOCATION*)((uint8_t*)cur_reloc_dir + cur_reloc_dir->SizeOfBlock);
+			}
+		}
+	}
+};
+
+auto set_all_priv = [](void* image_base, size_t image_sz) {
+#if defined(__WINDOWS__)
+	uint32_t dwOldProt;
+	VirtualProtect(image_base, image_sz, PAGE_EXECUTE_READWRITE, (DWORD*)&dwOldProt);
+#else
+	mprotect(image_base, image_sz, PROT_READ | PROT_WRITE | PROT_EXEC);
+#endif
+};
+
+#if defined(__WINDOWS__)
 auto of_rewrite_iat = [](void* imgbase) {
 	uint16_t platform = 0xffff;
 	uint8_t* _imgbase = (uint8_t*)imgbase;
@@ -126,15 +246,15 @@ auto of_rewrite_iat = [](void* imgbase) {
 				mod_name = (char*)(_imgbase + imp_descriptor->Name);
 				HMODULE hMod = LoadLibraryA(mod_name);
 
-				unsigned long long* pThunkRef = reinterpret_cast<unsigned long long*>(_imgbase + imp_descriptor->OriginalFirstThunk);
-				unsigned long long* pFuncRef = reinterpret_cast<unsigned long long*>(_imgbase + imp_descriptor->FirstThunk);
+				uint64_t* pThunkRef = reinterpret_cast<uint64_t*>(_imgbase + imp_descriptor->OriginalFirstThunk);
+				uint64_t* pFuncRef = reinterpret_cast<uint64_t*>(_imgbase + imp_descriptor->FirstThunk);
 				if (!pThunkRef)
 					pThunkRef = pFuncRef;
 				for (; *pThunkRef; pThunkRef++, pFuncRef++) {
 					if (IMAGE_SNAP_BY_ORDINAL(*pThunkRef)) {
 						uint32_t old_prot;
 						bool res;
-						res = VirtualProtect(pFuncRef, sizeof(void*), PAGE_READWRITE, (PDWORD)&old_prot);
+						res = VirtualProtect(pFuncRef, sizeof(void*), PAGE_EXECUTE_READWRITE, (PDWORD)&old_prot);
 						*pFuncRef = (ULONG_PTR)GetProcAddress(hMod, reinterpret_cast<char*>(*pThunkRef & 0xFFFF));
 					}
 					else {
@@ -142,7 +262,7 @@ auto of_rewrite_iat = [](void* imgbase) {
 						uint64_t target_addr = (uint64_t)GetProcAddress(hMod, (char*)imp_by_name->Name);
 						uint32_t old_prot;
 						bool res;
-						res = VirtualProtect(pFuncRef, sizeof(void*), PAGE_READWRITE, (PDWORD)&old_prot);
+						res = VirtualProtect(pFuncRef, sizeof(void*), PAGE_EXECUTE_READWRITE, (PDWORD)&old_prot);
 						*pFuncRef = target_addr;
 					}
 				}
@@ -177,102 +297,6 @@ auto of_set_seh = [](void* imgbase) {
 	}
 };
 
-auto of_readfile = [](string filename, size_t* dwread) {
-	size_t file_sz = 0;
-	uint8_t* fbuf = nullptr;
-	FILE* fp = nullptr;
-	errno_t err;
-	ifstream _stream(filename, ios::binary | ios::in);
-	_stream.seekg(0, ios::beg);
-	_stream.seekg(0, ios::end);
-	file_sz = _stream.tellg();
-	_stream.close();
-
-	fbuf = new uint8_t[file_sz];
-	err = fopen_s(&fp, filename.c_str(), "rb");
-	if (err) {
-		console_log(MSGTYPE::CRIT, "fopen_s error");
-	}
-	fread_s(fbuf, file_sz, sizeof(uint8_t), file_sz, fp);
-	fclose(fp);
-
-	*dwread = file_sz;
-
-	return fbuf;
-};
-
-auto get_imagebase = [](uint8_t* pe_bin) {
-	IMAGE_DOS_HEADER* dos_hdr = (IMAGE_DOS_HEADER*)pe_bin;
-	IMAGE_NT_HEADERS64* nt_hdr = (IMAGE_NT_HEADERS64*)(pe_bin + dos_hdr->e_lfanew);
-
-	return nt_hdr->OptionalHeader.ImageBase;
-};
-
-auto get_entrypoint = [](uint8_t* pe_bin) {
-	IMAGE_DOS_HEADER* dos_hdr = (IMAGE_DOS_HEADER*)pe_bin;
-	IMAGE_NT_HEADERS64* nt_hdr = (IMAGE_NT_HEADERS64*)(pe_bin + dos_hdr->e_lfanew);
-
-	return nt_hdr->OptionalHeader.AddressOfEntryPoint;
-};
-
-auto get_ntheader = [](uint8_t* pe_bin) {
-	IMAGE_DOS_HEADER* dos_hdr = (IMAGE_DOS_HEADER*)pe_bin;
-	IMAGE_NT_HEADERS64* nt_hdr = (IMAGE_NT_HEADERS64*)(pe_bin + dos_hdr->e_lfanew);
-	
-	return nt_hdr;
-};
-
-auto get_optheader = [](uint8_t* pe_bin) {
-	IMAGE_DOS_HEADER* dos_hdr = (IMAGE_DOS_HEADER*)pe_bin;
-	IMAGE_NT_HEADERS64* nt_hdr = (IMAGE_NT_HEADERS64*)(pe_bin + dos_hdr->e_lfanew);
-	IMAGE_OPTIONAL_HEADER64* opt_header = &nt_hdr->OptionalHeader;
-
-	return opt_header;
-};
-
-auto map_as_iamge = [](uint8_t* pe_bin, void* _image_base) {
-	uint8_t* image_base = (uint8_t*)_image_base;
-	IMAGE_NT_HEADERS64* nt_header = get_ntheader(pe_bin);
-	IMAGE_FILE_HEADER* file_header = &nt_header->FileHeader;
-	IMAGE_SECTION_HEADER* section_header = nullptr;
-	section_header = IMAGE_FIRST_SECTION(nt_header);
-	memmove_s(image_base, nt_header->OptionalHeader.SizeOfHeaders, pe_bin, nt_header->OptionalHeader.SizeOfHeaders);
-	for (int i = 0; file_header->NumberOfSections > i; i++) {
-		memmove_s((image_base + section_header->VirtualAddress), section_header->SizeOfRawData, (pe_bin + section_header->PointerToRawData), section_header->SizeOfRawData);
-		section_header = (IMAGE_SECTION_HEADER*)((uint8_t*)section_header + sizeof(IMAGE_SECTION_HEADER));
-	}
-};
-
-auto reloc_pe_image = [](void* _image_base) {
-	uint8_t* image_base = (uint8_t*)_image_base;
-	IMAGE_OPTIONAL_HEADER64* opt_header = get_optheader(image_base);
-	uint64_t delta = (uint64_t)image_base - (uint64_t)opt_header->ImageBase;
-	uint32_t reloc_dir_size = opt_header->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size;
-	uint64_t reloc_dir_va = opt_header->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress;
-	if (delta) {
-		if (reloc_dir_size) {
-			IMAGE_BASE_RELOCATION* cur_reloc_dir = (IMAGE_BASE_RELOCATION*)(image_base + reloc_dir_va);
-			IMAGE_BASE_RELOCATION* reloc_dir_end = (IMAGE_BASE_RELOCATION*)((uint8_t*)cur_reloc_dir + reloc_dir_size);
-			while (cur_reloc_dir < reloc_dir_end && cur_reloc_dir->SizeOfBlock) {
-				uint32_t number_of_etry = (cur_reloc_dir->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(uint16_t);
-				uint16_t* info = (uint16_t*)(cur_reloc_dir + 1);
-				for (int i = 0; number_of_etry > i; i++, info++) {
-					if ((*info >> 0xC) == IMAGE_REL_BASED_DIR64) {
-						uint64_t* addr = (uint64_t*)(image_base + cur_reloc_dir->VirtualAddress + ((*info) & 0xfff));
-						*addr += delta;
-					}
-				}
-				cur_reloc_dir = (IMAGE_BASE_RELOCATION*)((uint8_t*)cur_reloc_dir + cur_reloc_dir->SizeOfBlock);
-			}
-		}
-	}
-};
-
-auto set_all_priv = [](void* image_base, size_t image_sz) {
-	uint32_t dwOldProt;
-	VirtualProtect(image_base, image_sz, PAGE_EXECUTE_READWRITE, (DWORD*)&dwOldProt);
-};
-
 auto winmap = [](string lib_name) -> void* {
 	HANDLE hMap = nullptr;
 	HANDLE hFile = nullptr;
@@ -290,11 +314,15 @@ auto winmap = [](string lib_name) -> void* {
 		nullptr, SEC_IMAGE | PAGE_READONLY, 0,
 		0, nullptr);
 	
-	img_base = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
-	opt_header = get_optheader((uint8_t*)img_base);
+	img_base = MapViewOfFileEx(hMap, FILE_MAP_READ, 0, 0, 0, (void*)0x75a100000);
+	//img_base = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+	opt_header = (IMAGE_OPTIONAL_HEADER64*)get_optheader((uint8_t*)img_base);
 	set_all_priv(img_base, opt_header->SizeOfImage);
+	reloc_pe_image(img_base);
+	of_set_seh(img_base);
 	return img_base;
 };
+#endif
 
 auto of_loadlibraryX64 = [](string libname) {
 	uint8_t* raw = nullptr;
@@ -309,9 +337,9 @@ auto of_loadlibraryX64 = [](string libname) {
 	switch (platform)
 	{
 	case PLATFORM::X64_PLATFORM:
-#ifdef _WIN64
+#if defined(__WINDOWS__)
 		image_base = winmap(libname);
-		of_set_seh(image_base);
+		//of_set_seh(image_base);
 #else
 		if (!check_valid_pe(raw)) {
 			console_log(MSGTYPE::CRIT, "target module is not valid pe");
@@ -319,18 +347,19 @@ auto of_loadlibraryX64 = [](string libname) {
 		if (check_platform(raw) != PLATFORM::X64_PLATFORM) {
 			console_log(MSGTYPE::CRIT, "target module is unsupported platform binary");
 		}
-		nt_header = get_ntheader(raw);
-		image_base = mmap((void*)(nt_header->ImageBase),
-			nt_header->SizeOfImage, PROT_READ | PROT_WRITE | PROT_EXEC,
+		nt_header = (IMAGE_NT_HEADERS64*)get_ntheader(raw);
+		
+		image_base = mmap((void*)(nt_header->OptionalHeader.ImageBase),
+			nt_header->OptionalHeader. SizeOfImage, PROT_READ | PROT_WRITE | PROT_EXEC,
 			MAP_ANONYMOUS | MAP_PRIVATE,
 			-1,
 			0);
-		map_as_iamge(raw, image_base);
-		reloc_pe_image(image_base);
-		if (*image == MAP_FAILED) {
+		if (image_base == MAP_FAILED) {
 			console_log(MSGTYPE::CRIT, "fail to map windll");
 		}
-		
+		set_all_priv(image_base, nt_header->OptionalHeader.SizeOfImage);
+		map_as_iamge(raw, image_base);
+		reloc_pe_image(image_base);
 #endif // _WIN64
 
 		break;
@@ -338,17 +367,6 @@ auto of_loadlibraryX64 = [](string libname) {
 		console_log(MSGTYPE::CRIT, "unsupported PE platform");
 		break;
 	}
-
-	/*
-
-	hMap = CreateFileMappingA(
-		INVALID_HANDLE_VALUE, // paging file
-		nullptr,
-		PAGE_EXECUTE_READWRITE,
-		0,
-
-	)
-	*/
 	delete raw;
 	return image_base;
 };

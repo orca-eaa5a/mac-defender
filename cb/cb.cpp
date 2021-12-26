@@ -1,7 +1,22 @@
 
 #include <cstdint>
+#include <stdio.h>
+#if defined(__APPLE__) || defined(__LINUX__)
+#include <sys/uio.h>
+#include <sys/syslimits.h>
+#include <unistd.h>
+#endif
+#if defined(__LINUX__) || defined(__WINDOWS__)
+#include <fcntl.h>
 #include <io.h>
-#include <windows.h>
+	#if defined(__LINUX__)
+	#include <unistd.h>
+	#endif
+	#if defined(__WINDOWS__)
+	#include <windows.h>
+	#endif
+#endif
+#include "../winapi/strutils.hpp"
 #include <string>
 #include "cb.h"
 
@@ -102,16 +117,25 @@ uint64_t FullScanNotifyCallback(PSCAN_REPLY Scan)
 
 uint64_t ReadStreamCb(uint64_t fd, uint64_t Offset, void* Buffer, uint64_t Size, uint64_t* SizeRead)
 {
+#if defined(__WINDOWS__)
 	_lseek(fd, Offset, SEEK_SET);
 	*SizeRead = _read(fd, (uint8_t*)Buffer, Size);
-
+#else
+	lseek(fd, Offset, SEEK_SET);
+	*SizeRead = read(fd, (uint8_t*)Buffer, Size);
+#endif
 	return 1;
 }
 
 uint64_t GetStreamSizeCb(uint64_t fd, uint64_t* FileSize)
 {
+#if defined(__WINDOWS__)
 	_lseek(fd, 0, SEEK_END);
 	*FileSize = _lseek(fd, 0, SEEK_CUR);
+#else
+	lseek(fd, 0, SEEK_END);
+	*FileSize = lseek(fd, 0, SEEK_CUR);
+#endif
 	return 1;
 }
 
@@ -122,17 +146,18 @@ uint64_t GetIncremBufferSizeCb(void* buf, uint64_t* BufSize) {
 	return 1;
 }
 
-uint64_t ReadBufferCb(void* src, uint64_t Offset, void* Buffer, uint32_t Size, uint32_t* SizeRead) {
-	memcpy(Buffer, (void*)((uint8_t*)src + Offset), Size);
-	*SizeRead = Size;
+uint64_t ReadBufferCb(void* src, uint64_t Offset, void* Buffer, uint32_t* Size, uint32_t* SizeRead) {
+	memcpy(Buffer, (void*)((uint8_t*)src + Offset), *Size);
+	*SizeRead = *Size;
 	return 1;
 }
 #endif // _X86
 
 const wchar_t* GetStreamNameCb(void* self) {
-	HANDLE hFile = (HANDLE)_get_osfhandle((uint32_t)self);
 	wchar_t* fname = new wchar_t[260];
-	memset(fname, '\0', MAX_PATH);
+	memset(fname, '\0', sizeof(fname));
+#if defined(__WINDOWS__)
+	HANDLE hFile = (HANDLE)_get_osfhandle((uint32_t)self);
 	GetFinalPathNameByHandleW(hFile, (wchar_t*)fname, MAX_PATH, VOLUME_NAME_DOS);
 	std::wstring target_path(fname);
 	if (target_path.substr(0, 8).compare(L"\\\\?\\UNC\\") == 0)
@@ -146,6 +171,12 @@ const wchar_t* GetStreamNameCb(void* self) {
 		target_path = target_path.substr(4);
 	}
 	lstrcpyW(fname, target_path.c_str());
-
+#else
+	char* fname_str = new char[260];
+	memset(fname_str, '\0', sizeof(fname_str));
+	if (fcntl((intptr_t)self, F_GETPATH, fname_str) != -1)
+    	copy_str_to_wstr(fname_str, fname, strlen(fname_str));
+	delete fname_str;
+#endif
 	return fname;
 }

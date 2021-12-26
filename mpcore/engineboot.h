@@ -1,14 +1,15 @@
 #ifndef __ENGINEBOOT_H
 #define __ENGINEBOOT_H
+#if defined(__WINDOWS__)
 #pragma once
-#pragma pack(push, 1)
+#endif
 #include <cstdint>
 #ifdef _X86
 #define BOOTENGINE_PARAMS_VERSION 0x8E00
 #elif _X64
 #define BOOTENGINE_PARAMS_VERSION 0x8B00
 #endif // _X86
-
+#pragma pack(push)
 
 enum {
 	BOOT_CACHEENABLED = 1 << 0,
@@ -140,6 +141,5 @@ typedef struct _BOOTENGINE_PARAMS {
 	/*0x14C*/    unsigned int           SideBySidePassiveMode;
 } BOOTENGINE_PARAMS, *PBOOTENGINE_PARAMS;
 #endif
-
-#pragma pack(pop)
+#pragma pack(push)
 #endif // __ENGINEBOOT_H

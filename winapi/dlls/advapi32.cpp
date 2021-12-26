@@ -1,15 +1,14 @@
 #include "advapi32.h"
 #include <string>
 #include <cassert>
-#include <evntprov.h>
 
 using namespace std;
 
-unsigned long __stdcall MockAdvapi::RegisterTraceGuidsW(void* RequestAddress, void* RequestContext, void* ControlGuid, unsigned long GuidCOunt, void* TraceGuidReg, wchar_t* MofImagePath, wchar_t* MofResourceName, void* RegistrationHandle) {
+uint32_t __stdcall MockAdvapi::RegisterTraceGuidsW(void* RequestAddress, void* RequestContext, void* ControlGuid, uint32_t GuidCOunt, void* TraceGuidReg, wchar_t* MofImagePath, wchar_t* MofResourceName, void* RegistrationHandle) {
 	return 0;
 }
 
-unsigned long __stdcall MockAdvapi::EventSetInformation(void* RegHandle, unsigned int InformationClass, void* EventInformation, unsigned long InformationLength) {
+uint32_t __stdcall MockAdvapi::EventSetInformation(void* RegHandle, uint32_t InformationClass, void* EventInformation, uint32_t InformationLength) {
 	return 0;
 }
 
@@ -41,7 +40,7 @@ bool __stdcall MockAdvapi::LookupPrivilegeValueW(wchar_t* lpSystemName, wchar_t*
 	return ret;
 }
 
-bool __stdcall MockAdvapi::AdjustTokenPrivileges(void* TokenHandle, bool DisableAllPrivileges, void* NewState, unsigned int BufferLength, void* PreviousState, unsigned int* ReturnLength) {
+bool __stdcall MockAdvapi::AdjustTokenPrivileges(void* TokenHandle, bool DisableAllPrivileges, void* NewState, uint32_t BufferLength, void* PreviousState, uint32_t* ReturnLength) {
 	return true;
 }
 
@@ -53,13 +52,13 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 	*/
 	void* hKey, 
 	wchar_t* lpSubKey, 
-	unsigned int Reserved, 
+	uint32_t Reserved,
 	void* lpClass, 
-	unsigned int dwOptions, 
+	uint32_t dwOptions,
 	void* samDesired, 
 	void* lpSecurityAttributes, 
 	void* phkResult, 
-	unsigned int* lpdwDisposition) {
+	uint32_t* lpdwDisposition) {
 	wstring wstr = wstring(lpSubKey);
 	string hive;
 	string sub_key_str;
@@ -67,7 +66,7 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 	Json::Value key;
 
 	sub_key_str.assign(wstr.begin(), wstr.end());
-	switch ((unsigned long long)hKey)
+	switch ((uint64_t)hKey)
 	{
 	case HKEY_LOCAL_MACHINE:
 		hive = "hklm";
@@ -80,7 +79,7 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 		hive = "not imp";
 		break;
 	default:
-		tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(unsigned int)hKey];
+		tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(uintptr_t)hKey];
 		break;
 	}
 	vector<string> splitted = split_string((char*)sub_key_str.c_str(), '\\');
@@ -100,21 +99,21 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 		}
 	}
 	
-	unsigned long long new_k = MockNTKrnl::CreateNewRegHandle(hive, sub_key_str, key);
+	uint64_t new_k = MockNTKrnl::CreateNewRegHandle(hive, sub_key_str, key);
 	memmove(phkResult, &new_k, sizeof(new_k));
 	
 
 	return 0;
 }
 
-long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, wchar_t* lpSubKey, unsigned int ulOptions, unsigned int samDesired, void** phkResult) {
+long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, wchar_t* lpSubKey, uint32_t ulOptions, uint32_t samDesired, void** phkResult) {
 	wstring wstr = wstring(lpSubKey);
 	string hive;
 	string sub_key_str;
 	string key_str;
 	sub_key_str.assign(wstr.begin(), wstr.end());
 	Json::Value key;
-	switch ((unsigned long long)hKey)
+	switch ((uint64_t)hKey)
 	{
 	case HKEY_LOCAL_MACHINE:
 		hive = "hklm";
@@ -127,7 +126,7 @@ long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, wchar_t* lpSubKey, unsigned
 		hive = "not imp";
 		break;
 	default:
-		tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(unsigned int)hKey];
+		tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(uintptr_t)hKey];
 		break;
 	}
 	vector<string> splitted = split_string((char*)sub_key_str.c_str(), '\\');
@@ -146,7 +145,7 @@ long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, wchar_t* lpSubKey, unsigned
 		}
 	}
 	
-	unsigned long long new_k = MockNTKrnl::CreateNewRegHandle(hive, sub_key_str, key);
+	uint64_t new_k = MockNTKrnl::CreateNewRegHandle(hive, sub_key_str, key);
 	memmove(phkResult, &new_k, sizeof(new_k));
 	
 	return 0;
@@ -155,25 +154,25 @@ long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, wchar_t* lpSubKey, unsigned
 long __stdcall MockAdvapi::RegQueryInfoKeyW(
 	void* hKey,
 	wchar_t* lpClass,
-	unsigned int* lpcClass,
-	unsigned int* lpReserved,
-	unsigned int* lpcSubKeys,
-	unsigned int* lpcMaxSubKeyLen,
-	unsigned int* lpcMaxClassLen,
-	unsigned int* lpcValues,
-	unsigned int* lpcMaxValueNameLen,
-	unsigned int* lpcMaxValueLen,
-	unsigned int* lpcbSecurityDescriptor,
+	uint32_t* lpcClass,
+	uint32_t* lpReserved,
+	uint32_t* lpcSubKeys,
+	uint32_t* lpcMaxSubKeyLen,
+	uint32_t* lpcMaxClassLen,
+	uint32_t* lpcValues,
+	uint32_t* lpcMaxValueNameLen,
+	uint32_t* lpcMaxValueLen,
+	uint32_t* lpcbSecurityDescriptor,
 	void* lpftLastWriteTime
 ) {
 	string hive;
 	string key_str;
 	Json::Value key;
-	tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(unsigned int)hKey];
-	unsigned int subkeys = 0;
-	unsigned int key_values = 0;
-	unsigned int max_valuename_len = 0;
-	unsigned int max_subkey_len = 0;
+	tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(uintptr_t)hKey];
+	uint32_t subkeys = 0;
+	uint32_t key_values = 0;
+	uint32_t max_valuename_len = 0;
+	uint32_t max_subkey_len = 0;
 	for (auto it = key.begin(); it != key.end(); ++it)
 	{
 		string subkey_str = it.key().asString();
@@ -222,7 +221,7 @@ long __stdcall MockAdvapi::RegQueryInfoKeyW(
 	return 0;
 }
 
-long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, wchar_t* lpValueName, unsigned int* lpReserved, unsigned int* lpType, unsigned char*  lpData, unsigned int* lpcbData) {
+long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, wchar_t* lpValueName, uint32_t* lpReserved, uint32_t* lpType, uint8_t*  lpData, uint32_t* lpcbData) {
 	string hive;
 	string key_str;
 	Json::Value key;
@@ -230,7 +229,7 @@ long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, wchar_t* lpValueName, un
 	wstring value_w = wstring(lpValueName);
 	value.assign(value_w.begin(), value_w.end());
 
-	switch ((unsigned long long)hKey)
+	switch ((uint64_t)hKey)
 	{
 	case HKEY_LOCAL_MACHINE:
 		hive = "hklm";
@@ -243,13 +242,13 @@ long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, wchar_t* lpValueName, un
 		hive = "not imp";
 		break;
 	default:
-		tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(unsigned int)hKey];
+		tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(uintptr_t)hKey];
 		break;
 	}
 
 	if (key.isMember(value)) {
 		auto subkey = key[value];
-		unsigned int regtype;
+		uint32_t regtype;
 		size_t data_sz = 0;
 		
 		if (subkey.isString()) {
@@ -279,13 +278,13 @@ long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, wchar_t* lpValueName, un
 	return 0;
 }
 
-long __stdcall MockAdvapi::RegEnumKeyExW(void* hKey, unsigned int dwIndex, wchar_t* lpName, unsigned int* lpcchName, void* lpReserved, wchar_t* lpClass, unsigned int* lpcchClass, void* lpftLastWriteTime) {
+long __stdcall MockAdvapi::RegEnumKeyExW(void* hKey, uint32_t dwIndex, wchar_t* lpName, uint32_t* lpcchName, void* lpReserved, wchar_t* lpClass, uint32_t* lpcchClass, void* lpftLastWriteTime) {
 	string hive;
 	string key_str;
 	Json::Value key;
-	tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(unsigned int)hKey];
+	tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(uintptr_t)hKey];
 	
-	unsigned int idx = 0;
+	uint32_t idx = 0;
 	auto it = key.begin();
 	for (; it != key.end(); ++it) {
 		if (!key[it.key().asString()].isObject())
@@ -322,43 +321,43 @@ long __stdcall MockAdvapi::RegEnumKeyExW(void* hKey, unsigned int dwIndex, wchar
 
 
 long __stdcall MockAdvapi::RegCloseKey(void* hKey) {
-	unsigned int k = (unsigned int)hKey;
+	uintptr_t k = (uintptr_t)hKey;
 	MockNTKrnl::RemoveRegHandle(k);
 	return 0;
 }
 
-long __stdcall MockAdvapi::RegNotifyChangeKeyValue(void* hKey, bool bWatchSubtree, unsigned int dwNotifyFilter, void* hEvent, bool fAsynchronous) {
+long __stdcall MockAdvapi::RegNotifyChangeKeyValue(void* hKey, bool bWatchSubtree, uint32_t dwNotifyFilter, void* hEvent, bool fAsynchronous) {
 	return 0;
 }
 
-unsigned long __stdcall MockAdvapi::LsaNtStatusToWinError(unsigned long Status) {
+uint32_t __stdcall MockAdvapi::LsaNtStatusToWinError(uint32_t Status) {
 	return Status;
 }
 
-unsigned long __stdcall MockAdvapi::EventWriteEx(
+uint32_t __stdcall MockAdvapi::EventWriteEx(
 	void* EventDescriptor,
-	unsigned long long Filter,
-	unsigned long Flags,
+	uint64_t Filter,
+	uint32_t Flags,
 	void* ActivityId,
 	void* RelatedActivityId,
-	unsigned long UserDataCount,
+	uint32_t UserDataCount,
 	void* UserData) {
 	return 0;
 }
 
-unsigned long __stdcall MockAdvapi::EventWriteTransfer(
+uint32_t __stdcall MockAdvapi::EventWriteTransfer(
 	void* RegHandle,
 	void* EventDescriptor,
 	void* ActivityId,
 	void* RelatedActivityId,
-	unsigned long UserDataCount,
+	uint32_t UserDataCount,
 	void* UserData
 ) {
 	return 0;
 }
 
-unsigned long __stdcall MockAdvapi::MyEventActivityIdControl(
-	unsigned long ControlCode,
+uint32_t __stdcall MockAdvapi::MyEventActivityIdControl(
+	uint32_t ControlCode,
 	void* ActivityId
 ) {
 	return 0;

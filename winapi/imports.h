@@ -1,4 +1,6 @@
+#if defined(__WINDOWS__)
 #pragma once
+#endif
 #ifndef _IMP_H_
 #define _IMP_H_
 
@@ -11,12 +13,14 @@
 #include "dlls/crypt32.h"
 #include "dlls/wofutil.h"
 #include "dlls/wintrust.h"
+#include "dlls/ole32.h"
+#include "dlls/rpcrt4.h"
 #include "ntoskrnl.h"
 #include "exports.h"
 
 class ImportDLLs {
 public:
-	void ImportDLLs::setup_dlls(void);
+	void setup_dlls(void);
 
 	ImportDLLs() {
 		this->setup_dlls();
@@ -27,7 +31,7 @@ public:
 		this->setup_dlls();
 	}
 
-	void ImportDLLs::set_ported_apis(void);
+	void set_ported_apis(void);
 
 
 private:
@@ -39,6 +43,8 @@ private:
 	MockCrypt32 crypt32;
 	MockWofUtil wofutil;
 	MockWintrust wintrust;
+	MockOle32 ole32;
+	MockRpcrt4 rpcrt4;
 	void* engine_base;
 
 };

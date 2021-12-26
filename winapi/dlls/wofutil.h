@@ -1,16 +1,26 @@
+#if defined(__WINDOWS__)
 #pragma once
+#endif
+
 #ifndef _WOFUTIL_H_
 #define _WOFUTIL_H_
 #include <functional>
-#include <windows.h>
 #include "../exports.h"
+
+#if defined(__APPLE__) || defined(__LINUX__)
+#include "include/windows.h"
+#endif
 
 class MockWofUtil {
 public:
 	function<void(void)> set_wofutil_hookaddr = [](void) {
-		APIExports::add_hook_info("wofutil.dll", "WofShouldCompressBinaries", (void*)MockWofUtil::WofShouldCompressBinaries);
+		APIExports::add_hook_info("wofutil.dll", "WofShouldCompressBinaries", (void*)WofShouldCompressBinaries);
 
 	};
-	static void* __stdcall MockWofUtil::WofShouldCompressBinaries(wchar_t* Volume, unsigned long* Algorithm);
+#if defined(__WINDOWS__)
+	static bool __stdcall MockWofUtil::WofShouldCompressBinaries(wchar_t* Volume, uint32_t* Algorithm);
+#else
+	static bool __stdcall WofShouldCompressBinaries(wchar_t* Volume, uint32_t* Algorithm);
+#endif
 };
 #endif // !_WOFUTIL_H_

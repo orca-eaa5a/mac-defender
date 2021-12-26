@@ -1,12 +1,12 @@
+#if defined(__WINDOWS__)
 #pragma once
+#endif
 
 #ifndef __SCANREPLY_H
 #define __SCANREPLY_H
 #include <cstdint>
 #include "engineboot.h"
-
 #pragma pack(push, 1)
-
 // These are just guesses based on observed behaviour.
 enum {
 	SCAN_ENCRYPTED = 1 << 6,
@@ -23,7 +23,7 @@ enum {
 	SCAN_VIRUSFOUND = 1 << 27,
 };
 
-#ifdef _X86
+#if defined(_X86)
 
 typedef struct _SCAN_REPLY { // very very important structure!!
 	/*0x0*/    uint32_t field_0; // 0xB6B7B8B9
@@ -81,8 +81,7 @@ typedef struct _SCAN_REPLY { // very very important structure!!
 	/*too big...*/
 } SCAN_REPLY, *PSCAN_REPLY;
 
-#elif _X64
-
+#elif defined(_X64)
 typedef struct _SCAN_REPLY { // very very important structure!!
 	/*0x0*/    uint32_t signature; // 0xB6B7B8B9
 	/*0x4*/    uint32_t Flags;
@@ -144,7 +143,6 @@ typedef struct CCftScanState {
 	uint64_t   ScanFlag;
 } CCftScanState, *PCCftScanState;
 #endif // _X86
-
 #pragma pack(pop)
 #endif // __SCANREPLY_H
 

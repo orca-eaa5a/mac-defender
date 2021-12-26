@@ -1,18 +1,17 @@
 #include "bcrypt.h"
 
-NTSTATUS __stdcall MockBcrypt::BCryptOpenAlgorithmProvider(void* phAlgorithm, wchar_t* pszAlgId, wchar_t* pszImplementation, unsigned int dwFlags){
+NTSTATUS __stdcall MockBcrypt::BCryptOpenAlgorithmProvider(void* phAlgorithm, wchar_t* pszAlgId, wchar_t* pszImplementation, uint32_t dwFlags){
 	return 0;
 }
 
-NTSTATUS __stdcall MockBcrypt::BCryptCloseAlgorithmProvider(void* hAlgorithm, unsigned long dwFlags){
+NTSTATUS __stdcall MockBcrypt::BCryptCloseAlgorithmProvider(void* hAlgorithm, uint32_t dwFlags){
 	return 0;
 }
 
-NTSTATUS __stdcall MockBcrypt::BCryptGenRandom(void* phAlgorithm, unsigned char* pbBuffer, unsigned long cbBuffer, unsigned long dwFlags){
-	static int randomfd = -1;
+NTSTATUS __stdcall MockBcrypt::BCryptGenRandom(void* phAlgorithm, uint8_t* pbBuffer, uint32_t cbBuffer, uint32_t dwFlags){
 	for (int i = 0; cbBuffer > i * 2; i++) {
-		unsigned short r = (unsigned short)rand();
-		memset((pbBuffer+i), r, sizeof(unsigned short));
+		uint16_t r = (uint16_t)rand();
+		memset((pbBuffer+i), r, sizeof(uint16_t));
 	}
 	return 0;
 }

@@ -22,8 +22,8 @@ const wchar_t* GetStreamNameCb(void* self);
 uint64_t FullScanNotifyCallback(PSCAN_REPLY Scan);
 uint64_t ReadStreamCb(uint64_t fd, uint64_t Offset, void* Buffer, uint64_t Size, uint64_t* SizeRead);
 uint64_t GetStreamSizeCb(uint64_t fd, uint64_t* FileSize);
-uint64_t GetIncremBufferSizeCb(uint64_t buf, uint64_t* BufSize);
-uint64_t ReadBufferCb(uint64_t src, uint64_t* Offset, void* Buffer, uint32_t* Size, uint32_t* SizeRead);
+uint64_t GetIncremBufferSizeCb(void* buf, uint64_t* BufSize);
+uint64_t ReadBufferCb(void* src, uint64_t Offset, void* Buffer, uint32_t* Size, uint32_t* SizeRead);
 
 #endif // _X86
 const wchar_t* GetStreamNameCb(void* self);

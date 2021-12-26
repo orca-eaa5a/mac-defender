@@ -1,27 +1,27 @@
 #include <cassert>
 #include "ntoskrnl.h"
 
-unsigned short MockNTKrnl::major = 10;
-unsigned short MockNTKrnl::minor = 0;
-unsigned int MockNTKrnl::build_version = 19042;
-unsigned int MockNTKrnl::handle_count = 0x0188;
+uint16_t MockNTKrnl::major = 10;
+uint16_t MockNTKrnl::minor = 0;
+uint32_t MockNTKrnl::build_version = 19042;
+uint64_t MockNTKrnl::handle_count = 0x0188;
 Json::Value MockNTKrnl::mock_reg;
-unsigned int MockNTKrnl::page_alignment = 0x1000;
+uint32_t MockNTKrnl::page_alignment = 0x1000;
 
 
-map<unsigned int, tuple<string, string, Json::Value>> MockNTKrnl::m_reg_handle;
-map<unsigned int,
+map<uint64_t, tuple<string, string, Json::Value>> MockNTKrnl::m_reg_handle;
+map<uint64_t,
 	tuple<
-		unsigned int,
-		unsigned int,
-		unsigned int,
+		size_t,
+		size_t,
+		size_t,
 		map<
-			unsigned long long,
-			unsigned int
+			uint64_t,
+			size_t
 		>
 	>
 > MockNTKrnl::m_heap_handle;
-unsigned int MockNTKrnl::process_heap_handle;
+uint32_t MockNTKrnl::process_heap_handle;
 
 std::map<std::string, string> MockNTKrnl::m_env_variable = {
 	{"AllUsersProfile", "C:\\ProgramData"},
@@ -43,7 +43,7 @@ void MockNTKrnl::parse_mock_reg_info() {
 	Json::CharReaderBuilder reader;
 	ifstream json_stream;
 
-	json_stream.open(this->mock_reg_path, ifstream::binary);
+	json_stream.open(this->mock_reg_path);
 	if (!json_stream.is_open()) {
 		assert(0);
 	}
@@ -54,17 +54,17 @@ void MockNTKrnl::parse_mock_reg_info() {
 	this->mock_reg = _json;
 }
 
-unsigned int MockNTKrnl::CreateNewRegHandle(string hive, string key, Json::Value v) {
+uint64_t MockNTKrnl::CreateNewRegHandle(string hive, string key, Json::Value v) {
 	if (!MockNTKrnl::mock_reg) {
 		return 0xFFFFFFFF;
 	}
-	unsigned int hv = MockNTKrnl::handle_count += 4;
+	uint64_t hv = MockNTKrnl::handle_count += 4;
 	MockNTKrnl::m_reg_handle[hv] = make_tuple(hive, key, v);
 
 	return hv;
 }
 
-void MockNTKrnl::RemoveRegHandle(unsigned int hKey) {
+void MockNTKrnl::RemoveRegHandle(uint32_t hKey) {
 	MockNTKrnl::m_reg_handle.erase(hKey);
 }
 
@@ -73,7 +73,7 @@ void MockNTKrnl::RemoveRegHandle(unsigned int hKey) {
 #define CUR_SZ 2
 #define HEAP_LIST 3 
 
-unsigned int MockNTKrnl::CreateNewHeapHandle(size_t init_sz, size_t max_sz) {
+uint64_t MockNTKrnl::CreateNewHeapHandle(size_t init_sz, size_t max_sz) {
 	/*
 	"handle":{
 		"init_sz": ??,
@@ -85,33 +85,33 @@ unsigned int MockNTKrnl::CreateNewHeapHandle(size_t init_sz, size_t max_sz) {
 		heap is not fixed
 	*/
 	
-	//unsigned long long membase = (unsigned long long)malloc(init_sz);
-	unsigned int hv = MockNTKrnl::handle_count += 4;
-	map<unsigned long long, unsigned int> m;
-	tuple<unsigned int, unsigned int, unsigned int, map<unsigned long long, unsigned int>> new_t = {init_sz, max_sz, 0, m};
+	//uint64_t membase = (uint64_t)malloc(init_sz);
+	uint64_t hv = MockNTKrnl::handle_count += 4;
+	map<uint64_t, size_t> m;
+	tuple<size_t, size_t, size_t, map<uint64_t, size_t>> new_t = {init_sz, max_sz, 0, m};
 	MockNTKrnl::m_heap_handle[hv] = new_t;
 
 	return hv;
 }
 
-void* MockNTKrnl::AllocHeapMemory(unsigned int heap_handle, bool zeroize, size_t mem_size) {
-	tuple<unsigned int, unsigned int, unsigned int, map<unsigned long long, unsigned int>> handle_info;
+void* MockNTKrnl::AllocHeapMemory(uint64_t heap_handle, bool zeroize, size_t mem_size) {
+	tuple<size_t, size_t, size_t, map<uint64_t, size_t>> handle_info;
 	handle_info = MockNTKrnl::m_heap_handle[heap_handle];
-	unsigned int init_sz = std::get<INIT_SZ>(handle_info);
-	unsigned int max_sz = std::get<MAX_SZ>(handle_info);
-	unsigned int cur_sz = std::get<CUR_SZ>(handle_info);
+	size_t init_sz = std::get<INIT_SZ>(handle_info);
+	size_t max_sz = std::get<MAX_SZ>(handle_info);
+	size_t cur_sz = std::get<CUR_SZ>(handle_info);
 
-	unsigned long long mem_ptr;
+	uint64_t mem_ptr;
 	if (zeroize) {
-		mem_ptr = (unsigned long long)calloc(mem_size, 1);
+		mem_ptr = (uint64_t)calloc(mem_size, 1);
 	}
 	else {
-		mem_ptr = (unsigned long long)malloc(mem_size);
+		mem_ptr = (uint64_t)malloc(mem_size);
 	}
 
 	if (max_sz != 0) {
 		// fixed heap
-		unsigned int after_heap_sz = cur_sz + mem_size;
+		size_t after_heap_sz = cur_sz + mem_size;
 		if (after_heap_sz > max_sz) {
 			return NULL;
 		}
@@ -125,9 +125,9 @@ void* MockNTKrnl::AllocHeapMemory(unsigned int heap_handle, bool zeroize, size_t
 	return (void*)mem_ptr;
 }
 
-void* MockNTKrnl::ResizeHeap(unsigned int heap_handle, bool zeroize, void* heap_base, size_t mem_size) {
-	unsigned long long mem_ptr = (unsigned long long)heap_base;
-	unsigned int mem_sz = 0;
+void* MockNTKrnl::ResizeHeap(uint64_t heap_handle, bool zeroize, void* heap_base, size_t mem_size) {
+	uint64_t mem_ptr = (uint64_t)heap_base;
+	size_t mem_sz = 0;
 
 	if (std::get<HEAP_LIST>(MockNTKrnl::m_heap_handle[heap_handle]).find(mem_ptr)
 		== std::get<HEAP_LIST>(MockNTKrnl::m_heap_handle[heap_handle]).end()) {
@@ -137,24 +137,24 @@ void* MockNTKrnl::ResizeHeap(unsigned int heap_handle, bool zeroize, void* heap_
 	mem_sz = std::get<HEAP_LIST>(MockNTKrnl::m_heap_handle[heap_handle])[mem_ptr];
 	std::get<HEAP_LIST>(MockNTKrnl::m_heap_handle[heap_handle]).erase(mem_ptr);
 
-	mem_ptr = (unsigned long long)realloc(heap_base, mem_size);
+	mem_ptr = (uint64_t)realloc(heap_base, mem_size);
 
 	if (zeroize)
 		memset((void*)mem_ptr, 0, mem_size);
 
-	int delta = mem_size - mem_sz;
+	size_t delta = mem_size - mem_sz;
 	std::get<CUR_SZ>(MockNTKrnl::m_heap_handle[heap_handle]) += delta;
 	std::get<HEAP_LIST>(MockNTKrnl::m_heap_handle[heap_handle])[mem_ptr] = mem_size;
 
 	return (void*)mem_ptr;
 }
 
-bool MockNTKrnl::FreeHeap(unsigned int heap_handle, void* heap_base) {
-	tuple<unsigned int, unsigned int, unsigned int, map<unsigned long long, unsigned int>> handle_info;
+bool MockNTKrnl::FreeHeap(uint64_t heap_handle, void* heap_base) {
+	tuple<size_t, size_t, size_t, map<uint64_t, size_t>> handle_info;
 	handle_info = MockNTKrnl::m_heap_handle[heap_handle];
 
-	unsigned long long mem_ptr = (unsigned long long)heap_base;
-	unsigned int mem_sz = 0;
+	uint64_t mem_ptr = (uint64_t)heap_base;
+	size_t mem_sz = 0;
 	if (std::get<HEAP_LIST>(MockNTKrnl::m_heap_handle[heap_handle]).find(mem_ptr)
 		== std::get<HEAP_LIST>(MockNTKrnl::m_heap_handle[heap_handle]).end()) {
 		return false;
@@ -167,7 +167,7 @@ bool MockNTKrnl::FreeHeap(unsigned int heap_handle, void* heap_base) {
 	return true;
 }
 
-bool MockNTKrnl::DestroyHeap(unsigned int heap_handle) {
+bool MockNTKrnl::DestroyHeap(uint64_t heap_handle) {
 	void* heap_base = nullptr;
 	for (const auto &m : std::get<HEAP_LIST>(MockNTKrnl::m_heap_handle[heap_handle])) {
 		heap_base = (void*)m.first;

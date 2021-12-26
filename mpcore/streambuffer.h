@@ -1,10 +1,11 @@
+#if defined(__WINDOWS__)
 #pragma once
+#endif
 #include "scanreply.h"
 
 #ifndef __STREAMBUFFER_H
 #define __STREAMBUFFER_H
-#pragma once
-#pragma pack(push, 1)
+
 
 enum {
 	STREAM_ATTRIBUTE_INVALID = 0,
@@ -213,7 +214,7 @@ typedef struct _STREAMBUFFER_DESCRIPTOR_INTERNAL {
 	uint64_t Unknown13;
 	uint64_t Unknown14;
 	uint64_t Reserved9;
-};
+}STREAMBUFFER_DESCRIPTOR_INTERNAL;
 #endif
 
 #pragma pack(pop)
