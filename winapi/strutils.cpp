@@ -1,3 +1,6 @@
+#if defined(__WINDOWS__)
+#pragma warning(disable: 4996)
+#endif
 #include "strutils.hpp"
 
 char* convert_wstr_to_str(wchar_t* wstr){
@@ -5,8 +8,8 @@ char* convert_wstr_to_str(wchar_t* wstr){
 	string std_str;
 	std_str.assign(std_wstr.begin(), std_wstr.end());
 	char* new_str = new char[std_str.length() + 1];
-	unsigned long long max_len = std_str.length() + 1;
-	strcpy_s(new_str, max_len, std_str.c_str());
+	uint64_t max_len = std_str.length() + 1;
+	strcpy(new_str, std_str.c_str());
 
 	return new_str;
 }
@@ -16,7 +19,7 @@ wchar_t* convert_str_to_wstr(char* str) {
 	wstring std_wstr;
 	std_wstr.assign(std_str.begin(), std_str.end());
 	wchar_t* new_wstr = new wchar_t[std_wstr.length() + 1];
-	unsigned long long max_len = (std_str.length() + 1) * sizeof(wchar_t);
+	uint64_t max_len = (std_str.length() + 1) * sizeof(wchar_t);
 	memmove(new_wstr, std_wstr.c_str(), max_len);
 
 	return new_wstr;
@@ -89,7 +92,7 @@ vector<string> split_string(char* str, char delimiter) {
 	return v;
 }
 
-unsigned int copy_str_to_wstr(char* src, wchar_t* dst, unsigned int str_len) {
+uint32_t copy_str_to_wstr(char* src, wchar_t* dst, uint32_t str_len) {
 	/*src is null-terminated string*/
 	int i = 0;
 	for (i = 0; src[i] != '\0' && str_len > i; i++) {
@@ -99,7 +102,7 @@ unsigned int copy_str_to_wstr(char* src, wchar_t* dst, unsigned int str_len) {
 	return i;
 }
 
-unsigned int copy_wstr_to_str(wchar_t* src, char* dst, unsigned int max_len) {
+uint32_t copy_wstr_to_str(wchar_t* src, char* dst, uint32_t max_len) {
 	/*src is null-terminated string*/
 	int i = 0;
 	for (i = 0; src[i] != '\0' && max_len > i; i++) {

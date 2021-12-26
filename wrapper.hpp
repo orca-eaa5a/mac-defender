@@ -1,11 +1,10 @@
-#pragma once
+
 #ifndef _RSIG_WRAPPER_
 #define _RSIG_WRAPPER_
 
 #include <stdio.h>
 #include <string>
 #include <functional>
-#include <windows.h>
 
 #include "cb/cb.h"
 #include "mpcore/engineboot.h"
@@ -13,7 +12,7 @@
 #include "mpcore/rsignal.h"
 #include "mpcore/streambuffer.h"
 #include "log.hpp"
-
+#include "winapi/dlls/include/windows.h"
 
 #define _ZEROMEMORY_(buf, sz) memset(buf, 0, sz)
 
@@ -21,8 +20,8 @@ using namespace std;
 
 
 class RsignalWrapper {
-	typedef unsigned int(_cdecl * __rsignal)(void** hKrnl, unsigned int flag, void* bootOption, unsigned int size);
-	typedef uint64_t(_cdecl * notify_cb)(SCAN_REPLY* scan_reply);
+	typedef uint32_t(__cdecl *__rsignal)(void** hKrnl, uint32_t flag, void* bootOption, uint32_t size);
+	typedef uint64_t(__cdecl * notify_cb)(SCAN_REPLY* scan_reply);
 
 private:
 	ENGINE_CONFIG engine_config;
@@ -53,7 +52,7 @@ public:
 			console_log(MSGTYPE::CRIT, "Please set signature location first, show RsignalWrapper::set_vdm_location");
 			return false;
 		}
-		
+	
 		uint32_t res = this->_rsignal(
 			&this->kernel_handle,
 			RSIG_BOOTENGINE,
@@ -84,7 +83,7 @@ public:
 			return false;
 		}
 		this->stream_buffer_descriptor.UserPtr = fp;
-		uint32_t res = this->_rsignal(
+		this->_rsignal(
 			&this->kernel_handle,
 			RSIG_SCAN_STREAMBUFFER,
 			&this->scan_params,

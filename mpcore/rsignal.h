@@ -1,6 +1,8 @@
+#if defined(__WINDOWS__)
+#pragma once
+#endif
 #ifndef __RSIGNAL_H
 #define __RESIGNAL_H
-#pragma once
 
 #define RSIG_BASE                             0x4000
 #define RSIG_UNKNOWN1                         0x4003

@@ -1,9 +1,12 @@
+#if defined(__WINDOWS__)
 #pragma once
+#endif
 #ifndef _LOG_H_
+#define _LOG_H_
 #include <cassert>
 #include <stdio.h>
 
-enum MSGTYPE {
+enum MSGTYPE{
 	INFO = 1,
 	ERR,
 	CRIT,

@@ -1,8 +1,21 @@
+#if defined(__WINDOWS__)
+#pragma once
+#endif
 #ifndef __OPENSCAN_H
 #define __OPENSCAN_H
-#pragma once
-#pragma pack(push, 1)
+
+
+#if defined(__WINDOWS__)
 #include <guiddef.h>
+#else
+typedef struct _GUID {
+  uint32_t  Data1;
+  uint16_t Data2;
+  uint16_t Data3;
+  uint8_t  Data4[8];
+} GUID;
+#endif
+
 
 #define OPENSCAN_VERSION 0x2C6D
 

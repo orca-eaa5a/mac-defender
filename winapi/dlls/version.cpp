@@ -1,15 +1,15 @@
 
 #include "version.h"
 
-unsigned int __stdcall MockVersion::GetFileVersionInfoSizeExW(unsigned int dwFlags, wchar_t* lptstrFilename, unsigned int* lpdwHandle) {
+uint32_t __stdcall MockVersion::GetFileVersionInfoSizeExW(uint32_t dwFlags, wchar_t* lptstrFilename, uint32_t* lpdwHandle) {
 	return 0;
 }
 
-bool __stdcall MockVersion::GetFileVersionInfoExW(unsigned int dwFlags, wchar_t* lptstrFilename, unsigned int dwHandle, unsigned int dwLen, void* lpData) {
+bool __stdcall MockVersion::GetFileVersionInfoExW(uint32_t dwFlags, wchar_t* lptstrFilename, uint32_t dwHandle, uint32_t dwLen, void* lpData) {
 	return true;
 }
 
-bool __stdcall MockVersion::VerQueryValueW(void* pBlock, wchar_t* lpSubBlock, void** lplpBuffer, unsigned int* puLen) {
+bool __stdcall MockVersion::VerQueryValueW(void* pBlock, wchar_t* lpSubBlock, void** lplpBuffer, uint32_t* puLen) {
 	return true;
 }
 

@@ -71,6 +71,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)</OutDir>
+    <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -89,7 +90,8 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>false</ConformanceMode>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);_X64</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);_X64;__WINDOWS__</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -132,6 +134,8 @@
     <ClCompile Include="winapi\dlls\advapi32.cpp" />
     <ClCompile Include="winapi\dlls\bcrypt.cpp" />
     <ClCompile Include="winapi\dlls\crypt32.cpp" />
+    <ClCompile Include="winapi\dlls\ole32.cpp" />
+    <ClCompile Include="winapi\dlls\rpcrt4.cpp" />
     <ClCompile Include="winapi\dlls\version.cpp" />
     <ClCompile Include="winapi\dlls\wintrust.cpp" />
     <ClCompile Include="winapi\dlls\wofutil.cpp" />
@@ -149,6 +153,8 @@
     <ClInclude Include="winapi\dlls\bcrypt.h" />
     <ClInclude Include="winapi\dlls\crypt32.h" />
     <ClInclude Include="winapi\dlls\kernel32.h" />
+    <ClInclude Include="winapi\dlls\ole32.h" />
+    <ClInclude Include="winapi\dlls\rpcrt4.h" />
     <ClInclude Include="winapi\dlls\version.h" />
     <ClInclude Include="winapi\dlls\wintrust.h" />
     <ClInclude Include="winapi\dlls\wofutil.h" />

@@ -1,4 +1,4 @@
-#include <windows.h>
+#include <string.h>
 #include "exports.h"
 
 map<string, map<string, void*>> APIExports::exports;
@@ -34,18 +34,26 @@ bool APIExports::hook_as_ported_api(void* imgbase, char* targ_module, char* targ
 	if (imp_dir_sz) {
 		while (imp_descriptor->Name) {
 			mod_name = (char*)(_imgbase + imp_descriptor->Name);
+#if defined(__WINDOWS__)
 			if (_stricmp(targ_module, mod_name) != 0) {
+#else
+			if (strcasecmp(targ_module, mod_name) != 0) {
+#endif
 				imp_descriptor++;
 				continue;
 			}
-			unsigned long long* pThunkRef = reinterpret_cast<unsigned long long*>(_imgbase + imp_descriptor->OriginalFirstThunk);
-			unsigned long long* pFuncRef = reinterpret_cast<unsigned long long*>(_imgbase + imp_descriptor->FirstThunk);
+#if defined(__WINDOWS__)
+			uint64_t* pThunkRef = reinterpret_cast<uint64_t*>(_imgbase + imp_descriptor->OriginalFirstThunk);
+#else
+			uint64_t* pThunkRef = reinterpret_cast<uint64_t*>(_imgbase + imp_descriptor->DUMMYUNIONNAME.OriginalFirstThunk);
+#endif
+			uint64_t* pFuncRef = reinterpret_cast<uint64_t*>(_imgbase + imp_descriptor->FirstThunk);
 			if (!pThunkRef)
 				pThunkRef = pFuncRef;
 			for (; *pThunkRef; pThunkRef++, pFuncRef++) {
 				IMAGE_IMPORT_BY_NAME* imp_by_name = (IMAGE_IMPORT_BY_NAME*)(_imgbase + *pThunkRef);
-				if (strcmp(imp_by_name->Name, targ_api) == 0) {
-					*pFuncRef = (unsigned long long)hook_addr;
+				if (strcmp((const char*)imp_by_name->Name, (const char*)targ_api) == 0) {
+					*pFuncRef = (uint64_t)hook_addr;
 					return true;
 				}
 			}
