@@ -471,63 +471,552 @@ void __stdcall MockNtdll::MockRtlCaptureContext(void* ContextRecord) {
 }
 
 
-uint64_t GetEstablisherFrame(PCONTEXT Context, PUNWIND_INFO UnwindInfo, uint64_t CodeOffset) {
-	return 0;
-}
+#if defined(__APPLE__)
+bool get_pthread_stack_info(void** pBase, void** pLimit)
+{
+	pthread_t thread = pthread_self();
+	void*     pBaseTemp = pthread_get_stackaddr_np(thread);
+	size_t    stackSize = pthread_get_stacksize_np(thread);
 
-void* __stdcall MockNtdll::RtlVirtualUnwind(uint32_t HandlerType, uint64_t ImageBase, uint64_t ControlPc, PRUNTIME_FUNCTION FunctionEntry, PCONTEXT ContextRecord, void** HandlerData, uint64_t* EstablisherFrame, void* ContextPointers) {
-	PUNWIND_INFO UnwindInfo;
-	uint64_t CodeOffset;
-	uint32_t i, Offset;
-	UNWIND_CODE UnwindCode;
-	uint8_t Reg;
-	uint32_t* LanguageHandler;
-
-	/* Use relative virtual address */
-	ControlPc -= ImageBase;
-
-	/* Sanity checks */
-	if ((ControlPc < FunctionEntry->BeginAddress) ||
-		(ControlPc >= FunctionEntry->EndAddress))
+	if (pBase)
+		*pBase = pBaseTemp;
+	if (pLimit)
 	{
-		return NULL;
+		if (pBaseTemp)
+			*pLimit = (void*)((size_t)pBaseTemp - stackSize);
+		else
+			*pLimit = NULL;
 	}
 
-	/* Get a pointer to the unwind info */
-	UnwindInfo = (PUNWIND_INFO)(ImageBase + FunctionEntry->UnwindData);
+	return (pBaseTemp != NULL);
+}
+#endif
 
-	/* The language specific handler data follows the unwind info */
-	LanguageHandler = (uint32_t*)ALIGN_UP_POINTER_BY(&UnwindInfo->UnwindCode[UnwindInfo->CountOfCodes], sizeof(uint32_t));
-	*HandlerData = (LanguageHandler + 1);
 
-	/* Calculate relative offset to function start */
-	CodeOffset = ControlPc - FunctionEntry->BeginAddress;
+void* GetStackLimit()
+{
+#if defined (__WINDOWS__)
+	NT_TIB64* pTIB = (NT_TIB64*)NtCurrentTeb(); // NtCurrentTeb is defined in <WinNT.h> as an inline call to __readgsqword
+	return (void*)pTIB->StackLimit;
+#elif defined (__APPLE__)
+	void* pBase;
+	if (get_pthread_stack_info(&pBase, NULL))
+		return pBase;
+	void* pStack = __builtin_frame_address(0);
+	return (void*)((uintptr_t)pStack & ~4095); // Round down to nearest page.
+#else
+#endif
+}
 
-	*EstablisherFrame = GetEstablisherFrame(ContextRecord, UnwindInfo, CodeOffset);
+void* GetStackBase()
+{
+#if defined (__WINDOWS__)
+	NT_TIB64* pTIB = (NT_TIB64*)NtCurrentTeb(); // NtCurrentTeb is defined in <WinNT.h> as an inline call to __readgsqword
+	return (void*)pTIB->StackBase;
+#elif defined(__APPLE__)
+	void* pBase;
+	if (GetPthreadStackInfo(&pBase, NULL))
+		return pBase;
+	return NULL; // error...
+#else
+#endif
+}
+
+
+void RtlpGetStackLimits(uint64_t* StackBase, uint64_t* StackLimit) {
+	*StackBase = (uint64_t)GetStackBase();
+	*StackLimit = (uint64_t)GetStackLimit();
+}
+
+uint64_t GetReg(PCONTEXT Context, uint8_t Reg){
+	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a9ace9ccebdf63147ae998d2680681b7f
+	return ((uint64_t*)(&Context->Rax))[Reg];
+}
+
+void SetReg(PCONTEXT Context, uint8_t Reg, uint64_t Value){
+	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a78b2ccd05096b35688393fd4bdc25832
+	((uint64_t*)(&Context->Rax))[Reg] = Value;
+}
+
+void SetXmmReg(PCONTEXT Context, uint8_t Reg, M128A Value) {
+	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a785da3a689cdb0b585a3e189e239bf46
+	((M128A*)(&Context->Xmm0))[Reg] = Value;
+}
+
+void SetRegFromStackValue(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, BYTE Reg, uint64_t* ValuePointer) {
+	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a80af791c0ec8007aaf5bd7b4b7581021
+	SetReg(Context, Reg, *ValuePointer);
+	if (ContextPointers != NULL)
+		ContextPointers->IntegerContext[Reg] = ValuePointer;
+}
+
+
+void SetXmmRegFromStackValue(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, uint8_t Reg, M128A* ValuePointer) {
+	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#abf1d715b64bc14cafc7b227fd9d16f04
+	SetXmmReg(Context, Reg, *ValuePointer);
+	if (ContextPointers != NULL)
+		ContextPointers->FloatingContext[Reg] = ValuePointer;
+}
+
+void PopReg(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, uint8_t Reg){
+	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a1544fd53fb72c4ac529d9a5b9c0cd28e
+	SetRegFromStackValue(Context, ContextPointers, Reg, (uint64_t*)Context->Rsp);
+	Context->Rsp += sizeof(uint64_t);
+}
+
+uint32_t UnwindOpSlots(UNWIND_CODE UnwindCode){
+	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a966d8765847156957762a8a74b411e06
+	uint8_t UnwindOpExtraSlotTable[] = {
+		0, // UWOP_PUSH_NONVOL
+		1, // UWOP_ALLOC_LARGE (or 3, special cased in lookup code)
+		0, // UWOP_ALLOC_SMALL
+		0, // UWOP_SET_FPREG
+		1, // UWOP_SAVE_NONVOL
+		2, // UWOP_SAVE_NONVOL_FAR
+		1, // UWOP_EPILOG // previously UWOP_SAVE_XMM
+		2, // UWOP_SPARE_CODE // previously UWOP_SAVE_XMM_FAR
+		1, // UWOP_SAVE_XMM128
+		2, // UWOP_SAVE_XMM128_FAR
+		0, // UWOP_PUSH_MACHFRAME
+		2, // UWOP_SET_FPREG_LARGE
+	};
+
+	if ((UnwindCode.UnwindOp == UWOP_ALLOC_LARGE) && (UnwindCode.OpInfo != 0))
+		return 3;
+	else
+		return UnwindOpExtraSlotTable[UnwindCode.UnwindOp] + 1;
+}
+
+uint64_t GetEstablisherFrame(PCONTEXT Context, PUNWIND_INFO UnwindInfo, uint64_t CodeOffset) {
+	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a57ef599c611dcdefb93d5bda32af4819
+	uint32_t i;
+	if (UnwindInfo->FrameRegister == 0)
+		return Context->Rsp;
+
+	if ((CodeOffset >= UnwindInfo->SizeOfProlog) ||
+		((UnwindInfo->Flags & UNW_FLAG_CHAININFO) != 0)){
+		return GetReg(Context, UnwindInfo->FrameRegister) - UnwindInfo->FrameOffset * 16;
+	}
+	for (i = 0; i < UnwindInfo->CountOfCodes; i += UnwindOpSlots(UnwindInfo->UnwindCode[i])){
+		if (UnwindInfo->UnwindCode[i].UnwindOp == UWOP_SET_FPREG)
+			return GetReg(Context, UnwindInfo->FrameRegister) - UnwindInfo->FrameOffset * 16;
+	}
+
+	return Context->Rsp;
+}
+
+void __stdcall MockNtdll::MockRtlUnwind(void* TargetFrame, PVOID TargetIp, PEXCEPTION_RECORD ExceptionRecord, PVOID ReturnValue) {
+	PEXCEPTION_REGISTRATION_RECORD RegistrationFrame, OldFrame;
+	DISPATCHER_CONTEXT DispatcherContext;
+	PEXCEPTION_ROUTINE ExceptionRoutine;
+	EXCEPTION_DISPOSITION Disposition;
+	ULONG_PTR StackLow, StackHigh;
+	CONTEXT Context;
+	uint64_t ImageBase, EstablisherFrame;
+	PUNWIND_INFO pUnwindInfo;
+	PSCOPE_TABLE pScopTable;
+	PScopeRecord pScopRecord;
 
 	
-	return NULL;
 }
-void __stdcall MockNtdll::MockRtlUnwindEx(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue, void* ContextRecord, void* HistoryTable) {
+
+bool RtlpTryToUnwindEpilog(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, uint64_t ImageBase, PRUNTIME_FUNCTION FunctionEntry) {
+	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#ab1254c449095abb6946019d9f3a00fd7
+	CONTEXT LocalContext;
+	uint8_t *InstrPtr;
+	uint32_t Instr;
+	uint8_t Reg, Mod;
+	uint64_t EndAddress;
+
+	LocalContext = *Context;
+	InstrPtr = (uint8_t*)LocalContext.Rip;
+	Instr = *(uint32_t*)InstrPtr;
+
+	if ((Instr & 0x00fffdff) == 0x00c48148){
+		if ((Instr & 0x0000ff00) == 0x8300){
+			LocalContext.Rsp += Instr >> 24;
+			InstrPtr += 4;
+		}
+		else{
+			LocalContext.Rsp += *(uint32_t*)(InstrPtr + 3);
+			InstrPtr += 7;
+		}
+	}
+	else if ((Instr & 0x38fffe) == 0x208d48){
+		Reg = ((Instr << 8) | (Instr >> 16)) & 0x7;
+		LocalContext.Rsp = GetReg(&LocalContext, Reg);
+		Mod = (Instr >> 22) & 0x3;
+		if (Mod == 0){
+			InstrPtr += 3;
+		}
+		else if (Mod == 1){
+			LocalContext.Rsp += Instr >> 24;
+			InstrPtr += 4;
+		}
+		else if (Mod == 2){
+			LocalContext.Rsp += *(uint32_t*)(InstrPtr + 3);
+			InstrPtr += 7;
+		}
+	}
+	EndAddress = FunctionEntry->EndAddress + ImageBase - 1;
+	while ((uint64_t)InstrPtr < EndAddress){
+		Instr = *(uint32_t*)InstrPtr;
+		if ((Instr & 0xf8) == 0x58){
+			Reg = Instr & 0x7;
+			PopReg(&LocalContext, ContextPointers, Reg);
+			InstrPtr++;
+			continue;
+		}
+		if ((Instr & 0xf8fb) == 0x5841){
+			Reg = ((Instr >> 8) & 0x7) + 8;
+			PopReg(&LocalContext, ContextPointers, Reg);
+			InstrPtr += 2;
+			continue;
+		}
+		return false;
+	}
+	if ((uint64_t)InstrPtr != EndAddress){
+		assert((uint64_t)InstrPtr <= EndAddress);
+		return false;
+	}
+	if (*InstrPtr != 0xc3){
+		// continue forcefully
+		return false;
+	}
+	LocalContext.Rip = *(uint64_t*)LocalContext.Rsp;
+	LocalContext.Rsp += sizeof(uint64_t);
+
+	*Context = LocalContext;
+	return true;
+}
+
+PEXCEPTION_ROUTINE RtlVirtualUnwind(
+	uint32_t HandlerType,
+	uint64_t ImageBase,
+	uint64_t ControlPc,
+	PRUNTIME_FUNCTION 	FunctionEntry,
+	PCONTEXT 	Context,
+	void** HandlerData,
+	uint64_t* EstablisherFrame,
+	PKNONVOLATILE_CONTEXT_POINTERS 	ContextPointers
+)
+// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a03c91b6c437066272ebc2c2fff051a4c
+	{
+		PUNWIND_INFO UnwindInfo;
+		uint64_t CodeOffset;
+		uint32_t i, Offset;
+		UNWIND_CODE UnwindCode;
+		uint8_t Reg;
+		uint32_t* LanguageHandler;
+
+		ControlPc -= ImageBase;
+
+		if ((ControlPc < FunctionEntry->BeginAddress) ||
+			(ControlPc >= FunctionEntry->EndAddress))
+		{
+			return NULL;
+		}
+		UnwindInfo = (PUNWIND_INFO)(ImageBase + FunctionEntry->UnwindData);
+		LanguageHandler = (uint32_t*)ALIGN_UP_POINTER_BY(&UnwindInfo->UnwindCode[UnwindInfo->CountOfCodes], sizeof(uint32_t));
+		*HandlerData = (LanguageHandler + 1);
+		CodeOffset = ControlPc - FunctionEntry->BeginAddress;
+
+		*EstablisherFrame = GetEstablisherFrame(Context, UnwindInfo, CodeOffset);
+		if (CodeOffset > UnwindInfo->SizeOfProlog)
+		{
+			if (RtlpTryToUnwindEpilog(Context, ContextPointers, ImageBase, FunctionEntry))
+			{
+				return NULL;
+			}
+		}
+		i = 0;
+		while ((i < UnwindInfo->CountOfCodes) &&
+			(UnwindInfo->UnwindCode[i].CodeOffset > CodeOffset))
+		{
+			i += UnwindOpSlots(UnwindInfo->UnwindCode[i]);
+		}
+
+	RepeatChainedInfo:
+		while (i < UnwindInfo->CountOfCodes)
+		{
+			UnwindCode = UnwindInfo->UnwindCode[i];
+			switch (UnwindCode.UnwindOp)
+			{
+			case UWOP_PUSH_NONVOL:
+				Reg = UnwindCode.OpInfo;
+				PopReg(Context, ContextPointers, Reg);
+				i++;
+				break;
+
+			case UWOP_ALLOC_LARGE:
+				if (UnwindCode.OpInfo)
+				{
+					Offset = *(uint32_t*)(&UnwindInfo->UnwindCode[i + 1]);
+					Context->Rsp += Offset;
+					i += 3;
+				}
+				else
+				{
+					Offset = UnwindInfo->UnwindCode[i + 1].FrameOffset;
+					Context->Rsp += Offset * 8;
+					i += 2;
+				}
+				break;
+
+			case UWOP_ALLOC_SMALL:
+				Context->Rsp += (UnwindCode.OpInfo + 1) * 8;
+				i++;
+				break;
+
+			case UWOP_SET_FPREG:
+				Reg = UnwindInfo->FrameRegister;
+				Context->Rsp = GetReg(Context, Reg) - UnwindInfo->FrameOffset * 16;
+				i++;
+				break;
+
+			case UWOP_SAVE_NONVOL:
+				Reg = UnwindCode.OpInfo;
+				Offset = *(USHORT*)(&UnwindInfo->UnwindCode[i + 1]);
+				SetRegFromStackValue(Context, ContextPointers, Reg, (uint64_t*)Context->Rsp + Offset);
+				i += 2;
+				break;
+
+			case UWOP_SAVE_NONVOL_FAR:
+				Reg = UnwindCode.OpInfo;
+				Offset = *(uint32_t*)(&UnwindInfo->UnwindCode[i + 1]);
+				SetRegFromStackValue(Context, ContextPointers, Reg, (uint64_t*)Context->Rsp + Offset);
+				i += 3;
+				break;
+
+			case UWOP_EPILOG:
+				i += 1;
+				break;
+
+			case UWOP_SPARE_CODE:
+				assert(0);
+				i += 2;
+				break;
+
+			case UWOP_SAVE_XMM128:
+				Reg = UnwindCode.OpInfo;
+				Offset = *(uint16_t*)(&UnwindInfo->UnwindCode[i + 1]);
+				SetXmmRegFromStackValue(Context, ContextPointers, Reg, (M128A*)(Context->Rsp + Offset));
+				i += 2;
+				break;
+
+			case UWOP_SAVE_XMM128_FAR:
+				Reg = UnwindCode.OpInfo;
+				Offset = *(uint32_t*)(&UnwindInfo->UnwindCode[i + 1]);
+				SetXmmRegFromStackValue(Context, ContextPointers, Reg, (M128A*)(Context->Rsp + Offset));
+				i += 3;
+				break;
+
+			case UWOP_PUSH_MACHFRAME:
+				Context->Rsp += UnwindCode.OpInfo * sizeof(uint64_t);
+				Context->Rip = *(uint64_t*)(Context->Rsp + 0x00);
+				Context->SegCs = *(uint64_t*)(Context->Rsp + 0x08);
+				Context->EFlags = *(uint64_t*)(Context->Rsp + 0x10);
+				Context->SegSs = *(uint64_t*)(Context->Rsp + 0x20);
+				Context->Rsp = *(uint64_t*)(Context->Rsp + 0x18);
+				assert((i + 1) == UnwindInfo->CountOfCodes);
+				goto Exit;
+			}
+		}
+		if (UnwindInfo->Flags & UNW_FLAG_CHAININFO)
+		{
+			/* See https://docs.microsoft.com/en-us/cpp/build/exception-handling-x64?view=msvc-160#chained-unwind-info-structures */
+			FunctionEntry = (PRUNTIME_FUNCTION)&(UnwindInfo->UnwindCode[(UnwindInfo->CountOfCodes + 1) & ~1]);
+			UnwindInfo = (PUNWIND_INFO)(ImageBase + FunctionEntry->UnwindData);
+			i = 0;
+			goto RepeatChainedInfo;
+		}
+		if (Context->Rsp != 0)
+		{
+			Context->Rip = *(uint64_t*)Context->Rsp;
+			Context->Rsp += sizeof(uint64_t);
+		}
+
+	Exit:
+		if (UnwindInfo->Flags & (UNW_FLAG_EHANDLER | UNW_FLAG_UHANDLER))
+		{
+			return (PEXCEPTION_ROUTINE)(ImageBase + *LanguageHandler);
+		}
+
+		return NULL;
+}
+
+void RtlpUnwindInternal(
+	// ref : https://doxygen.reactos.org/d6/dea/sdk_2lib_2rtl_2amd64_2except_8c.html#abfbd00808c64b2e9fd3b0b63dd181135
+	void* 	TargetFrame,
+	void* 	TargetIp,
+	PEXCEPTION_RECORD 	ExceptionRecord,
+	void* 	ReturnValue,
+	PCONTEXT 	ContextRecord,
+	struct _UNWIND_HISTORY_TABLE * 	HistoryTable,
+	uint32_t 	HandlerType
+){
+	DISPATCHER_CONTEXT DispatcherContext;
+	PEXCEPTION_ROUTINE ExceptionRoutine;
+	EXCEPTION_DISPOSITION Disposition;
+	PRUNTIME_FUNCTION FunctionEntry;
+	ULONG_PTR StackLow, StackHigh;
+	uint64_t ImageBase, EstablisherFrame;
+	CONTEXT UnwindContext;
+	RtlpGetStackLimits(&StackLow, &StackHigh);
+
+	if (TargetFrame != NULL)
+	{
+		StackHigh = (uint64_t)TargetFrame + 1;
+	}
+
+	UnwindContext = *ContextRecord;
+
+	DispatcherContext.ContextRecord = ContextRecord;
+	DispatcherContext.HistoryTable = HistoryTable;
+	DispatcherContext.TargetIp = (uint64_t)TargetIp;
+
+	while (true)
+	{
+		FunctionEntry = RtlLookupFunctionEntry(UnwindContext.Rip, &ImageBase, NULL);
+		if (FunctionEntry == NULL)
+		{
+			UnwindContext.Rip = *(uint64_t*)UnwindContext.Rsp;
+			UnwindContext.Rsp += sizeof(uint64_t);
+			continue;
+		}
+
+		/* Do a virtual unwind to get the next frame */
+		ExceptionRoutine = RtlVirtualUnwind(
+								HandlerType,
+								ImageBase,
+								UnwindContext.Rip,
+								FunctionEntry,
+								&UnwindContext,
+								&DispatcherContext.HandlerData,
+								&EstablisherFrame,
+								NULL
+							);
+
+		if ((EstablisherFrame < StackLow) || (EstablisherFrame >= StackHigh) || (EstablisherFrame & 7))
+		{
+
+			if (HandlerType == UNW_FLAG_EHANDLER)
+			{
+				ExceptionRecord->ExceptionFlags |= EXCEPTION_STACK_INVALID;
+				return;
+			}
+		}
+
+		if (ExceptionRoutine != NULL)
+		{
+			if (EstablisherFrame == (uint64_t)TargetFrame){
+				ExceptionRecord->ExceptionFlags |= EXCEPTION_TARGET_UNWIND;
+			}
+
+			DispatcherContext.ControlPc = ContextRecord->Rip;
+			DispatcherContext.ImageBase = ImageBase;
+			DispatcherContext.FunctionEntry = FunctionEntry;
+			DispatcherContext.LanguageHandler = ExceptionRoutine;
+			DispatcherContext.EstablisherFrame = EstablisherFrame;
+			DispatcherContext.ScopeIndex = 0;
+
+			UnwindContext.Rax = (uint64_t)ReturnValue;
+			do
+			{
+				Disposition = ExceptionRoutine(ExceptionRecord,
+					(void*)EstablisherFrame,
+					&UnwindContext,
+					&DispatcherContext);
+
+				ExceptionRecord->ExceptionFlags &= ~(EXCEPTION_TARGET_UNWIND |
+					EXCEPTION_COLLIDED_UNWIND);
+
+				if (HandlerType == UNW_FLAG_EHANDLER)
+				{
+					if (Disposition == ExceptionContinueExecution)
+					{
+						if (ExceptionRecord->ExceptionFlags & EXCEPTION_NONCONTINUABLE){
+							// not ported!!	
+						}
+						return;
+					}
+					else if (Disposition == ExceptionNestedException){
+						// not ported!!
+					}
+				}
+
+				if (Disposition == ExceptionCollidedUnwind){
+					// not ported!!
+				}
+
+				
+				if (Disposition != ExceptionContinueSearch){
+					// not ported!!
+				}
+			} while (ExceptionRecord->ExceptionFlags & EXCEPTION_COLLIDED_UNWIND);
+		}
+
+		if ((EstablisherFrame < StackLow) ||
+			(EstablisherFrame > StackHigh) ||
+			(EstablisherFrame & 7))
+		{
+
+			if (UnwindContext.Rip == ContextRecord->Rip){
+				// not ported!!
+			}
+			else{
+				// not ported!!
+			}
+		}
+
+		if (EstablisherFrame == (uint64_t)TargetFrame)
+		{
+			break;
+		}
+
+		/* We have successfully unwound a frame. Copy the unwind context back. */
+		*ContextRecord = UnwindContext;
+	}
+	if (ExceptionRecord->ExceptionCode != STATUS_UNWIND_CONSOLIDATE)
+	{
+		ContextRecord->Rip = (uint64_t)TargetIp;
+	}
+	ContextRecord->Rax = (uint64_t)ReturnValue;
+	RtlRestoreContext(ContextRecord, ExceptionRecord);
+	return;
+}
+
+bool __stdcall MockNtdll::MockRtlUnwindEx(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue, void* ContextRecord, void* HistoryTable) {
 	//it is directly called, not called by RtlDispatchException
 #if defined(__WINDOWS__)
+	PCONTEXT ctx = (PCONTEXT)ContextRecord;
 	EXCEPTION_RECORD LocalExceptionRecord;
-	RtlCaptureContext((PCONTEXT)ContextRecord);
-	PCONTEXT pCtx = (PCONTEXT)ContextRecord;
+	RtlCaptureContext(ctx);
 	if (ExceptionRecord == NULL)
 	{
 		/* No exception record was passed, so set up a local one */
-		LocalExceptionRecord.ExceptionCode = 0xC0000027;
-		LocalExceptionRecord.ExceptionAddress = (PVOID)pCtx->Rip;
+		LocalExceptionRecord.ExceptionCode = 0xC0000028;
+		LocalExceptionRecord.ExceptionAddress = (PVOID)ctx->Rip;
 		LocalExceptionRecord.ExceptionRecord = NULL;
 		LocalExceptionRecord.NumberParameters = 0;
 		ExceptionRecord = &LocalExceptionRecord;
-	}	
+	}
+	RtlpUnwindInternal(TargetFrame, TargetIp, (EXCEPTION_RECORD*)ExceptionRecord, ReturnValue, (PCONTEXT)ContextRecord, (_UNWIND_HISTORY_TABLE*)HistoryTable, UNW_FLAG_UHANDLER);
 
 #else
-
+	
 #endif
-	RtlUnwindEx(TargetFrame, TargetIp, (PEXCEPTION_RECORD)ExceptionRecord, ReturnValue, (PCONTEXT)ContextRecord, (PUNWIND_HISTORY_TABLE)HistoryTable);
+	/*
+	//RtlpUnwindInternal(TargetFrame, TargetIp, (PEXCEPTION_RECORD)ExceptionRecord, ReturnValue, (PCONTEXT)ContextRecord, (PUNWIND_HISTORY_TABLE)HistoryTable, UNW_FLAG_UHANDLER);
+	//SetThreadContext(GetCurrentThread(), (PCONTEXT)ContextRecord);
+	if (HistoryTable == NULL) {
+		MockRtlUnwind(TargetFrame, TargetIp, (PEXCEPTION_RECORD)ExceptionRecord, ReturnValue);
+	}
+	else {
+		RtlUnwindEx(TargetFrame, TargetIp, (PEXCEPTION_RECORD)ExceptionRecord, ReturnValue, (PCONTEXT)ContextRecord, (PUNWIND_HISTORY_TABLE)HistoryTable);
+	}
+	*/
+	return true;
 }
 
 uint32_t __stdcall MockNtdll::RtlNtStatusToDosError(NTSTATUS Status) {

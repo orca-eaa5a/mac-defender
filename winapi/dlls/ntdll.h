@@ -52,48 +52,79 @@ typedef struct _KEY_VALUE_PARTIAL_INFORMATION {
 #define ALIGN_DOWN_BY(size, align) ((unsigned long long)(size) & ~((unsigned long long)(align) - 1))
 #define ALIGN_UP_BY(size, align) (ALIGN_DOWN_BY(((unsigned long long)(size) + align - 1), align))
 #define ALIGN_UP_POINTER_BY(ptr, align) ((void*)ALIGN_UP_BY(ptr, align))
-typedef enum _UNWIND_OP_CODES
-{
-	UWOP_PUSH_NONVOL = 0,
-	UWOP_ALLOC_LARGE,
-	UWOP_ALLOC_SMALL,
-	UWOP_SET_FPREG,
-	UWOP_SAVE_NONVOL,
-	UWOP_SAVE_NONVOL_FAR,
-	UWOP_SAVE_XMM128,
-	UWOP_SAVE_XMM128_FAR,
-	UWOP_PUSH_MACHFRAME
-} UNWIND_CODE_OPS;
 
-typedef union _UNWIND_CODE
-{
-	struct
-	{
-		uint8_t CodeOffset;
-		uint8_t UnwindOp : 4;
-		uint8_t OpInfo : 4;
-	} u;
-	uint16_t FrameOffset;
+#define UNW_FLAG_NHANDLER 0x0
+#define UNW_FLAG_EHANDLER 0x1
+#define UNW_FLAG_UHANDLER 0x2
+#define UNW_FLAG_CHAININFO 0x4
+
+#define UNWIND_HISTORY_TABLE_NONE 0
+#define UNWIND_HISTORY_TABLE_GLOBAL 1
+#define UNWIND_HISTORY_TABLE_LOCAL 2
+
+#define UWOP_PUSH_NONVOL 0
+#define UWOP_ALLOC_LARGE 1
+#define UWOP_ALLOC_SMALL 2
+#define UWOP_SET_FPREG 3
+#define UWOP_SAVE_NONVOL 4
+#define UWOP_SAVE_NONVOL_FAR 5
+#if 0 // These are deprecated / not for x64
+#define UWOP_SAVE_XMM 6
+#define UWOP_SAVE_XMM_FAR 7
+#else
+#define UWOP_EPILOG 6
+#define UWOP_SPARE_CODE 7
+#endif
+#define UWOP_SAVE_XMM128 8
+#define UWOP_SAVE_XMM128_FAR 9
+#define UWOP_PUSH_MACHFRAME 10
+
+typedef union _UNWIND_CODE {
+	struct {
+		unsigned char CodeOffset;
+		unsigned char UnwindOp : 4;
+		unsigned char OpInfo : 4;
+	};
+	USHORT FrameOffset;
 } UNWIND_CODE, *PUNWIND_CODE;
 
-typedef struct _UNWIND_INFO
-{
-	uint8_t Version : 3;
-	uint8_t Flags : 5;
-	uint8_t SizeOfProlog;
-	uint8_t CountOfCodes;
-	uint8_t FrameRegister : 4;
-	uint8_t FrameOffset : 4;
-	UNWIND_CODE UnwindCode[1]; /* actually CountOfCodes (aligned) */
-/*
- *  union
- *  {
- *      OPTIONAL ULONG ExceptionHandler;
- *      OPTIONAL ULONG FunctionEntry;
- *  };
- *  OPTIONAL ULONG ExceptionData[];
- */
+typedef struct _UNWIND_INFO {
+	unsigned char Version : 3, Flags : 5;          // + 0x00 - Unwind info structure version
+	unsigned char SizeOfProlog;         // + 0x01
+	unsigned char CountOfCodes;         // + 0x02 - Count of unwind codes
+	unsigned char FrameRegister : 4, FrameOffset : 4;    // + 0x03
+	UNWIND_CODE UnwindCode[1];  // + 0x04 - Unwind code array
+	UNWIND_CODE MoreUnwindCode[1];
+	union
+	{
+		OPTIONAL ULONG ExceptionHandler;
+		OPTIONAL ULONG FunctionEntry;
+	};
+	OPTIONAL ULONG ExceptionData[];
+
 } UNWIND_INFO, *PUNWIND_INFO;
+
+
+typedef struct _ScopeRecord
+{
+	ULONG BeginAddress;
+	ULONG EndAddress;
+	ULONG HandlerAddress;
+	ULONG JumpTarget;
+} ScopeRecord, *PScopeRecord;
+
+struct _EXCEPTION_FRAME;
+
+typedef EXCEPTION_DISPOSITION(*PEXCEPTION_HANDLER)(
+	struct _EXCEPTION_RECORD *ExceptionRecord,
+	struct _EXCEPTION_FRAME *EstablisherFrame,
+	struct _CONTEXT *ContextRecord,
+	struct _EXCEPTION_FRAME **DispatcherContext);
+
+typedef struct _EXCEPTION_FRAME {
+	struct _EXCEPTION_FRAME *prev;
+	PEXCEPTION_HANDLER handler;
+} EXCEPTION_FRAME, *PEXCEPTION_FRAME;
 
 class MockNtdll {
 public:
@@ -134,8 +165,7 @@ public:
 		APIExports::add_hook_info("ntdll.dll", "RtlPcToFileHeader", (void*)RtlPcToFileHeader);
 		APIExports::add_hook_info("ntdll.dll", "RtlImageDirectoryEntryToData", (void*)RtlImageDirectoryEntryToData);
 		APIExports::add_hook_info("ntdll.dll", "RtlCaptureContext", (void*)MockRtlCaptureContext);
-		APIExports::add_hook_info("ntdll.dll", "RtlVirtualUnwind", (void*)RtlVirtualUnwind);
-		//APIExports::add_hook_info("ntdll.dll", "RtlUnwind", (void*)RtlUnwind);
+		APIExports::add_hook_info("ntdll.dll", "RtlUnwind", (void*)MockRtlUnwind);
 		APIExports::add_hook_info("ntdll.dll", "RtlUnwindEx", (void*)MockRtlUnwindEx);
 		APIExports::add_hook_info("ntdll.dll", "RtlNtStatusToDosError", (void*)RtlNtStatusToDosError);
 		
@@ -184,8 +214,8 @@ public:
 	static void* __stdcall MockNtdll::RtlPcToFileHeader(void* PcValue, void** BaseOfImage);
 	static void* __stdcall MockNtdll::RtlImageDirectoryEntryToData(void* BaseAddress, bool MappedAsImage, uint16_t Directory, uint32_t* Size);
 	static void __stdcall MockNtdll::MockRtlCaptureContext(void* ContextRecord);
-	static void* __stdcall MockNtdll::RtlVirtualUnwind(uint32_t HandlerType, uint64_t ImageBase, uint64_t ControlPc, PRUNTIME_FUNCTION FunctionEntry, PCONTEXT ContextRecord, void** HanderData, uint64_t* EstablisherFrame, void* ContextPointers);
-	static void __stdcall MockNtdll::MockRtlUnwindEx(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue, void* ContextRecord, void* HistoryTable);
+	static void __stdcall MockNtdll::MockRtlUnwind(void* TargetFrame, PVOID TargetIp, PEXCEPTION_RECORD ExceptionRecord, PVOID ReturnValue);
+	static bool __stdcall MockNtdll::MockRtlUnwindEx(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue, void* ContextRecord, void* HistoryTable);
 	static uint32_t __stdcall MockNtdll::RtlNtStatusToDosError(NTSTATUS Status);
 
 	
@@ -232,8 +262,8 @@ public:
 	static void* __stdcall RtlPcToFileHeader(void* PcValue, void** BaseOfImage);
 	static void* __stdcall RtlImageDirectoryEntryToData(void* BaseAddress, bool MappedAsImage, uint16_t Directory, uint32_t* Size);
 	static void __stdcall MockRtlCaptureContext(void* ContextRecord);
-	static void* __stdcall RtlVirtualUnwind(uint32_t HandlerType, uint64_t ImageBase, uint64_t ControlPc, void* FunctionEntry, void* ContextRecord, void** HanderData, uint64_t* EstablisherFrame, void* ContextPointers);
-	static void __stdcall MockRtlUnwindEx(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue, void* ContextRecord, void* HistoryTable);
+	static void* __stdcall MockRtlVirtualUnwind(uint32_t HandlerType, uint64_t ImageBase, uint64_t ControlPc, void* FunctionEntry, void* ContextRecord, void** HanderData, uint64_t* EstablisherFrame, void* ContextPointers);
+	static bool __stdcall MockRtlUnwindEx(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue, void* ContextRecord, void* HistoryTable);
 	static uint32_t __stdcall RtlNtStatusToDosError(NTSTATUS Status);
 #endif
 };
