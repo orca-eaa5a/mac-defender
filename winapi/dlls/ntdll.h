@@ -165,8 +165,11 @@ public:
 		APIExports::add_hook_info("ntdll.dll", "RtlPcToFileHeader", (void*)RtlPcToFileHeader);
 		APIExports::add_hook_info("ntdll.dll", "RtlImageDirectoryEntryToData", (void*)RtlImageDirectoryEntryToData);
 		APIExports::add_hook_info("ntdll.dll", "RtlCaptureContext", (void*)MockRtlCaptureContext);
+		APIExports::add_hook_info("ntdll.dll", "RtlRestoreContext", (void*)MockRtlRestoreContext);
 		APIExports::add_hook_info("ntdll.dll", "RtlUnwind", (void*)MockRtlUnwind);
 		APIExports::add_hook_info("ntdll.dll", "RtlUnwindEx", (void*)MockRtlUnwindEx);
+		APIExports::add_hook_info("ntdll.dll", "RtlVirtualUnwind", (void*)RtlVirtualUnwind);
+
 		APIExports::add_hook_info("ntdll.dll", "RtlNtStatusToDosError", (void*)RtlNtStatusToDosError);
 		
 
@@ -206,7 +209,7 @@ public:
 	static uint32_t __stdcall MockNtdll::RtlImageNtHeaderEx(uint32_t Flags, void* base, uint64_t Size, PIMAGE_NT_HEADERS * OutHeaders);
 	static bool __stdcall MockNtdll::RtlAddFunctionTable(void* FunctionTable, uint32_t EntryCount, uint64_t BaseAddress);
 	static bool __stdcall MockNtdll::RtlDeleteFunctionTable(void* FunctionTable);
-	static void* __stdcall MockNtdll::RtlLookupFunctionEntry(uint64_t ControlPc, uint64_t* ImageBase, void* HistoryTable);
+	static PRUNTIME_FUNCTION __stdcall MockNtdll::RtlLookupFunctionEntry(uint64_t ControlPc, uint64_t* ImageBase, void* HistoryTable);
 	static PRUNTIME_FUNCTION __stdcall MockNtdll::RtlLookupFunctionTable(uint64_t ControlPc, uint64_t* ImageBase, uint32_t* Length);
 	static wchar_t __stdcall MockNtdll::RtlpUpcaseUnicodeChar(wchar_t Source);
 	static bool __stdcall MockNtdll::RtlPrefixUnicodeString(PUNICODE_STRING String1, PUNICODE_STRING String2, bool CaseInSensitive);
@@ -214,8 +217,19 @@ public:
 	static void* __stdcall MockNtdll::RtlPcToFileHeader(void* PcValue, void** BaseOfImage);
 	static void* __stdcall MockNtdll::RtlImageDirectoryEntryToData(void* BaseAddress, bool MappedAsImage, uint16_t Directory, uint32_t* Size);
 	static void __stdcall MockNtdll::MockRtlCaptureContext(void* ContextRecord);
+	static void __stdcall MockNtdll::MockRtlRestoreContext(void* ContextRecord, PEXCEPTION_RECORD ExceptionRecord);
 	static void __stdcall MockNtdll::MockRtlUnwind(void* TargetFrame, PVOID TargetIp, PEXCEPTION_RECORD ExceptionRecord, PVOID ReturnValue);
 	static bool __stdcall MockNtdll::MockRtlUnwindEx(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue, void* ContextRecord, void* HistoryTable);
+	static PEXCEPTION_ROUTINE __stdcall MockNtdll::RtlVirtualUnwind(
+		uint32_t HandlerType,
+		uint64_t ImageBase,
+		uint64_t ControlPc,
+		PRUNTIME_FUNCTION 	FunctionEntry,
+		PCONTEXT 	Context,
+		void** HandlerData,
+		uint64_t* EstablisherFrame,
+		PKNONVOLATILE_CONTEXT_POINTERS 	ContextPointers
+	);
 	static uint32_t __stdcall MockNtdll::RtlNtStatusToDosError(NTSTATUS Status);
 
 	
@@ -254,7 +268,7 @@ public:
 	static uint32_t __stdcall RtlImageNtHeaderEx(uint32_t Flags, void* base, uint64_t Size, PIMAGE_NT_HEADERS * OutHeaders);
 	static bool __stdcall RtlAddFunctionTable(void* FunctionTable, uint32_t EntryCount, uint64_t BaseAddress);
 	static bool __stdcall RtlDeleteFunctionTable(void* FunctionTable);
-	static void* __stdcall RtlLookupFunctionEntry(uint64_t ControlPc, uint64_t* ImageBase, void* HistoryTable);
+	static PRUNTIME_FUNCTION __stdcall RtlLookupFunctionEntry(uint64_t ControlPc, uint64_t* ImageBase, void* HistoryTable);
 	static PRUNTIME_FUNCTION __stdcall RtlLookupFunctionTable(uint64_t ControlPc, uint64_t* ImageBase, uint32_t* Length);
 	static wchar_t __stdcall RtlpUpcaseUnicodeChar(wchar_t Source);
 	static bool __stdcall RtlPrefixUnicodeString(PUNICODE_STRING String1, PUNICODE_STRING String2, bool CaseInSensitive);
@@ -262,8 +276,17 @@ public:
 	static void* __stdcall RtlPcToFileHeader(void* PcValue, void** BaseOfImage);
 	static void* __stdcall RtlImageDirectoryEntryToData(void* BaseAddress, bool MappedAsImage, uint16_t Directory, uint32_t* Size);
 	static void __stdcall MockRtlCaptureContext(void* ContextRecord);
-	static void* __stdcall MockRtlVirtualUnwind(uint32_t HandlerType, uint64_t ImageBase, uint64_t ControlPc, void* FunctionEntry, void* ContextRecord, void** HanderData, uint64_t* EstablisherFrame, void* ContextPointers);
 	static bool __stdcall MockRtlUnwindEx(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue, void* ContextRecord, void* HistoryTable);
+	static PEXCEPTION_ROUTINE __stdcall RtlVirtualUnwind(
+		uint32_t HandlerType,
+		uint64_t ImageBase,
+		uint64_t ControlPc,
+		PRUNTIME_FUNCTION 	FunctionEntry,
+		PCONTEXT 	Context,
+		void** HandlerData,
+		uint64_t* EstablisherFrame,
+		PKNONVOLATILE_CONTEXT_POINTERS 	ContextPointers
+	);
 	static uint32_t __stdcall RtlNtStatusToDosError(NTSTATUS Status);
 #endif
 };

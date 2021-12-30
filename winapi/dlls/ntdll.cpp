@@ -315,7 +315,7 @@ bool __stdcall MockNtdll::RtlDeleteFunctionTable(void* FunctionTable) {
 	return true;
 }
 
-void* __stdcall MockNtdll::RtlLookupFunctionEntry(uint64_t ControlPc, uint64_t* ImageBase, void* HistoryTable) {
+PRUNTIME_FUNCTION __stdcall MockNtdll::RtlLookupFunctionEntry(uint64_t ControlPc, uint64_t* ImageBase, void* HistoryTable) {
 	PRUNTIME_FUNCTION FunctionTable, FunctionEntry;
 	uint32_t TableLength;
 	uint32_t IndexLo, IndexHi, IndexMid;
@@ -417,8 +417,25 @@ wchar_t* __stdcall MockNtdll::RtlIpv4AddressToStringW(in_addr *Addr, wchar_t* S)
 }
 
 void* __stdcall MockNtdll::RtlPcToFileHeader(void* PcValue, void** BaseOfImage) {
-	*BaseOfImage = (void*)MockNTKrnl::engine_base;
-	return (void*)MockNTKrnl::engine_base; // there is only one module
+	PIMAGE_DOS_HEADER dos_header = nullptr;
+	PIMAGE_NT_HEADERS64 nt_header = nullptr;
+	PIMAGE_OPTIONAL_HEADER64 opt_header = nullptr;
+	uint64_t TargetPC = (uint64_t)PcValue;
+	dos_header = (PIMAGE_DOS_HEADER)MockNTKrnl::engine_base;
+	nt_header = (PIMAGE_NT_HEADERS64)(MockNTKrnl::engine_base + dos_header->e_lfanew);
+	opt_header = (PIMAGE_OPTIONAL_HEADER64)(&nt_header->OptionalHeader);
+	
+	// there is only two case
+	if (MockNTKrnl::engine_base <= TargetPC && TargetPC <= MockNTKrnl::engine_base + opt_header->SizeOfImage)
+		*BaseOfImage = (void*)MockNTKrnl::engine_base; // mpengine
+	else
+#if defined(__WINDOWS__)
+		*BaseOfImage = (void*)GetModuleHandle(NULL); //self
+#elif defined(__APPLE__)
+
+#endif
+	return *BaseOfImage;
+	
 }
 
 void* __stdcall MockNtdll::RtlImageDirectoryEntryToData(void* BaseAddress, bool MappedAsImage, uint16_t Directory, uint32_t* Size) {
@@ -460,9 +477,17 @@ void* __stdcall MockNtdll::RtlImageDirectoryEntryToData(void* BaseAddress, bool 
 
 void __stdcall MockNtdll::MockRtlCaptureContext(void* ContextRecord) {
 #if defined (__WINDOWS__) //testing
-	HANDLE hThread = GetCurrentThread();
-	GetThreadContext(hThread, (LPCONTEXT)ContextRecord);
-	CloseHandle(hThread);
+	RtlCaptureContext((PCONTEXT)ContextRecord);
+#else
+	ucontext_t uctx;
+	int res = getcontext(&uctx);
+#endif
+	return;
+}
+
+void __stdcall MockNtdll::MockRtlRestoreContext(void* ContextRecord, PEXCEPTION_RECORD ExceptionRecord) {
+#if defined (__WINDOWS__) //testing
+	RtlRestoreContext((PCONTEXT)ContextRecord, NULL);
 #else
 	ucontext_t uctx;
 	int res = getcontext(&uctx);
@@ -606,18 +631,7 @@ uint64_t GetEstablisherFrame(PCONTEXT Context, PUNWIND_INFO UnwindInfo, uint64_t
 }
 
 void __stdcall MockNtdll::MockRtlUnwind(void* TargetFrame, PVOID TargetIp, PEXCEPTION_RECORD ExceptionRecord, PVOID ReturnValue) {
-	PEXCEPTION_REGISTRATION_RECORD RegistrationFrame, OldFrame;
-	DISPATCHER_CONTEXT DispatcherContext;
-	PEXCEPTION_ROUTINE ExceptionRoutine;
-	EXCEPTION_DISPOSITION Disposition;
-	ULONG_PTR StackLow, StackHigh;
-	CONTEXT Context;
-	uint64_t ImageBase, EstablisherFrame;
-	PUNWIND_INFO pUnwindInfo;
-	PSCOPE_TABLE pScopTable;
-	PScopeRecord pScopRecord;
-
-	
+	// this is wrapper of MockRtlUnwindEx
 }
 
 bool RtlpTryToUnwindEpilog(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, uint64_t ImageBase, PRUNTIME_FUNCTION FunctionEntry) {
@@ -690,7 +704,7 @@ bool RtlpTryToUnwindEpilog(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS Cont
 	return true;
 }
 
-PEXCEPTION_ROUTINE RtlVirtualUnwind(
+PEXCEPTION_ROUTINE __stdcall MockNtdll::RtlVirtualUnwind(
 	uint32_t HandlerType,
 	uint64_t ImageBase,
 	uint64_t ControlPc,
@@ -711,9 +725,7 @@ PEXCEPTION_ROUTINE RtlVirtualUnwind(
 
 		ControlPc -= ImageBase;
 
-		if ((ControlPc < FunctionEntry->BeginAddress) ||
-			(ControlPc >= FunctionEntry->EndAddress))
-		{
+		if ((ControlPc < FunctionEntry->BeginAddress) || (ControlPc >= FunctionEntry->EndAddress)){
 			return NULL;
 		}
 		UnwindInfo = (PUNWIND_INFO)(ImageBase + FunctionEntry->UnwindData);
@@ -722,26 +734,21 @@ PEXCEPTION_ROUTINE RtlVirtualUnwind(
 		CodeOffset = ControlPc - FunctionEntry->BeginAddress;
 
 		*EstablisherFrame = GetEstablisherFrame(Context, UnwindInfo, CodeOffset);
-		if (CodeOffset > UnwindInfo->SizeOfProlog)
-		{
-			if (RtlpTryToUnwindEpilog(Context, ContextPointers, ImageBase, FunctionEntry))
-			{
+		if (CodeOffset > UnwindInfo->SizeOfProlog){
+			if (RtlpTryToUnwindEpilog(Context, ContextPointers, ImageBase, FunctionEntry)){
 				return NULL;
 			}
 		}
 		i = 0;
-		while ((i < UnwindInfo->CountOfCodes) &&
-			(UnwindInfo->UnwindCode[i].CodeOffset > CodeOffset))
-		{
+		while ((i < UnwindInfo->CountOfCodes) && (UnwindInfo->UnwindCode[i].CodeOffset > CodeOffset)){
 			i += UnwindOpSlots(UnwindInfo->UnwindCode[i]);
 		}
 
-	RepeatChainedInfo:
-		while (i < UnwindInfo->CountOfCodes)
-		{
+RepeatChainedInfo:
+		while (i < UnwindInfo->CountOfCodes){
 			UnwindCode = UnwindInfo->UnwindCode[i];
-			switch (UnwindCode.UnwindOp)
-			{
+			switch (UnwindCode.UnwindOp){
+
 			case UWOP_PUSH_NONVOL:
 				Reg = UnwindCode.OpInfo;
 				PopReg(Context, ContextPointers, Reg);
@@ -749,14 +756,12 @@ PEXCEPTION_ROUTINE RtlVirtualUnwind(
 				break;
 
 			case UWOP_ALLOC_LARGE:
-				if (UnwindCode.OpInfo)
-				{
+				if (UnwindCode.OpInfo){
 					Offset = *(uint32_t*)(&UnwindInfo->UnwindCode[i + 1]);
 					Context->Rsp += Offset;
 					i += 3;
 				}
-				else
-				{
+				else{
 					Offset = UnwindInfo->UnwindCode[i + 1].FrameOffset;
 					Context->Rsp += Offset * 8;
 					i += 2;
@@ -822,25 +827,21 @@ PEXCEPTION_ROUTINE RtlVirtualUnwind(
 				goto Exit;
 			}
 		}
-		if (UnwindInfo->Flags & UNW_FLAG_CHAININFO)
-		{
+		if (UnwindInfo->Flags & UNW_FLAG_CHAININFO){
 			/* See https://docs.microsoft.com/en-us/cpp/build/exception-handling-x64?view=msvc-160#chained-unwind-info-structures */
 			FunctionEntry = (PRUNTIME_FUNCTION)&(UnwindInfo->UnwindCode[(UnwindInfo->CountOfCodes + 1) & ~1]);
 			UnwindInfo = (PUNWIND_INFO)(ImageBase + FunctionEntry->UnwindData);
 			i = 0;
 			goto RepeatChainedInfo;
 		}
-		if (Context->Rsp != 0)
-		{
+		if (Context->Rsp != 0){
 			Context->Rip = *(uint64_t*)Context->Rsp;
 			Context->Rsp += sizeof(uint64_t);
 		}
 
-	Exit:
+Exit:
 		if (UnwindInfo->Flags & (UNW_FLAG_EHANDLER | UNW_FLAG_UHANDLER))
-		{
 			return (PEXCEPTION_ROUTINE)(ImageBase + *LanguageHandler);
-		}
 
 		return NULL;
 }
@@ -864,8 +865,7 @@ void RtlpUnwindInternal(
 	CONTEXT UnwindContext;
 	RtlpGetStackLimits(&StackLow, &StackHigh);
 
-	if (TargetFrame != NULL)
-	{
+	if (TargetFrame != NULL){
 		StackHigh = (uint64_t)TargetFrame + 1;
 	}
 
@@ -877,9 +877,8 @@ void RtlpUnwindInternal(
 
 	while (true)
 	{
-		FunctionEntry = RtlLookupFunctionEntry(UnwindContext.Rip, &ImageBase, NULL);
-		if (FunctionEntry == NULL)
-		{
+		FunctionEntry = MockNtdll::RtlLookupFunctionEntry(UnwindContext.Rip, &ImageBase, NULL);
+		if (FunctionEntry == NULL){
 			UnwindContext.Rip = *(uint64_t*)UnwindContext.Rsp;
 			UnwindContext.Rsp += sizeof(uint64_t);
 			continue;
@@ -897,18 +896,14 @@ void RtlpUnwindInternal(
 								NULL
 							);
 
-		if ((EstablisherFrame < StackLow) || (EstablisherFrame >= StackHigh) || (EstablisherFrame & 7))
-		{
-
-			if (HandlerType == UNW_FLAG_EHANDLER)
-			{
+		if ((EstablisherFrame < StackLow) || (EstablisherFrame >= StackHigh) || (EstablisherFrame & 7)){
+			if (HandlerType == UNW_FLAG_EHANDLER){
 				ExceptionRecord->ExceptionFlags |= EXCEPTION_STACK_INVALID;
 				return;
 			}
 		}
 
-		if (ExceptionRoutine != NULL)
-		{
+		if (ExceptionRoutine != NULL){
 			if (EstablisherFrame == (uint64_t)TargetFrame){
 				ExceptionRecord->ExceptionFlags |= EXCEPTION_TARGET_UNWIND;
 			}
@@ -921,20 +916,18 @@ void RtlpUnwindInternal(
 			DispatcherContext.ScopeIndex = 0;
 
 			UnwindContext.Rax = (uint64_t)ReturnValue;
-			do
-			{
-				Disposition = ExceptionRoutine(ExceptionRecord,
-					(void*)EstablisherFrame,
-					&UnwindContext,
-					&DispatcherContext);
+			do{
+				Disposition = ExceptionRoutine(
+									ExceptionRecord,
+									(void*)EstablisherFrame,
+									&UnwindContext,
+									&DispatcherContext
+								);
 
-				ExceptionRecord->ExceptionFlags &= ~(EXCEPTION_TARGET_UNWIND |
-					EXCEPTION_COLLIDED_UNWIND);
+				ExceptionRecord->ExceptionFlags &= ~(EXCEPTION_TARGET_UNWIND | EXCEPTION_COLLIDED_UNWIND);
 
-				if (HandlerType == UNW_FLAG_EHANDLER)
-				{
-					if (Disposition == ExceptionContinueExecution)
-					{
+				if (HandlerType == UNW_FLAG_EHANDLER){
+					if (Disposition == ExceptionContinueExecution){
 						if (ExceptionRecord->ExceptionFlags & EXCEPTION_NONCONTINUABLE){
 							// not ported!!	
 						}
@@ -958,23 +951,14 @@ void RtlpUnwindInternal(
 
 		if ((EstablisherFrame < StackLow) ||
 			(EstablisherFrame > StackHigh) ||
-			(EstablisherFrame & 7))
-		{
-
-			if (UnwindContext.Rip == ContextRecord->Rip){
-				// not ported!!
-			}
-			else{
-				// not ported!!
-			}
+			(EstablisherFrame & 7)){
+			if (UnwindContext.Rip == ContextRecord->Rip){/*not ported!!*/}
+			else{/*not ported!!*/ }
 		}
 
-		if (EstablisherFrame == (uint64_t)TargetFrame)
-		{
+		if (EstablisherFrame == (uint64_t)TargetFrame){
 			break;
 		}
-
-		/* We have successfully unwound a frame. Copy the unwind context back. */
 		*ContextRecord = UnwindContext;
 	}
 	if (ExceptionRecord->ExceptionCode != STATUS_UNWIND_CONSOLIDATE)
@@ -982,7 +966,8 @@ void RtlpUnwindInternal(
 		ContextRecord->Rip = (uint64_t)TargetIp;
 	}
 	ContextRecord->Rax = (uint64_t)ReturnValue;
-	RtlRestoreContext(ContextRecord, ExceptionRecord);
+	//RtlRestoreContext(ContextRecord, ExceptionRecord);
+	MockNtdll::MockRtlRestoreContext(ContextRecord, ExceptionRecord);
 	return;
 }
 
@@ -991,9 +976,8 @@ bool __stdcall MockNtdll::MockRtlUnwindEx(void* TargetFrame, void* TargetIp, voi
 #if defined(__WINDOWS__)
 	PCONTEXT ctx = (PCONTEXT)ContextRecord;
 	EXCEPTION_RECORD LocalExceptionRecord;
-	RtlCaptureContext(ctx);
-	if (ExceptionRecord == NULL)
-	{
+	MockNtdll::MockRtlCaptureContext(ctx);
+	if (ExceptionRecord == NULL){
 		/* No exception record was passed, so set up a local one */
 		LocalExceptionRecord.ExceptionCode = 0xC0000028;
 		LocalExceptionRecord.ExceptionAddress = (PVOID)ctx->Rip;
@@ -1002,20 +986,10 @@ bool __stdcall MockNtdll::MockRtlUnwindEx(void* TargetFrame, void* TargetIp, voi
 		ExceptionRecord = &LocalExceptionRecord;
 	}
 	RtlpUnwindInternal(TargetFrame, TargetIp, (EXCEPTION_RECORD*)ExceptionRecord, ReturnValue, (PCONTEXT)ContextRecord, (_UNWIND_HISTORY_TABLE*)HistoryTable, UNW_FLAG_UHANDLER);
-
+	
 #else
 	
 #endif
-	/*
-	//RtlpUnwindInternal(TargetFrame, TargetIp, (PEXCEPTION_RECORD)ExceptionRecord, ReturnValue, (PCONTEXT)ContextRecord, (PUNWIND_HISTORY_TABLE)HistoryTable, UNW_FLAG_UHANDLER);
-	//SetThreadContext(GetCurrentThread(), (PCONTEXT)ContextRecord);
-	if (HistoryTable == NULL) {
-		MockRtlUnwind(TargetFrame, TargetIp, (PEXCEPTION_RECORD)ExceptionRecord, ReturnValue);
-	}
-	else {
-		RtlUnwindEx(TargetFrame, TargetIp, (PEXCEPTION_RECORD)ExceptionRecord, ReturnValue, (PCONTEXT)ContextRecord, (PUNWIND_HISTORY_TABLE)HistoryTable);
-	}
-	*/
 	return true;
 }
 
