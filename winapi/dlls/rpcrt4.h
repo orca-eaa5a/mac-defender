@@ -7,6 +7,7 @@
 #else
 #include "include/windows.h"
 #endif
+
 class MockRpcrt4 {
 public:
 	function<void(void)> set_rpcrt4_hookaddr = [](void) {
@@ -24,7 +25,7 @@ public:
 #else
 	static uint32_t __stdcall UuidFromStringW(wchar_t* StringUuid, void* Uuid);
 	static uint32_t __stdcall RpcBindingFree(void* Binding);
-	static void __stdcall NdrServerCallAll(void* pRpcMsg)
+    static void __stdcall NdrServerCallAll(void* pRpcMsg);
 	static void* __stdcall NdrClientCall3(void *pProxyInfo, uint32_t nProcNum, void* pReturnValue, ...);
 #endif
 };

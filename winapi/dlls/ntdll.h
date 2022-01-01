@@ -11,14 +11,16 @@
 #if defined(__APPLE__) || defined(__LINUX__)
 #include "include/windows.h"
 #include <ucontext.h>
+#include <mach/mach_init.h>
+#include <sys/sysctl.h>
+#include <mach/mach_vm.h>
+
 typedef struct _IMAGE_RUNTIME_FUNCTION_ENTRY {
 	uint32_t BeginAddress;
 	uint32_t EndAddress;
-	union {
-		uint32_t UnwindInfoAddress;
-		uint32_t UnwindData;
-	} DUMMYUNIONNAME;
+    uint32_t UnwindData;
 } _IMAGE_RUNTIME_FUNCTION_ENTRY, *_PIMAGE_RUNTIME_FUNCTION_ENTRY;
+typedef struct _IMAGE_RUNTIME_FUNCTION_ENTRY RUNTIME_FUNCTION, *PRUNTIME_FUNCTION;
 #else
 #include <windows.h>
 
@@ -62,6 +64,19 @@ typedef struct _KEY_VALUE_PARTIAL_INFORMATION {
 #define UNWIND_HISTORY_TABLE_GLOBAL 1
 #define UNWIND_HISTORY_TABLE_LOCAL 2
 
+#define     EXCEPTION_NONCONTINUABLE   0x1
+#define     EXCEPTION_UNWINDING   0x2
+#define     EXCEPTION_EXIT_UNWIND   0x4
+#define     EXCEPTION_STACK_INVALID   0x8
+#define     EXCEPTION_NESTED_CALL   0x10
+#define     EXCEPTION_TARGET_UNWIND   0x20
+#define     EXCEPTION_COLLIDED_UNWIND   0x40
+#define     EXCEPTION_UNWIND
+#define     IS_UNWINDING(Flag)   ((Flag & EXCEPTION_UNWIND) != 0)
+#define     IS_DISPATCHING(Flag)   ((Flag & EXCEPTION_UNWIND) == 0)
+#define     IS_TARGET_UNWIND(Flag)   (Flag & EXCEPTION_TARGET_UNWIND)
+#define     EXCEPTION_MAXIMUM_PARAMETERS   15
+
 #define UWOP_PUSH_NONVOL 0
 #define UWOP_ALLOC_LARGE 1
 #define UWOP_ALLOC_SMALL 2
@@ -97,10 +112,10 @@ typedef struct _UNWIND_INFO {
 	UNWIND_CODE MoreUnwindCode[1];
 	union
 	{
-		OPTIONAL ULONG ExceptionHandler;
-		OPTIONAL ULONG FunctionEntry;
+		ULONG ExceptionHandler;
+		ULONG FunctionEntry;
 	};
-	OPTIONAL ULONG ExceptionData[];
+	ULONG ExceptionData[];
 
 } UNWIND_INFO, *PUNWIND_INFO;
 
@@ -113,7 +128,85 @@ typedef struct _ScopeRecord
 	ULONG JumpTarget;
 } ScopeRecord, *PScopeRecord;
 
+typedef struct _KNONVOLATILE_CONTEXT_POINTERS {
+    union {
+        PM128A FloatingContext[16];
+        struct {
+            PM128A Xmm0;
+            PM128A Xmm1;
+            PM128A Xmm2;
+            PM128A Xmm3;
+            PM128A Xmm4;
+            PM128A Xmm5;
+            PM128A Xmm6;
+            PM128A Xmm7;
+            PM128A Xmm8;
+            PM128A Xmm9;
+            PM128A Xmm10;
+            PM128A Xmm11;
+            PM128A Xmm12;
+            PM128A Xmm13;
+            PM128A Xmm14;
+            PM128A Xmm15;
+        } DUMMYSTRUCTNAME;
+    } DUMMYUNIONNAME;
+
+    union {
+        PULONG64 IntegerContext[16];
+        struct {
+            PULONG64 Rax;
+            PULONG64 Rcx;
+            PULONG64 Rdx;
+            PULONG64 Rbx;
+            PULONG64 Rsp;
+            PULONG64 Rbp;
+            PULONG64 Rsi;
+            PULONG64 Rdi;
+            PULONG64 R8;
+            PULONG64 R9;
+            PULONG64 R10;
+            PULONG64 R11;
+            PULONG64 R12;
+            PULONG64 R13;
+            PULONG64 R14;
+            PULONG64 R15;
+        } DUMMYSTRUCTNAME;
+    } DUMMYUNIONNAME2;
+} KNONVOLATILE_CONTEXT_POINTERS, *PKNONVOLATILE_CONTEXT_POINTERS;
+
 struct _EXCEPTION_FRAME;
+
+ #define EXCEPTION_MAXIMUM_PARAMETERS   15
+
+typedef enum _EXCEPTION_DISPOSITION{
+    ExceptionContinueExecution,
+    ExceptionContinueSearch,
+    ExceptionNestedException,
+    ExceptionCollidedUnwind
+}EXCEPTION_DISPOSITION, *PEXCEPTION_DISPOSITION;
+
+typedef struct _EXCEPTION_RECORD {
+  DWORD ExceptionCode;
+  DWORD ExceptionFlags;
+  struct _EXCEPTION_RECORD *ExceptionRecord;
+  PVOID ExceptionAddress;
+  DWORD NumberParameters;
+  ULONG_PTR ExceptionInformation[EXCEPTION_MAXIMUM_PARAMETERS];
+} EXCEPTION_RECORD, *PEXCEPTION_RECORD;
+
+
+typedef EXCEPTION_DISPOSITION __stdcall EXCEPTION_ROUTINE(
+                                                          struct _EXCEPTION_RECORD *ExceptionRecord,
+                                                          PVOID EstablisherFrame, struct _CONTEXT *ContextRecord,
+                                                          PVOID DispatcherContext);
+
+typedef EXCEPTION_ROUTINE* PEXCEPTION_ROUTINE;
+
+typedef struct _EXCEPTION_REGISTRATION_RECORD
+{
+    struct _EXCEPTION_REGISTRATION_RECORD *Next;
+    PEXCEPTION_ROUTINE Handler;
+} EXCEPTION_REGISTRATION_RECORD, *PEXCEPTION_REGISTRATION_RECORD;
 
 typedef EXCEPTION_DISPOSITION(*PEXCEPTION_HANDLER)(
 	struct _EXCEPTION_RECORD *ExceptionRecord,
@@ -125,6 +218,36 @@ typedef struct _EXCEPTION_FRAME {
 	struct _EXCEPTION_FRAME *prev;
 	PEXCEPTION_HANDLER handler;
 } EXCEPTION_FRAME, *PEXCEPTION_FRAME;
+
+#define UNWIND_HISTORY_TABLE_SIZE 12
+
+typedef struct _UNWIND_HISTORY_TABLE_ENTRY {
+    uint64_t ImageBase;
+    PRUNTIME_FUNCTION FunctionEntry;
+} UNWIND_HISTORY_TABLE_ENTRY, *PUNWIND_HISTORY_TABLE_ENTRY;
+
+typedef struct _UNWIND_HISTORY_TABLE {
+    uint32_t Count;
+    uint8_t Search;
+    uint64_t LowAddress;
+    uint64_t HighAddress;
+    UNWIND_HISTORY_TABLE_ENTRY Entry[UNWIND_HISTORY_TABLE_SIZE];
+} UNWIND_HISTORY_TABLE, *PUNWIND_HISTORY_TABLE;
+
+typedef struct _DISPATCHER_CONTEXT
+{
+    uint64_t ControlPc;
+    uint64_t ImageBase;
+    struct _IMAGE_RUNTIME_FUNCTION_ENTRY *FunctionEntry;
+    uint64_t EstablisherFrame;
+    uint64_t TargetIp;
+    PCONTEXT ContextRecord;
+    PEXCEPTION_ROUTINE LanguageHandler;
+    void* HandlerData;
+    struct _UNWIND_HISTORY_TABLE *HistoryTable;
+    uint32_t ScopeIndex;
+    uint32_t Fill0;
+} DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
 
 class MockNtdll {
 public:
@@ -276,6 +399,8 @@ public:
 	static void* __stdcall RtlPcToFileHeader(void* PcValue, void** BaseOfImage);
 	static void* __stdcall RtlImageDirectoryEntryToData(void* BaseAddress, bool MappedAsImage, uint16_t Directory, uint32_t* Size);
 	static void __stdcall MockRtlCaptureContext(void* ContextRecord);
+    static void __stdcall MockRtlRestoreContext(void* ContextRecord, PEXCEPTION_RECORD ExceptionRecord);
+    static void __stdcall MockRtlUnwind(void* TargetFrame, PVOID TargetIp, PEXCEPTION_RECORD ExceptionRecord, PVOID ReturnValue);
 	static bool __stdcall MockRtlUnwindEx(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue, void* ContextRecord, void* HistoryTable);
 	static PEXCEPTION_ROUTINE __stdcall RtlVirtualUnwind(
 		uint32_t HandlerType,

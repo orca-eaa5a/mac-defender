@@ -35,7 +35,7 @@ public:
 	static uint32_t __stdcall CoCreateInstance(void* rclsid, void* pUnkOuter, uint32_t dwClsContext, void* riid, void* ppv);
 	static uint32_t __stdcall CoInitializeEx(void* pvReserved, uint32_t dwCoInit);
 	static void __stdcall CoUninitialize();
-	static uint32_t __stdcall IIDFromString(void* lpsz, void* lpiid)
+    static uint32_t __stdcall IIDFromString(void* lpsz, void* lpiid);
 	static uint32_t __stdcall CoSetProxyBlanket(
 		void* pProxy,
 		uint32_t dwAuthnSvc,

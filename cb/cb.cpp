@@ -1,13 +1,13 @@
 
 #include <cstdint>
 #include <stdio.h>
+#include <fcntl.h>
 #if defined(__APPLE__) || defined(__LINUX__)
 #include <sys/uio.h>
 #include <sys/syslimits.h>
 #include <unistd.h>
 #endif
 #if defined(__LINUX__) || defined(__WINDOWS__)
-#include <fcntl.h>
 #include <io.h>
 	#if defined(__LINUX__)
 	#include <unistd.h>

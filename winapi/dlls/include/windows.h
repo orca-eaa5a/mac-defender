@@ -77,31 +77,31 @@ typedef enum _KEY_VALUE_INFORMATION_CLASS{
 } KEY_VALUE_INFORMATION_CLASS;
 
 typedef struct _KEY_VALUE_BASIC_INFORMATION {
-	unsigned long TitleIndex;
-	unsigned long Type;
-	unsigned long NameLength;
+	uint32_t TitleIndex;
+	uint32_t Type;
+	uint32_t NameLength;
 	wchar_t Name[1];
 } KEY_VALUE_BASIC_INFORMATION, *PKEY_VALUE_BASIC_INFORMATION;
 
 typedef struct _KEY_VALUE_PARTIAL_INFORMATION {
-	unsigned long TitleIndex;
-	unsigned long Type;
-	unsigned long DataLength;
-	unsigned char Data[1];
+	uint32_t TitleIndex;
+	uint32_t Type;
+	uint32_t DataLength;
+	uint8_t Data[1];
 } KEY_VALUE_PARTIAL_INFORMATION, *PKEY_VALUE_PARTIAL_INFORMATION;
 
 typedef struct _UNICODE_STRING {
-	unsigned short Length;
-	unsigned short MaximumLength;
+	uint16_t Length;
+	uint16_t MaximumLength;
 	wchar_t*  Buffer;
 } UNICODE_STRING, *PUNICODE_STRING;
 
 typedef struct _OSVERSIONINFOW {
-  unsigned long dwOSVersionInfoSize;
-  unsigned long dwMajorVersion;
-  unsigned long dwMinorVersion;
-  unsigned long dwBuildNumber;
-  unsigned long dwPlatformId;
+  uint32_t dwOSVersionInfoSize;
+  uint32_t dwMajorVersion;
+  uint32_t dwMinorVersion;
+  uint32_t dwBuildNumber;
+  uint32_t dwPlatformId;
   wchar_t szCSDVersion[128];
 } OSVERSIONINFOW, *POSVERSIONINFOW, *LPOSVERSIONINFOW, RTL_OSVERSIONINFOW, *PRTL_OSVERSIONINFOW;
 
@@ -484,48 +484,43 @@ typedef struct _IMAGE_RELOCATION
 #define FILE_ATTRIBUTE_NOT_CONTENT_INDEXED 0x00002000
 #define FILE_ATTRIBUTE_ENCRYPTED           0x00004000
 
-typedef struct _FILETIME {
-  unsigned int dwLowDateTime;
-  unsigned int dwHighDateTime;
-} FILETIME, *PFILETIME, *LPFILETIME;
-
 typedef struct _STARTUPINFOA {
-  unsigned int  cb;
+  uint32_t  cb;
   char*  lpReserved;
   char*  lpDesktop;
   char*  lpTitle;
-  unsigned int  dwX;
-  unsigned int  dwY;
-  unsigned int  dwXSize;
-  unsigned int  dwYSize;
-  unsigned int  dwXCountChars;
-  unsigned int  dwYCountChars;
-  unsigned int  dwFillAttribute;
-  unsigned int  dwFlags;
-  unsigned short   wShowWindow;
-  unsigned short   cbReserved2;
-  unsigned char* lpReserved2;
+  uint32_t  dwX;
+  uint32_t  dwY;
+  uint32_t  dwXSize;
+  uint32_t  dwYSize;
+  uint32_t  dwXCountChars;
+  uint32_t  dwYCountChars;
+  uint32_t  dwFillAttribute;
+  uint32_t  dwFlags;
+  uint16_t   wShowWindow;
+  uint16_t   cbReserved2;
+  uint8_t* lpReserved2;
   void* hStdInput;
   void* hStdOutput;
   void* hStdError;
 } STARTUPINFOA, *LPSTARTUPINFOA;
 
 typedef struct _STARTUPINFOW {
-  unsigned int  cb;
+  uint32_t  cb;
   wchar_t*  lpReserved;
   wchar_t*  lpDesktop;
   wchar_t*  lpTitle;
-  unsigned int  dwX;
-  unsigned int  dwY;
-  unsigned int  dwXSize;
-  unsigned int  dwYSize;
-  unsigned int  dwXCountChars;
-  unsigned int  dwYCountChars;
-  unsigned int  dwFillAttribute;
-  unsigned int  dwFlags;
-  unsigned short   wShowWindow;
-  unsigned short   cbReserved2;
-  unsigned char* lpReserved2;
+  uint32_t  dwX;
+  uint32_t  dwY;
+  uint32_t  dwXSize;
+  uint32_t  dwYSize;
+  uint32_t  dwXCountChars;
+  uint32_t  dwYCountChars;
+  uint32_t  dwFillAttribute;
+  uint32_t  dwFlags;
+  uint16_t   wShowWindow;
+  uint16_t   cbReserved2;
+  uint8_t* lpReserved2;
   void* hStdInput;
   void* hStdOutput;
   void* hStdError;
@@ -533,11 +528,11 @@ typedef struct _STARTUPINFOW {
 
 typedef union _LARGE_INTEGER {
   struct {
-	unsigned int LowPart;
+	uint32_t LowPart;
 	long  HighPart;
   } DUMMYSTRUCTNAME;
   struct {
-	unsigned int LowPart;
+	uint32_t LowPart;
 	long  HighPart;
   } u;
   long long QuadPart;
@@ -545,26 +540,26 @@ typedef union _LARGE_INTEGER {
 
 typedef struct _SYSTEM_INFO {
   union {
-	unsigned int dwOemId;
+	uint32_t dwOemId;
 	struct {
-	  unsigned short wProcessorArchitecture;
-	  unsigned short wReserved;
+	  uint16_t wProcessorArchitecture;
+	  uint16_t wReserved;
 	} DUMMYSTRUCTNAME;
   } DUMMYUNIONNAME;
-  unsigned int     dwPageSize;
+  uint32_t     dwPageSize;
   void*    lpMinimumApplicationAddress;
   void*    lpMaximumApplicationAddress;
-  unsigned int* dwActiveProcessorMask;
-  unsigned int     dwNumberOfProcessors;
-  unsigned int     dwProcessorType;
-  unsigned int     dwAllocationGranularity;
-  unsigned short      wProcessorLevel;
-  unsigned short      wProcessorRevision;
+  uint32_t* dwActiveProcessorMask;
+  uint32_t     dwNumberOfProcessors;
+  uint32_t     dwProcessorType;
+  uint32_t     dwAllocationGranularity;
+  uint16_t      wProcessorLevel;
+  uint16_t      wProcessorRevision;
 } SYSTEM_INFO, *LPSYSTEM_INFO;
 
-#define STD_INPUT_HANDLE ((unsigned int)-10)
-#define STD_OUTPUT_HANDLE ((unsigned int)-11)
-#define STD_ERROR_HANDLE ((unsigned int)-12)
+#define STD_INPUT_HANDLE ((uint32_t)-10)
+#define STD_OUTPUT_HANDLE ((uint32_t)-11)
+#define STD_ERROR_HANDLE ((uint32_t)-12)
 
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 #define _ARRAYSIZE ARRAY_SIZE
@@ -654,6 +649,10 @@ typedef struct _SYSTEM_INFO {
 #define HKEY_PERFORMANCE_DATA   0x80000004
 #define HKEY_CURRENT_CONFIG     0x80000005
 
+#define MEM_COMMIT    0x1000
+#define MEM_RESERVE    0x2000
+#define MEM_RELEASE    0x8000
+
 #ifndef s_addr
 typedef struct in_addr {
 	union {
@@ -667,10 +666,10 @@ typedef struct in_addr {
 #define s_imp   S_un.S_un_w.s_w2    // imp
 #define s_impno S_un.S_un_b.s_b4    // imp #
 #define s_lh    S_un.S_un_b.s_b3    // logical host
-} IN_ADDR, *PIN_ADDR, FAR *LPIN_ADDR;
+} IN_ADDR, *PIN_ADDR, *LPIN_ADDR;
 #endif /* WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP | WINAPI_PARTITION_SYSTEM) */
 
-#define DECLSPEC_ALIGN(x)   __declspec(align(x))
+#define DECLSPEC_ALIGN(x) __attribute__ ((aligned (x)))
 
 typedef struct DECLSPEC_ALIGN(16) _M128A {
 	ULONGLONG Low;
@@ -754,29 +753,26 @@ typedef struct DECLSPEC_ALIGN(16) _CONTEXT {
 	// Floating point state.
 	//
 
-	union {
-		XMM_SAVE_AREA32 FltSave;
-		struct {
-			M128A Header[2];
-			M128A Legacy[8];
-			M128A Xmm0;
-			M128A Xmm1;
-			M128A Xmm2;
-			M128A Xmm3;
-			M128A Xmm4;
-			M128A Xmm5;
-			M128A Xmm6;
-			M128A Xmm7;
-			M128A Xmm8;
-			M128A Xmm9;
-			M128A Xmm10;
-			M128A Xmm11;
-			M128A Xmm12;
-			M128A Xmm13;
-			M128A Xmm14;
-			M128A Xmm15;
-		} DUMMYSTRUCTNAME;
-	} DUMMYUNIONNAME;
+	struct {
+        M128A Header[2];
+        M128A Legacy[8];
+        M128A Xmm0;
+        M128A Xmm1;
+        M128A Xmm2;
+        M128A Xmm3;
+        M128A Xmm4;
+        M128A Xmm5;
+        M128A Xmm6;
+        M128A Xmm7;
+        M128A Xmm8;
+        M128A Xmm9;
+        M128A Xmm10;
+        M128A Xmm11;
+        M128A Xmm12;
+        M128A Xmm13;
+        M128A Xmm14;
+        M128A Xmm15;
+    };
 
 	//
 	// Vector registers.
@@ -794,7 +790,7 @@ typedef struct DECLSPEC_ALIGN(16) _CONTEXT {
 	DWORD64 LastBranchFromRip;
 	DWORD64 LastExceptionToRip;
 	DWORD64 LastExceptionFromRip;
-} CONTEXT, *PCONTEXT;
+}CONTEXT, *PCONTEXT;
 
 typedef struct _SYSTEMTIME {
 	uint16_t wYear;
@@ -811,13 +807,6 @@ typedef struct _FILETIME {
 	DWORD dwLowDateTime;
 	DWORD dwHighDateTime;
 } FILETIME, *PFILETIME, *LPFILETIME;
-
-typedef struct _IMAGE_RUNTIME_FUNCTION_ENTRY RUNTIME_FUNCTION, *PRUNTIME_FUNCTION;
-
-typedef struct DECLSPEC_ALIGN(16) _M128A {
-	ULONGLONG Low;
-	LONGLONG High;
-} M128A, *PM128A;
 
 #endif
 #endif

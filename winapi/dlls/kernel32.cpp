@@ -47,9 +47,8 @@ void* __stdcall MockKernel32::LoadLibraryA(char* lpLibFileName) {
 */
 
 void* __stdcall MockKernel32::LoadLibraryW(wchar_t* lpLibFileName) {
-	//void* mod = nullptr;
+	void* mod = nullptr;
 	char *name = convert_wstr_to_str(lpLibFileName);
-	HINSTANCE mod = LoadLibraryA(name);
 	delete name;
 	return (void*)mod;
 }
@@ -1253,7 +1252,11 @@ int __stdcall MockKernel32::CompareStringOrdinal(void* lpString1, int cchCount1,
 }
 
 void* __stdcall MockKernel32::RaiseException(uint32_t dwExceptionCode, uint32_t dwExceptionFlags, uint32_t nNumberOfArguments, void* Arguments) {
+#if defined(__WINDOWS__)
 	__debugbreak();
+#elif defined(__APPLE__)
+    __builtin_trap();
+#endif
 	return NULL;
 }
 

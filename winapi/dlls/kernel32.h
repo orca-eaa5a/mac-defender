@@ -553,7 +553,7 @@ public:
 	static int __stdcall CompareStringOrdinal(void* lpString1, int cchCount1, void* lpString2, int cchCount2, bool bIgnoreCase);
 
 	static void* __stdcall RaiseException(uint32_t dwExceptionCode, uint32_t dwExceptionFlags, uint32_t nNumberOfArguments, void* Arguments);
-	static bool __stdcall IsProcessorFeaturePresent(uint32_t ProcessorFeature);
+	static bool __stdcall MockIsProcessorFeaturePresent(uint32_t ProcessorFeature);
 	static bool __stdcall IsDebuggerPresent();
 #endif
 };

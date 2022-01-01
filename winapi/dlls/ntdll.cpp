@@ -410,7 +410,11 @@ wchar_t* __stdcall MockNtdll::RtlIpv4AddressToStringW(in_addr *Addr, wchar_t* S)
 	if (!S)
 		return (PWSTR)~0;
 	swprintf(S, 32, L"%u.%u.%u.%u", Addr->S_un.S_un_b.s_b1, Addr->S_un.S_un_b.s_b2, Addr->S_un.S_un_b.s_b3, Addr->S_un.S_un_b.s_b4);
+#if defined(__APPLE__)
+    end_offset = get_wide_string_length((void*)S);
+#else
 	end_offset = lstrlenW(S);
+#endif
 	End = &S[end_offset];
 	
 	return End;
@@ -432,10 +436,9 @@ void* __stdcall MockNtdll::RtlPcToFileHeader(void* PcValue, void** BaseOfImage) 
 #if defined(__WINDOWS__)
 		*BaseOfImage = (void*)GetModuleHandle(NULL); //self
 #elif defined(__APPLE__)
-
+        *BaseOfImage = NULL; //this is error...
 #endif
 	return *BaseOfImage;
-	
 }
 
 void* __stdcall MockNtdll::RtlImageDirectoryEntryToData(void* BaseAddress, bool MappedAsImage, uint16_t Directory, uint32_t* Size) {
@@ -540,7 +543,7 @@ void* GetStackBase()
 	return (void*)pTIB->StackBase;
 #elif defined(__APPLE__)
 	void* pBase;
-	if (GetPthreadStackInfo(&pBase, NULL))
+    if (get_pthread_stack_info(&pBase, NULL))
 		return pBase;
 	return NULL; // error...
 #else
@@ -572,7 +575,11 @@ void SetRegFromStackValue(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS Conte
 	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a80af791c0ec8007aaf5bd7b4b7581021
 	SetReg(Context, Reg, *ValuePointer);
 	if (ContextPointers != NULL)
+#if defined(__WINDOWS)
 		ContextPointers->IntegerContext[Reg] = ValuePointer;
+#else
+        ContextPointers->DUMMYUNIONNAME2.IntegerContext[Reg] = ValuePointer;
+#endif
 }
 
 
@@ -580,7 +587,11 @@ void SetXmmRegFromStackValue(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS Co
 	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#abf1d715b64bc14cafc7b227fd9d16f04
 	SetXmmReg(Context, Reg, *ValuePointer);
 	if (ContextPointers != NULL)
+#if defined(__WINDOWS__)
 		ContextPointers->FloatingContext[Reg] = ValuePointer;
+#else
+        ContextPointers->DUMMYUNIONNAME.FloatingContext[Reg] = ValuePointer;
+#endif
 }
 
 void PopReg(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, uint8_t Reg){
@@ -885,7 +896,7 @@ void RtlpUnwindInternal(
 		}
 
 		/* Do a virtual unwind to get the next frame */
-		ExceptionRoutine = RtlVirtualUnwind(
+		ExceptionRoutine = MockNtdll::RtlVirtualUnwind(
 								HandlerType,
 								ImageBase,
 								UnwindContext.Rip,
