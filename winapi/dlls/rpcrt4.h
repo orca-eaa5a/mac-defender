@@ -18,12 +18,12 @@ public:
 		
 	};
 #if defined(__WINDOWS__)
-	static uint32_t __stdcall MockRpcrt4::UuidFromStringW(wchar_t* StringUuid, void* Uuid);
+	static uint32_t __stdcall MockRpcrt4::UuidFromStringW(WCHAR* StringUuid, void* Uuid);
 	static uint32_t __stdcall MockRpcrt4::RpcBindingFree(void* Binding);
 	static void __stdcall MockRpcrt4::NdrServerCallAll(void* pRpcMsg);
 	static void* __stdcall MockRpcrt4::NdrClientCall3(void *pProxyInfo, uint32_t nProcNum, void* pReturnValue, ...);
 #else
-	static uint32_t __stdcall UuidFromStringW(wchar_t* StringUuid, void* Uuid);
+	static uint32_t __stdcall UuidFromStringW(WCHAR* StringUuid, void* Uuid);
 	static uint32_t __stdcall RpcBindingFree(void* Binding);
     static void __stdcall NdrServerCallAll(void* pRpcMsg);
 	static void* __stdcall NdrClientCall3(void *pProxyInfo, uint32_t nProcNum, void* pReturnValue, ...);

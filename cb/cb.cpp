@@ -153,19 +153,19 @@ uint64_t ReadBufferCb(void* src, uint64_t Offset, void* Buffer, uint32_t* Size, 
 }
 #endif // _X86
 
-const wchar_t* GetStreamNameCb(void* self) {
-	wchar_t* fname = new wchar_t[260];
+const WCHAR* GetStreamNameCb(void* self) {
+	WCHAR* fname = new WCHAR[260];
 	memset(fname, '\0', sizeof(fname));
 #if defined(__WINDOWS__)
 	HANDLE hFile = (HANDLE)_get_osfhandle((uint32_t)self);
-	GetFinalPathNameByHandleW(hFile, (wchar_t*)fname, MAX_PATH, VOLUME_NAME_DOS);
-	std::wstring target_path(fname);
-	if (target_path.substr(0, 8).compare(L"\\\\?\\UNC\\") == 0)
+	GetFinalPathNameByHandleW(hFile, (WCHAR*)fname, MAX_PATH, VOLUME_NAME_DOS);
+	std::u16string target_path(fname);
+	if (target_path.substr(0, 8).compare(u"\\\\?\\UNC\\") == 0)
 	{
 		// In case of a network path, replace `\\?\UNC\` with `\\`.
-		target_path = L"\\" + target_path.substr(7);
+		target_path = u"\\" + target_path.substr(7);
 	}
-	else if (target_path.substr(0, 4).compare(L"\\\\?\\") == 0)
+	else if (target_path.substr(0, 4).compare(u"\\\\?\\") == 0)
 	{
 		// In case of a local path, crop `\\?\`.
 		target_path = target_path.substr(4);

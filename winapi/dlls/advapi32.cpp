@@ -4,7 +4,7 @@
 
 using namespace std;
 
-uint32_t __stdcall MockAdvapi::RegisterTraceGuidsW(void* RequestAddress, void* RequestContext, void* ControlGuid, uint32_t GuidCOunt, void* TraceGuidReg, wchar_t* MofImagePath, wchar_t* MofResourceName, void* RegistrationHandle) {
+uint32_t __stdcall MockAdvapi::RegisterTraceGuidsW(void* RequestAddress, void* RequestContext, void* ControlGuid, uint32_t GuidCOunt, void* TraceGuidReg, WCHAR* MofImagePath, WCHAR* MofResourceName, void* RegistrationHandle) {
 	return 0;
 }
 
@@ -24,7 +24,7 @@ bool __stdcall MockAdvapi::LookupPrivilegeValueA(char* lpSystemName, char* lpNam
 	return true;
 }
 
-bool __stdcall MockAdvapi::LookupPrivilegeValueW(wchar_t* lpSystemName, wchar_t* lpName, void* lpLuid) {
+bool __stdcall MockAdvapi::LookupPrivilegeValueW(WCHAR* lpSystemName, WCHAR* lpName, void* lpLuid) {
 	char* system_name = nullptr;
 	char* name = nullptr;
 	if (!lpName)
@@ -51,7 +51,7 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 	Note that key names are not case sensitive.
 	*/
 	void* hKey, 
-	wchar_t* lpSubKey, 
+	WCHAR* lpSubKey, 
 	uint32_t Reserved,
 	void* lpClass, 
 	uint32_t dwOptions,
@@ -59,7 +59,7 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 	void* lpSecurityAttributes, 
 	void* phkResult, 
 	uint32_t* lpdwDisposition) {
-	wstring wstr = wstring(lpSubKey);
+	u16string wstr = u16string(lpSubKey);
 	string hive;
 	string sub_key_str;
 	string key_str;
@@ -106,8 +106,8 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 	return 0;
 }
 
-long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, wchar_t* lpSubKey, uint32_t ulOptions, uint32_t samDesired, void** phkResult) {
-	wstring wstr = wstring(lpSubKey);
+long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, WCHAR* lpSubKey, uint32_t ulOptions, uint32_t samDesired, void** phkResult) {
+	u16string wstr = u16string(lpSubKey);
 	string hive;
 	string sub_key_str;
 	string key_str;
@@ -153,7 +153,7 @@ long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, wchar_t* lpSubKey, uint32_t
 
 long __stdcall MockAdvapi::RegQueryInfoKeyW(
 	void* hKey,
-	wchar_t* lpClass,
+	WCHAR* lpClass,
 	uint32_t* lpcClass,
 	uint32_t* lpReserved,
 	uint32_t* lpcSubKeys,
@@ -221,12 +221,12 @@ long __stdcall MockAdvapi::RegQueryInfoKeyW(
 	return 0;
 }
 
-long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, wchar_t* lpValueName, uint32_t* lpReserved, uint32_t* lpType, uint8_t*  lpData, uint32_t* lpcbData) {
+long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, WCHAR* lpValueName, uint32_t* lpReserved, uint32_t* lpType, uint8_t*  lpData, uint32_t* lpcbData) {
 	string hive;
 	string key_str;
 	Json::Value key;
 	string value;
-	wstring value_w = wstring(lpValueName);
+	u16string value_w = u16string(lpValueName);
 	value.assign(value_w.begin(), value_w.end());
 
 	switch ((uint64_t)hKey)
@@ -253,7 +253,7 @@ long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, wchar_t* lpValueName, ui
 		
 		if (subkey.isString()) {
 			regtype = 0x2; //REG_EXPAND_SZ;
-			wstring value;
+			u16string value;
 			data_sz = subkey.asString().length();
 			
 			value.assign(subkey.asString().begin(), subkey.asString().end());
@@ -261,9 +261,9 @@ long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, wchar_t* lpValueName, ui
 				*lpcbData = data_sz;
 				return 234; //ERROR_MORE_DATA
 			}
-			memmove(lpData, value.c_str(), (data_sz+1)*sizeof(wchar_t));
+			memmove(lpData, value.c_str(), (data_sz+1)*sizeof(WCHAR));
 			
-			*lpcbData = (data_sz + 1) * sizeof(wchar_t);
+			*lpcbData = (data_sz + 1) * sizeof(WCHAR);
 		}
 		else if (subkey.isInt64() || subkey.isInt()) {
 			regtype = 0x4; //REG_DWORD
@@ -278,7 +278,7 @@ long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, wchar_t* lpValueName, ui
 	return 0;
 }
 
-long __stdcall MockAdvapi::RegEnumKeyExW(void* hKey, uint32_t dwIndex, wchar_t* lpName, uint32_t* lpcchName, void* lpReserved, wchar_t* lpClass, uint32_t* lpcchClass, void* lpftLastWriteTime) {
+long __stdcall MockAdvapi::RegEnumKeyExW(void* hKey, uint32_t dwIndex, WCHAR* lpName, uint32_t* lpcchName, void* lpReserved, WCHAR* lpClass, uint32_t* lpcchClass, void* lpftLastWriteTime) {
 	string hive;
 	string key_str;
 	Json::Value key;

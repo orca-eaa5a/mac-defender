@@ -1,8 +1,8 @@
 #ifndef _WINDOWS_H_
 #define _WINDOWS_H_
 #if defined(__APPLE__)
-#define __stdcall __attribute__((__stdcall__)) __attribute__((__force_align_arg_pointer__))
-#define __cdecl __attribute__((__cdecl__)) __attribute__((__force_align_arg_pointer__))
+#define __stdcall __attribute__((ms_abi))
+#define __cdecl __stdcall
 #include "ntstatus.h"
 #include "wintype.h"
 #elif defined(__LINUX__)
@@ -80,7 +80,7 @@ typedef struct _KEY_VALUE_BASIC_INFORMATION {
 	uint32_t TitleIndex;
 	uint32_t Type;
 	uint32_t NameLength;
-	wchar_t Name[1];
+	WCHAR Name[1];
 } KEY_VALUE_BASIC_INFORMATION, *PKEY_VALUE_BASIC_INFORMATION;
 
 typedef struct _KEY_VALUE_PARTIAL_INFORMATION {
@@ -93,7 +93,7 @@ typedef struct _KEY_VALUE_PARTIAL_INFORMATION {
 typedef struct _UNICODE_STRING {
 	uint16_t Length;
 	uint16_t MaximumLength;
-	wchar_t*  Buffer;
+	WCHAR*  Buffer;
 } UNICODE_STRING, *PUNICODE_STRING;
 
 typedef struct _OSVERSIONINFOW {
@@ -102,7 +102,7 @@ typedef struct _OSVERSIONINFOW {
   uint32_t dwMinorVersion;
   uint32_t dwBuildNumber;
   uint32_t dwPlatformId;
-  wchar_t szCSDVersion[128];
+  WCHAR szCSDVersion[128];
 } OSVERSIONINFOW, *POSVERSIONINFOW, *LPOSVERSIONINFOW, RTL_OSVERSIONINFOW, *PRTL_OSVERSIONINFOW;
 
 typedef struct _IMAGE_DOS_HEADER {
@@ -507,9 +507,9 @@ typedef struct _STARTUPINFOA {
 
 typedef struct _STARTUPINFOW {
   uint32_t  cb;
-  wchar_t*  lpReserved;
-  wchar_t*  lpDesktop;
-  wchar_t*  lpTitle;
+  WCHAR*  lpReserved;
+  WCHAR*  lpDesktop;
+  WCHAR*  lpTitle;
   uint32_t  dwX;
   uint32_t  dwY;
   uint32_t  dwXSize;

@@ -67,9 +67,9 @@ NTSTATUS __stdcall MockNtdll::NtEnumerateValueKey(void* KeyHandle, uint32_t Inde
 		kvinfo->TitleIndex = 0;
 		kvinfo->Type = regtype;
 		kvinfo->NameLength = 0;
-		buf_sz = key_str.length() * sizeof(wchar_t) + sizeof(KEY_VALUE_BASIC_INFORMATION);
+		buf_sz = key_str.length() * sizeof(WCHAR) + sizeof(KEY_VALUE_BASIC_INFORMATION);
 		copy_str_to_wstr((char*)key_str.c_str(), kvinfo->Name, key_str.length());
-		kvinfo->NameLength = key_str.length() * sizeof(wchar_t);
+		kvinfo->NameLength = key_str.length() * sizeof(WCHAR);
 		*ResultLength = buf_sz;
 		if (buf_sz > Length) {
 			return 0x80000005; //STATUS_BUFFER_OVERFLOW
@@ -93,7 +93,7 @@ NTSTATUS __stdcall MockNtdll::NtQueryValueKey(void* KeyHandle, void* ValueName, 
 	PUNICODE_STRING ustr = (PUNICODE_STRING)ValueName;
 	
 	tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(uint64_t)KeyHandle];
-	wchar_t* wstr = read_widestring(ustr->Buffer, ustr->Length);
+	WCHAR* wstr = read_widestring(ustr->Buffer, ustr->Length);
 	char* subkey_str = str_tolower(convert_wstr_to_str(wstr));
 	auto subkey = key[subkey_str];
 	delete wstr;
@@ -212,12 +212,12 @@ void* __stdcall MockNtdll::RtlAllocateHeap(void* HeapHandle, uint32_t Flags, siz
 	return NULL;
 }
 
-void __stdcall MockNtdll::RtlInitUnicodeString(PUNICODE_STRING DestinationString, wchar_t* SourceString) {
+void __stdcall MockNtdll::RtlInitUnicodeString(PUNICODE_STRING DestinationString, WCHAR* SourceString) {
 	size_t wstr_len = 0;
 	for (; SourceString[wstr_len] != '\0'; wstr_len++) {}
-	DestinationString->Length = wstr_len * sizeof(wchar_t);
+	DestinationString->Length = wstr_len * sizeof(WCHAR);
 	DestinationString->Buffer = SourceString;
-	DestinationString->MaximumLength = (wstr_len + 1) * sizeof(wchar_t);
+	DestinationString->MaximumLength = (wstr_len + 1) * sizeof(WCHAR);
 }
 
 
@@ -360,7 +360,7 @@ PRUNTIME_FUNCTION __stdcall MockNtdll::RtlLookupFunctionEntry(uint64_t ControlPc
 	return NULL;
 }
 
-wchar_t __stdcall MockNtdll::RtlpUpcaseUnicodeChar(wchar_t Source){
+WCHAR __stdcall MockNtdll::RtlpUpcaseUnicodeChar(WCHAR Source){
 	uint16_t Offset;
 
 	if (Source < 'a')
@@ -373,14 +373,14 @@ wchar_t __stdcall MockNtdll::RtlpUpcaseUnicodeChar(wchar_t Source){
 }
 
 bool __stdcall MockNtdll::RtlPrefixUnicodeString(PUNICODE_STRING String1, PUNICODE_STRING String2, bool CaseInSensitive) {
-	wchar_t* pc1;
-	wchar_t* pc2;
+	WCHAR* pc1;
+	WCHAR* pc2;
 	uint32_t  NumChars;
 
 	if (String2->Length < String1->Length)
 		return false;
 
-	NumChars = String1->Length / sizeof(wchar_t);
+	NumChars = String1->Length / sizeof(WCHAR);
 	pc1 = String1->Buffer;
 	pc2 = String2->Buffer;
 
@@ -403,14 +403,17 @@ bool __stdcall MockNtdll::RtlPrefixUnicodeString(PUNICODE_STRING String1, PUNICO
 	return false;
 }
 
-wchar_t* __stdcall MockNtdll::RtlIpv4AddressToStringW(in_addr *Addr, wchar_t* S) {
+WCHAR* __stdcall MockNtdll::RtlIpv4AddressToStringW(in_addr *Addr, WCHAR* S) {
 	NTSTATUS Status;
-	wchar_t* End;
+	WCHAR* End;
 	uint32_t end_offset = 0;
+    char mb_ipaddr[32];
 	if (!S)
 		return (PWSTR)~0;
-	swprintf(S, 32, L"%u.%u.%u.%u", Addr->S_un.S_un_b.s_b1, Addr->S_un.S_un_b.s_b2, Addr->S_un.S_un_b.s_b3, Addr->S_un.S_un_b.s_b4);
+    
+    sprintf(mb_ipaddr, "%u.%u.%u.%u", Addr->S_un.S_un_b.s_b1, Addr->S_un.S_un_b.s_b2, Addr->S_un.S_un_b.s_b3, Addr->S_un.S_un_b.s_b4);
 #if defined(__APPLE__)
+    S = convert_str_to_wstr(mb_ipaddr);
     end_offset = get_wide_string_length((void*)S);
 #else
 	end_offset = lstrlenW(S);

@@ -2532,14 +2532,14 @@ static inline char* duplicateStringValue(const char* value, size_t length) {
   if (length >= static_cast<size_t>(Value::maxInt))
     length = Value::maxInt - 1;
 
-  auto newString = static_cast<char*>(malloc(length + 1));
-  if (newString == nullptr) {
+  auto neu16string = static_cast<char*>(malloc(length + 1));
+  if (neu16string == nullptr) {
     throwRuntimeError("in Json::Value::duplicateStringValue(): "
                       "Failed to allocate string value buffer");
   }
-  memcpy(newString, value, length);
-  newString[length] = 0;
-  return newString;
+  memcpy(neu16string, value, length);
+  neu16string[length] = 0;
+  return neu16string;
 }
 
 /* Record the length as a prefix.
@@ -2553,16 +2553,16 @@ static inline char* duplicateAndPrefixStringValue(const char* value,
                       "in Json::Value::duplicateAndPrefixStringValue(): "
                       "length too big for prefixing");
   size_t actualLength = sizeof(length) + length + 1;
-  auto newString = static_cast<char*>(malloc(actualLength));
-  if (newString == nullptr) {
+  auto neu16string = static_cast<char*>(malloc(actualLength));
+  if (neu16string == nullptr) {
     throwRuntimeError("in Json::Value::duplicateAndPrefixStringValue(): "
                       "Failed to allocate string value buffer");
   }
-  *reinterpret_cast<unsigned*>(newString) = length;
-  memcpy(newString + sizeof(unsigned), value, length);
-  newString[actualLength - 1U] =
+  *reinterpret_cast<unsigned*>(neu16string) = length;
+  memcpy(neu16string + sizeof(unsigned), value, length);
+  neu16string[actualLength - 1U] =
       0; // to avoid buffer over-run accidents by users later
-  return newString;
+  return neu16string;
 }
 inline static void decodePrefixedString(bool isPrefixed, char const* prefixed,
                                         unsigned* length, char const** value) {

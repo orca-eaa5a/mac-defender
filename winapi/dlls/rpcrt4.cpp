@@ -1,6 +1,6 @@
 #include "rpcrt4.h"
 
-uint32_t __stdcall MockRpcrt4::UuidFromStringW(wchar_t* StringUuid, void* Uuid)
+uint32_t __stdcall MockRpcrt4::UuidFromStringW(WCHAR* StringUuid, void* Uuid)
 {
     typedef struct _GUID {
       uint32_t  Data1;

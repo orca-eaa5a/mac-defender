@@ -6,6 +6,7 @@
 #define __SCANREPLY_H
 #include <cstdint>
 #include "engineboot.h"
+#include "../winapi/dlls/include/windows.h"
 #pragma pack(push, 1)
 // These are just guesses based on observed behaviour.
 enum {
@@ -45,8 +46,8 @@ typedef struct _SCAN_REPLY { // very very important structure!!
 	/*0x58*/    uint32_t UserPtr;
 	/*0x5C*/    uint32_t field_5C;
 	/*0x60*/    char* MaybeFileName2;
-	/*0x64*/    wchar_t* StreamName1;
-	/*0x68*/    wchar_t* StreamName2;
+	/*0x64*/    WCHAR* StreamName1;
+	/*0x68*/    WCHAR* StreamName2;
 	/*0x6C*/    uint32_t field_6C;
 	/*0x70*/    uint32_t ThreatId;             // Can be passed back to GetThreatInfo
 	/*0x74*/    uint32_t Reserved1;
@@ -102,8 +103,8 @@ typedef struct _SCAN_REPLY { // very very important structure!!
 	/*0x5C*/    void* UserPtr;
 	/*0x64*/    uint32_t field_5C;
 	/*0x68*/    char* MaybeFileName2;
-	/*0x70*/    wchar_t* StreamName1;
-	/*0x78*/    wchar_t* StreamName2;
+	/*0x70*/    WCHAR* StreamName1;
+	/*0x78*/    WCHAR* StreamName2;
 	/*0x80*/    uint32_t field_6C;
 	/*0x84*/    uint32_t ThreatId;             // Can be passed back to GetThreatInfo
 	/*0x88*/    uint32_t Reserved1;
@@ -130,14 +131,14 @@ typedef struct _SCAN_REPLY { // very very important structure!!
 
 #ifdef _X86
 typedef struct CCftScanState {
-	uint32_t(*ClientNotifyCallback)(PSCAN_REPLY arg);
+	uint32_t ( __stdcall *ClientNotifyCallback)(PSCAN_REPLY arg);
 	uint32_t   field_4;
 	void*   UserPtr;
 	uint32_t   ScanFlag;
 } CCftScanState, *PCCftScanState;
 #elif _X64
 typedef struct CCftScanState {
-	uint64_t(*ClientNotifyCallback)(PSCAN_REPLY arg);
+	uint64_t ( __stdcall *ClientNotifyCallback)(PSCAN_REPLY arg);
 	uint64_t   field_4;
 	uint64_t   UserPtr;
 	uint64_t   ScanFlag;

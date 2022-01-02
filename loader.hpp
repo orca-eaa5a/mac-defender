@@ -49,7 +49,7 @@ auto check_platform = [](uint8_t* pe_bin) -> uint16_t {
 };
 
 auto call_dllmain = [](void* imgbase) -> bool {
-	typedef bool(*dllMain)(void*, uint32_t, uint32_t);
+	typedef __attribute__((ms_abi)) bool(*dllMain)(void*, uint32_t, uint32_t);
 	uint16_t platform = 0xffff;
 	dllMain d_main = nullptr;
 	uint8_t* _imgbase = (uint8_t*)imgbase;
@@ -62,8 +62,7 @@ auto call_dllmain = [](void* imgbase) -> bool {
 	else {
 		console_log(MSGTYPE::CRIT, "target module is unsupported platform binary");
 	}
-	d_main(imgbase, 1, 0);
-	return true;
+    return d_main(imgbase, 1, 0);
 };
 
 auto of_getprocaddress = [](void* imgbase, string proc_name) {

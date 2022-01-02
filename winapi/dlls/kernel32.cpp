@@ -13,7 +13,7 @@
 using namespace std;
 
 string MockKernel32::commandline;
-wstring MockKernel32::wcommandline;
+u16string MockKernel32::wcommandline;
 uint64_t MockKernel32::ThreadLocalStorage[1024];
 PFLS_CALLBACK_FUNCTION MockKernel32::FlsCallbacks[1024];
 uint32_t MockKernel32::tls_index = 2;
@@ -46,14 +46,14 @@ void* __stdcall MockKernel32::LoadLibraryA(char* lpLibFileName) {
 }
 */
 
-void* __stdcall MockKernel32::LoadLibraryW(wchar_t* lpLibFileName) {
+void* __stdcall MockKernel32::LoadLibraryW(WCHAR* lpLibFileName) {
 	void* mod = nullptr;
 	char *name = convert_wstr_to_str(lpLibFileName);
 	delete name;
 	return (void*)mod;
 }
 
-void* __stdcall MockKernel32::LoadLibraryExW(wchar_t* lpLibFileName, void* hFile, uint32_t dwFlags) {
+void* __stdcall MockKernel32::LoadLibraryExW(WCHAR* lpLibFileName, void* hFile, uint32_t dwFlags) {
 	char *name = convert_wstr_to_str(lpLibFileName);
 	if (strstr(name, "win-core") || \
 		strstr(name, "wofutil") || \
@@ -94,7 +94,7 @@ void* __stdcall MockKernel32::MockGetModuleHandleA(char* lpModuleName) {
 	return mock_mod;
 }
 
-void* __stdcall MockKernel32::GetModuleHandleW(wchar_t* lpModuleName)
+void* __stdcall MockKernel32::GetModuleHandleW(WCHAR* lpModuleName)
 {
 	char *name = convert_wstr_to_str(lpModuleName);
 	void* mock_mod = MockKernel32::MockGetModuleHandleA(name);
@@ -109,7 +109,7 @@ bool __stdcall MockKernel32::GetModuleHandleExA(uint32_t dwFlags, char* lpModule
 	return true;
 }
 
-bool __stdcall MockKernel32::GetModuleHandleExW(uint32_t dwFlags, wchar_t* lpModuleName, void* phModule) {
+bool __stdcall MockKernel32::GetModuleHandleExW(uint32_t dwFlags, WCHAR* lpModuleName, void* phModule) {
 	char* str_modname = convert_wstr_to_str(lpModuleName);
 	bool ret = false;
 	ret = MockKernel32::GetModuleHandleExA(dwFlags, str_modname, phModule);
@@ -143,9 +143,9 @@ uint32_t __stdcall MockKernel32::GetModuleFileNameA(void* hModule, char* lpFilen
 	return 0; // never reached
 }
 
-uint32_t __stdcall MockKernel32::GetModuleFileNameW(void* hModule, wchar_t* lpFileName, uint32_t nSize) {
-	wstring mock_file_namew = L"C:\\orca\\angle.exe";
-	size_t str_buf_sz = mock_file_namew.length()*sizeof(wchar_t);
+uint32_t __stdcall MockKernel32::GetModuleFileNameW(void* hModule, WCHAR* lpFileName, uint32_t nSize) {
+	u16string mock_file_namew = u"C:\\orca\\angle.exe";
+	size_t str_buf_sz = mock_file_namew.length()*sizeof(WCHAR);
 
 	if (hModule == NULL && nSize > str_buf_sz) {
 		memmove(lpFileName, mock_file_namew.c_str(), str_buf_sz);
@@ -209,7 +209,7 @@ void* __stdcall MockKernel32::CreateFileA(char* lpFileName, uint32_t dwDesiredAc
 	return FileHandle ? FileHandle : INVALID_HANDLE_VALUE;
 }
 
-void* __stdcall MockKernel32::CreateFileW(wchar_t* lpFileName, uint32_t dwDesiredAccess, uint32_t dwShareMode, void* lpSecurityAttributes, uint32_t dwCreationDisposition, uint32_t dwFlagsAndAttributes, void* hTemplateFile) {
+void* __stdcall MockKernel32::CreateFileW(WCHAR* lpFileName, uint32_t dwDesiredAccess, uint32_t dwShareMode, void* lpSecurityAttributes, uint32_t dwCreationDisposition, uint32_t dwFlagsAndAttributes, void* hTemplateFile) {
 	char *filename = convert_wstr_to_str(lpFileName);
 	void* ret = MockKernel32::CreateFileA(filename, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 	delete filename;
@@ -231,14 +231,14 @@ bool __stdcall MockKernel32::DeleteFileA(char* lpFileName) {
 	return remove(lpFileName);
 }
 
-bool __stdcall MockKernel32::DeleteFileW(wchar_t* lpFileName) {
+bool __stdcall MockKernel32::DeleteFileW(WCHAR* lpFileName) {
 	char* str = convert_wstr_to_str(lpFileName);
 	bool res = (bool)remove(str);
 	delete str;
 	return res;
 }
 
-void* __stdcall MockKernel32::FindFirstFileW(wchar_t* lpFileName, void* lpFindFileData) {
+void* __stdcall MockKernel32::FindFirstFileW(WCHAR* lpFileName, void* lpFindFileData) {
 	MockKernel32::SetLastError(ERROR_FILE_NOT_FOUND);
 	return INVALID_HANDLE_VALUE;
 }
@@ -265,7 +265,7 @@ uint32_t __stdcall MockKernel32::GetDriveTypeA(char* lpRootPathName) {
 	return 3;
 }
 
-uint32_t __stdcall MockKernel32::GetDriveTypeW(wchar_t* lpRootPathName) {
+uint32_t __stdcall MockKernel32::GetDriveTypeW(WCHAR* lpRootPathName) {
 	return MockKernel32::GetDriveTypeA(nullptr);
 }
 
@@ -329,7 +329,7 @@ uint32_t __stdcall MockKernel32::GetFileAttributesExA(char* lpFileName, uint32_t
 	return true;
 }
 
-uint32_t __stdcall MockKernel32::GetFileAttributesExW(wchar_t* lpFileName, uint32_t fInfoLevelId, void* lpFileInformation)
+uint32_t __stdcall MockKernel32::GetFileAttributesExW(WCHAR* lpFileName, uint32_t fInfoLevelId, void* lpFileInformation)
 {
 	return MockKernel32::GetFileAttributesExA(nullptr, fInfoLevelId, lpFileInformation);
 }
@@ -568,9 +568,9 @@ bool __stdcall MockKernel32::GetStringTypeA(uint32_t dwInfoType, char* lpSrcStr,
 	return true;
 }
 
-bool __stdcall MockKernel32::GetStringTypeW(uint32_t dwInfoType, wchar_t* lpSrcStr, int cchSrc, uint16_t* lpCharType) {
+bool __stdcall MockKernel32::GetStringTypeW(uint32_t dwInfoType, WCHAR* lpSrcStr, int cchSrc, uint16_t* lpCharType) {
 	int idx = 0;
-	wstring input_wstr = wstring(lpSrcStr);
+	u16string input_wstr = u16string(lpSrcStr);
 	if (cchSrc <= 0) {
 		cchSrc = input_wstr.length();
 	}
@@ -613,18 +613,18 @@ int __stdcall MockKernel32::LCMapStringA(LCID Locale, uint32_t dwMapFlags, char*
 		return 0;
 	if (lpDestStr == NULL || cchDest == NULL)
 		return 0;
-	memmove(lpDestStr, lpSrcStr, cchSrc*sizeof(wchar_t));
+	memmove(lpDestStr, lpSrcStr, cchSrc*sizeof(WCHAR));
 	return string(lpSrcStr).length();
 }
 
-int __stdcall MockKernel32::LCMapStringW(LCID Locale, uint32_t dwMapFlags, wchar_t* lpSrcStr, int cchSrc, wchar_t*  lpDestStr, int cchDest) {
+int __stdcall MockKernel32::LCMapStringW(LCID Locale, uint32_t dwMapFlags, WCHAR* lpSrcStr, int cchSrc, WCHAR*  lpDestStr, int cchDest) {
 	if (lpDestStr == NULL)
 		return 0;
 	memmove(lpDestStr, lpSrcStr, cchSrc);
-	return wstring(lpSrcStr).length();
+	return u16string(lpSrcStr).length();
  }
 
-int __stdcall MockKernel32::LCMapStringEx(wchar_t* lpLocaleName, uint32_t dwMapFlags, wchar_t* lpSrcStr, int cchSrc, wchar_t* lpDestStr, int cchDest, void* lpVersionInformation, void* lpReserved, void* sortHandle) {
+int __stdcall MockKernel32::LCMapStringEx(WCHAR* lpLocaleName, uint32_t dwMapFlags, WCHAR* lpSrcStr, int cchSrc, WCHAR* lpDestStr, int cchDest, void* lpVersionInformation, void* lpReserved, void* sortHandle) {
 	size_t cp_sz = cchDest > cchSrc ? cchSrc : cchDest;
 	if (cchSrc == 0)
 		return 0;
@@ -662,12 +662,12 @@ int __stdcall MockKernel32::WideCharToMultiByte(uint32_t CodePage, uint32_t dwFl
 
 	if (cchWideChar != -1) {
 		// it is not null terminated
-		wchar_t* wstr = read_widestring(lpWideCharStr, cchWideChar);
+		WCHAR* wstr = read_widestring(lpWideCharStr, cchWideChar);
 		ansi = convert_wstr_to_str(wstr);
 		delete wstr;
 	}
 	else {
-		ansi = convert_wstr_to_str((wchar_t*)lpWideCharStr);
+		ansi = convert_wstr_to_str((WCHAR*)lpWideCharStr);
 	}
 	if (ansi == NULL) {
 		return 0;
@@ -704,7 +704,7 @@ int __stdcall MockKernel32::MultiByteToWideChar(uint32_t CodePage, uint32_t dwFl
 	if (cbMultiByte > cchWideChar) {
 		return 0;
 	}
-	wchar_t* wstr = (wchar_t*)lpWideCharStr;
+	WCHAR* wstr = (WCHAR*)lpWideCharStr;
 	char* str = (char*)lpMultiByteStr;
 	for (i = 0; i < cbMultiByte; i++) {
 		wstr[i] = str[i];
@@ -768,7 +768,7 @@ uint32_t __stdcall MockKernel32::GetEnvironmentVariableA(char* lpName, char* lpB
 	return 0;
 }
 
-uint32_t __stdcall MockKernel32::GetEnvironmentVariableW(wchar_t* lpName, wchar_t* lpBuffer, uint32_t nSize)
+uint32_t __stdcall MockKernel32::GetEnvironmentVariableW(WCHAR* lpName, WCHAR* lpBuffer, uint32_t nSize)
 {
 	char *str = convert_wstr_to_str(lpName);
 	bool found = false;
@@ -780,7 +780,7 @@ uint32_t __stdcall MockKernel32::GetEnvironmentVariableW(wchar_t* lpName, wchar_
 				lpBuffer[i] = v.first[i];
 			}
 			delete str;
-			return i * sizeof(wchar_t);
+			return i * sizeof(WCHAR);
 		}
 	}
 	MockKernel32::SetLastError(ERROR_ENVVAR_NOT_FOUND);
@@ -801,26 +801,26 @@ char* __stdcall MockKernel32::GetEnvironmentStrings() {
 	return env_str;
 }
 
-wchar_t* __stdcall MockKernel32::GetEnvironmentStringsW() {
-	std::wstring env_str_tmp;
+WCHAR* __stdcall MockKernel32::GetEnvironmentStringsW() {
+	std::u16string env_str_tmp;
 	for (auto const &v : MockNTKrnl::m_env_variable) {
-		std::wstring key;
-		std::wstring value;
+		std::u16string key;
+		std::u16string value;
 		key.assign(v.first.begin(), v.first.end());
 		value.assign(v.second.begin(), v.second.end());
-		env_str_tmp += (key + std::wstring(L"=")+value);
+		env_str_tmp += (key + std::u16string(u"=")+value);
 		env_str_tmp.push_back('\0');
 	}
 	env_str_tmp.pop_back();
 	size_t buf_sz = (env_str_tmp.length() + 1) * 2;
-	wchar_t* env_str = new wchar_t[buf_sz];
+	WCHAR* env_str = new WCHAR[buf_sz];
 	memset(env_str, 0, buf_sz);
 	memmove(env_str, env_str_tmp.c_str(), buf_sz-2);
 
 	return env_str;
 }
 
-uint32_t __stdcall MockKernel32::ExpandEnvironmentStringsW(wchar_t* lpSrc, wchar_t* lpDst, uint32_t nSize) {
+uint32_t __stdcall MockKernel32::ExpandEnvironmentStringsW(WCHAR* lpSrc, WCHAR* lpDst, uint32_t nSize) {
 	char* str = convert_wstr_to_str(lpSrc);
 	std::string src = std::string(str);
 	memset(lpDst, 0, nSize);
@@ -837,7 +837,7 @@ uint32_t __stdcall MockKernel32::ExpandEnvironmentStringsW(wchar_t* lpSrc, wchar
 			continue;
 		}
 		src.replace(idx, env_fmt.length(), env.second);
-		req_buf_sz = (src.length() + 1) * sizeof(wchar_t);
+		req_buf_sz = (src.length() + 1) * sizeof(WCHAR);
 		if (req_buf_sz > nSize) {
 			delete str;
 			return req_buf_sz;
@@ -848,7 +848,7 @@ uint32_t __stdcall MockKernel32::ExpandEnvironmentStringsW(wchar_t* lpSrc, wchar
 		delete str;
 		return req_buf_sz;
 	}
-	size_t sz = (src.length()+1) * sizeof(wchar_t);
+	size_t sz = (src.length()+1) * sizeof(WCHAR);
 	if (sz > nSize) {
 		delete str;
 		return sz;
@@ -864,7 +864,7 @@ bool __stdcall MockKernel32::FreeEnvironmentStringsA(char* penv) {
 	return true;
 }
 
-bool __stdcall MockKernel32::FreeEnvironmentStringsW(wchar_t* penv) {
+bool __stdcall MockKernel32::FreeEnvironmentStringsW(WCHAR* penv) {
 	delete penv;
 	return true;
 }
@@ -912,7 +912,7 @@ void* __stdcall MockKernel32::GetCurrentThread()
 	return INVALID_HANDLE_VALUE;
 }
 
-bool __stdcall MockKernel32::GetDiskFreeSpaceExW(wchar_t* lpDirectoryName, void* lpFreeBytesAvailableToCaller, void* lpTotalNumberOfBytes, void* lpTotalNumberOfFreeBytes) {
+bool __stdcall MockKernel32::GetDiskFreeSpaceExW(WCHAR* lpDirectoryName, void* lpFreeBytesAvailableToCaller, void* lpTotalNumberOfBytes, void* lpTotalNumberOfFreeBytes) {
 	*(uint64_t*)lpTotalNumberOfFreeBytes = 0x000000000ULL;
 	return false;
 }
@@ -927,9 +927,9 @@ uint32_t __stdcall MockKernel32::GetSystemDirectoryA(char* lpBuffer, uint32_t uS
 	return buf_sz;
 }
 
-uint32_t __stdcall MockKernel32::GetSystemDirectoryW(wchar_t* lpBuffer, uint32_t uSize) {
-	size_t buf_sz = sizeof(L"C:\\Windows\\System32");
-	wchar_t* system_dir = L"C:\\Windows\\System32";
+uint32_t __stdcall MockKernel32::GetSystemDirectoryW(WCHAR* lpBuffer, uint32_t uSize) {
+	size_t buf_sz = sizeof(u"C:\\Windows\\System32");
+	WCHAR* system_dir = (char16_t*)u"C:\\Windows\\System32";
 	if (uSize == 0)
 		return buf_sz + 1;
 	memset(lpBuffer, 0, uSize);
@@ -937,16 +937,16 @@ uint32_t __stdcall MockKernel32::GetSystemDirectoryW(wchar_t* lpBuffer, uint32_t
 	return buf_sz;
 }
 
-uint32_t __stdcall MockKernel32::GetSystemWindowsDirectoryW(wchar_t* lpBuffer, uint32_t uSize) {
-	size_t req_sz = sizeof(L"C:\\Windows");
+uint32_t __stdcall MockKernel32::GetSystemWindowsDirectoryW(WCHAR* lpBuffer, uint32_t uSize) {
+	size_t req_sz = sizeof(u"C:\\Windows");
 	if (uSize < req_sz) {
 		return req_sz + 2;
 	}
-	memmove(lpBuffer, L"C:\\Windows", req_sz);
+	memmove(lpBuffer, u"C:\\Windows", req_sz);
 	return req_sz + 2;
 }
 
-uint32_t __stdcall MockKernel32::GetSystemWow64DirectoryW(wchar_t* lpBuffer, uint32_t uSize) {
+uint32_t __stdcall MockKernel32::GetSystemWow64DirectoryW(WCHAR* lpBuffer, uint32_t uSize) {
 	return 0;
 }
 
@@ -968,13 +968,13 @@ void __stdcall MockKernel32::GetSystemInfo(LPSYSTEM_INFO lpSystemInfo) {
 
 }
 
-uint32_t __stdcall MockKernel32::GetFullPathNameW(wchar_t* lpFileName, uint32_t nBufferLength, wchar_t* lpBuffer, wchar_t** lpFilePart) {
+uint32_t __stdcall MockKernel32::GetFullPathNameW(WCHAR* lpFileName, uint32_t nBufferLength, WCHAR* lpBuffer, WCHAR** lpFilePart) {
 	return 1;
 }
 
-uint32_t __stdcall MockKernel32::GetTempPathW(uint32_t nBufferLength, wchar_t* lpBuffer) {
-	size_t buf_sz = sizeof(L".\\TEMP");
-	wchar_t* temp_dir = L".\\TEMP";
+uint32_t __stdcall MockKernel32::GetTempPathW(uint32_t nBufferLength, WCHAR* lpBuffer) {
+	size_t buf_sz = sizeof(u".\\TEMP");
+	WCHAR* temp_dir = (char16_t*)u".\\TEMP";
 	if (nBufferLength == 0)
 		return buf_sz + 1;
 	memset(lpBuffer, 0, nBufferLength);
@@ -982,12 +982,12 @@ uint32_t __stdcall MockKernel32::GetTempPathW(uint32_t nBufferLength, wchar_t* l
 	return buf_sz;
 }
 
-bool __stdcall MockKernel32::GetComputerNameExW(uint32_t NameType, wchar_t* lpBuffer, uint32_t* lpnSize) {
+bool __stdcall MockKernel32::GetComputerNameExW(uint32_t NameType, WCHAR* lpBuffer, uint32_t* lpnSize) {
 	if (lpBuffer == NULL)
 		return false;
 
-	size_t wstr_sz = sizeof(L"DESKTOP-orca");
-	memmove(lpBuffer, L"DESKTOP-orca", wstr_sz);
+	size_t wstr_sz = sizeof(u"DESKTOP-orca");
+	memmove(lpBuffer, u"DESKTOP-orca", wstr_sz);
 
 	return true;
 }
@@ -1089,11 +1089,11 @@ void __stdcall MockKernel32::CloseThreadpoolWork(void* pfnwk) {
 	return;
 }
 
-void* __stdcall MockKernel32::CreateSemaphoreW(void* lpSemaphoreAttributes, long lInitialCount, long lMaximumCount, wchar_t* lpName) {
+void* __stdcall MockKernel32::CreateSemaphoreW(void* lpSemaphoreAttributes, long lInitialCount, long lMaximumCount, WCHAR* lpName) {
 	return (HANDLE) 'SEMA';
 }
 
-void* __stdcall MockKernel32::CreateEventW(void* lpEventAttributes, bool bManualReset, bool bInitialState, wchar_t* lpName) {
+void* __stdcall MockKernel32::CreateEventW(void* lpEventAttributes, bool bManualReset, bool bInitialState, WCHAR* lpName) {
 	MockKernel32::SetLastError(0);
 	return (HANDLE) 'EVNT';
 }
@@ -1226,8 +1226,8 @@ int __stdcall MockKernel32::CompareStringOrdinal(void* lpString1, int cchCount1,
 	if (cchCount2 == -1)
 		cchCount1 = (int)get_wide_string_length(lpString2);
 
-	lpt1 = calloc(cchCount1 + 1, sizeof(wchar_t));
-	lpt2 = calloc(cchCount2 + 1, sizeof(wchar_t));
+	lpt1 = calloc(cchCount1 + 1, sizeof(WCHAR));
+	lpt2 = calloc(cchCount2 + 1, sizeof(WCHAR));
 
 	if (!lpt1 || !lpt2) {
 		free(lpt1);
@@ -1238,7 +1238,7 @@ int __stdcall MockKernel32::CompareStringOrdinal(void* lpString1, int cchCount1,
 	memcpy(lpt1, lpString1, cchCount1 * 2);
 	memcpy(lpt2, lpString2, cchCount2 * 2);
 
-	Result = bIgnoreCase ? wcscmp((const wchar_t*)lpt1, (const wchar_t*)lpt2) : wcscmp((const wchar_t*)lpt1, (const wchar_t*)lpt2);
+	Result = bIgnoreCase ? compare_wstr((WCHAR*)lpt1, (WCHAR*)lpt2) : compare_wstr((WCHAR*)lpt1, (WCHAR*)lpt2);
 
 	free(lpt1);
 	free(lpt2);

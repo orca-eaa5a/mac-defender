@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
 	rsignal_wrapper = new RsignalWrapper();
 	rsignal_wrapper->set_notify_cb((void*)FullScanNotifyCallback);
 	rsignal_wrapper->set_rsignal(rsig_addr);
-	rsignal_wrapper->set_vdm_location("./engine");
+	rsignal_wrapper->set_vdm_location(string(cur_dir) + "/engine");
 	rsignal_wrapper->rsig_boot_engine();
 	rsignal_wrapper->rsig_scan_stream(fd);
 	system("pause");

@@ -5,10 +5,12 @@ map<string, map<string, void*>> APIExports::exports;
 void APIExports::add_hook_info(string mod_name, string func_name, void* addr) {
 	if (APIExports::exports.count(mod_name)) {
 		if (!APIExports::exports[mod_name].count(func_name)) {
+            printf("%s!%s is at %p\n", mod_name.c_str(), func_name.c_str(), addr);
 			APIExports::exports[mod_name][func_name] = addr;
 		}
 	}
 	else {
+        printf("%s!%s is at %p\n", mod_name.c_str(),func_name.c_str(), addr);
 		APIExports::exports[mod_name];
 		APIExports::exports[mod_name][func_name] = addr;
 	}
