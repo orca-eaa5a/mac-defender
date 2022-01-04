@@ -32,10 +32,13 @@ uint32_t __stdcall MockKernel32::GetLastError(){
 
 
 void __stdcall MockKernel32::GetStartupInfoA(LPSTARTUPINFOA lpStartupInfo) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetStartupInfoA");
 	//lpStartupInfo->cb = sizeof(STARTUPINFOA);
 	return;
 }
 void __stdcall MockKernel32::GetStartupInfoW(LPSTARTUPINFOW lpStartupInfo) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetStartupInfoW");
+	memset(lpStartupInfo, 0, sizeof(STARTUPINFOW));
 	//lpStartupInfo->cb = sizeof(STARTUPINFOW);
 	return;
 }
@@ -49,12 +52,17 @@ void* __stdcall MockKernel32::LoadLibraryA(char* lpLibFileName) {
 void* __stdcall MockKernel32::LoadLibraryW(char16_t* lpLibFileName) {
 	void* mod = nullptr;
 	char *name = convert_wstr_to_str(lpLibFileName);
+
+	debug_log("<kernel32.dll!%s> called with %s\n", "LoadLibraryW", name);
+
 	delete name;
 	return (void*)mod;
 }
 
 void* __stdcall MockKernel32::LoadLibraryExW(char16_t* lpLibFileName, void* hFile, uint32_t dwFlags) {
 	char *name = convert_wstr_to_str(lpLibFileName);
+	debug_log("<kernel32.dll!%s> called with %s\n", "LoadLibraryExW", name);
+
 	if (strstr(name, "win-core") || \
 		strstr(name, "wofutil") || \
 		strstr(name, "wintrust")){
@@ -68,10 +76,14 @@ void* __stdcall MockKernel32::LoadLibraryExW(char16_t* lpLibFileName, void* hFil
 }
 
 bool __stdcall MockKernel32::FreeLibrary(void* hLibModule) {
+	debug_log("<kernel32.dll!%s> called with %p\n", "FreeLibrary", hLibModule);
+
 	return true;
 }
 
 void* __stdcall MockKernel32::MockGetModuleHandleA(char* lpModuleName) {
+	debug_log("<kernel32.dll!%s> called with %s\n", "GetModuleHandleA", lpModuleName);
+
 	void* mock_mod = nullptr;
 	if (lpModuleName && strstr(lpModuleName, "mpengine.dll"))
 		return (void*)MockNTKrnl::engine_base;
@@ -104,6 +116,8 @@ void* __stdcall MockKernel32::GetModuleHandleW(char16_t* lpModuleName)
 }
 
 bool __stdcall MockKernel32::GetModuleHandleExA(uint32_t dwFlags, char* lpModuleName, void* phModule) {
+	debug_log("<kernel32.dll!%s> called with %s\n", "GetModuleHandleExA", lpModuleName);
+
 	char* _phModule = (char*)phModule;
 	memset(phModule, (int)0, sizeof(void*));
 	return true;
@@ -111,6 +125,9 @@ bool __stdcall MockKernel32::GetModuleHandleExA(uint32_t dwFlags, char* lpModule
 
 bool __stdcall MockKernel32::GetModuleHandleExW(uint32_t dwFlags, char16_t* lpModuleName, void* phModule) {
 	char* str_modname = convert_wstr_to_str(lpModuleName);
+
+	debug_log("<kernel32.dll!%s> called with %s\n", "GetModuleHandleExW", str_modname);
+
 	bool ret = false;
 	ret = MockKernel32::GetModuleHandleExA(dwFlags, str_modname, phModule);
 	delete str_modname;
@@ -127,6 +144,8 @@ void* __stdcall MockKernel32::MockGetProcAddress(void* hModule, char* lpProcName
 		}
 	}
 
+
+	debug_log("<kernel32.dll!%s> failed to get %s\n", "GetProcAddress", lpProcName);
 	uint32_t i = rand();
 	//printf("%s --> 0x%x\n", lpProcName, i);
 	return (void*)i;
@@ -134,6 +153,8 @@ void* __stdcall MockKernel32::MockGetProcAddress(void* hModule, char* lpProcName
 
 
 uint32_t __stdcall MockKernel32::GetModuleFileNameA(void* hModule, char* lpFilename, uint32_t nSize) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetModuleFileNameA");
+
 	string mock_file_name = "C:\\orca\\angle.exe";
 	size_t str_buf_sz = mock_file_name.length();
 	if (hModule == NULL && nSize > str_buf_sz) {
@@ -144,6 +165,8 @@ uint32_t __stdcall MockKernel32::GetModuleFileNameA(void* hModule, char* lpFilen
 }
 
 uint32_t __stdcall MockKernel32::GetModuleFileNameW(void* hModule, char16_t* lpFileName, uint32_t nSize) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetModuleFileNameW");
+
 	u16string mock_file_namew = u"C:\\orca\\angle.exe";
 	size_t str_buf_sz = mock_file_namew.length()*sizeof(WCHAR);
 
@@ -158,7 +181,7 @@ void* __stdcall MockKernel32::CreateFileA(char* lpFileName, uint32_t dwDesiredAc
 	//UNIX
 		//while (strchr(filename, '\\'))
 		//	*strchr(filename, '\\') = '/';
-
+	debug_log("<%s> called with %s\n", "CreateFileA", lpFileName);
 	FILE *FileHandle;
 	FILE* tmp;
 
@@ -211,6 +234,8 @@ void* __stdcall MockKernel32::CreateFileA(char* lpFileName, uint32_t dwDesiredAc
 
 void* __stdcall MockKernel32::CreateFileW(char16_t* lpFileName, uint32_t dwDesiredAccess, uint32_t dwShareMode, void* lpSecurityAttributes, uint32_t dwCreationDisposition, uint32_t dwFlagsAndAttributes, void* hTemplateFile) {
 	char *filename = convert_wstr_to_str(lpFileName);
+	debug_log("<kernel32.dll!%s> called with %s\n", "CreateFileW", filename);
+
 	void* ret = MockKernel32::CreateFileA(filename, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 	delete filename;
 
@@ -228,22 +253,30 @@ bool __stdcall MockKernel32::WriteFile(void* hFile, void* lpBuffer, uint32_t nNu
 }
 
 bool __stdcall MockKernel32::DeleteFileA(char* lpFileName) {
+	debug_log("<kernel32.dll!%s> called with %s\n", "DeleteFileA", lpFileName);
 	return remove(lpFileName);
 }
 
 bool __stdcall MockKernel32::DeleteFileW(char16_t* lpFileName) {
 	char* str = convert_wstr_to_str(lpFileName);
+	debug_log("<kernel32.dll!%s> called with %s\n", "DeleteFileW", str);
+
 	bool res = (bool)remove(str);
 	delete str;
 	return res;
 }
 
 void* __stdcall MockKernel32::FindFirstFileW(char16_t* lpFileName, void* lpFindFileData) {
+	char* str = convert_wstr_to_str(lpFileName);
+	debug_log("<kernel32.dll!%s> called with %s\n", "FindFirstFileW", str);
+	delete str;
+
 	MockKernel32::SetLastError(ERROR_FILE_NOT_FOUND);
 	return INVALID_HANDLE_VALUE;
 }
 
 bool __stdcall MockKernel32::CloseHandle(void* hObject) {
+	debug_log("<kernel32.dll!%s> called with %p\n", "CloseHandle", hObject);
 	if (hObject == (void*)'EVNT'
 		|| hObject == INVALID_HANDLE_VALUE
 		|| hObject == (void*) 'SEMA')
@@ -254,6 +287,7 @@ bool __stdcall MockKernel32::CloseHandle(void* hObject) {
 }
 
 bool __stdcall MockKernel32::DuplicateHandle(void* hSourceProcessHandle, void* hSourceHandle, void* hTargetProcessHandle, void** lpTargetHandle, uint32_t dwDesiredAccess, bool bInheritHandle, uint32_t dwOptions) {
+	debug_log("<kernel32.dll!%s> called..\n", "DuplicateHandle");
 	if(lpTargetHandle)
 		*lpTargetHandle = hSourceHandle;
 	return true;
@@ -262,23 +296,32 @@ bool __stdcall MockKernel32::DuplicateHandle(void* hSourceProcessHandle, void* h
 
 
 uint32_t __stdcall MockKernel32::GetDriveTypeA(char* lpRootPathName) {
+	debug_log("<kernel32.dll!%s> called with %s\n", "GetDriveTypeA", lpRootPathName);
 	return 3;
 }
 
 uint32_t __stdcall MockKernel32::GetDriveTypeW(char16_t* lpRootPathName) {
+	char* str = convert_wstr_to_str(lpRootPathName);
+	debug_log("<kernel32.dll!%s> called with %s\n", "GetDriveTypeW", str);
+	delete str;
+
 	return MockKernel32::GetDriveTypeA(nullptr);
 }
 
 uint32_t __stdcall MockKernel32::GetLogicalDrives() {
+	debug_log("<kernel32.dll!%s> called..\n", "GetLogicalDrives");
 	return 4;
 }
 
 uint32_t __stdcall MockKernel32::GetSystemDefaultLCID(){
+	debug_log("<kernel32.dll!%s> called..\n", "GetSystemDefaultLCID");
 	return 0x0800; //locale-system-default
 }
 
 
 uint32_t __stdcall MockKernel32::GetFileSizeEx(void* hFile, PLARGE_INTEGER lpFileSize) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetFileSizeEx");
+
 	long curpos = ftell((FILE*)hFile);
 	fseek((FILE*)hFile, 0, SEEK_END);
 	lpFileSize->u.LowPart = ftell((FILE*)hFile);
@@ -293,6 +336,8 @@ uint32_t __stdcall MockKernel32::SetFilePointer(
 	long*  lpDistanceToMoveHigh,
 	uint32_t  dwMoveMethod
 ) {
+	// debug_log("<kernel32.dll!%s> called..\n", "SetFilePointer"); too many...
+
 	int result;
 	result = fseek((FILE*)hFile, lDistanceToMove, dwMoveMethod);
 	uint32_t pos = ftell((FILE*)hFile);
@@ -309,6 +354,8 @@ bool __stdcall MockKernel32::SetFilePointerEx(
 	uint64_t*  lpNewFilePointer,
 	uint32_t  dwMoveMethod
 ) {
+	// debug_log("<kernel32.dll!%s> called..\n", "SetFilePointerEx"); too many...
+
 	int result;
 	result = fseek((FILE*)hFile, liDistanceToMove, dwMoveMethod);
 	if (lpNewFilePointer) {
@@ -320,11 +367,17 @@ bool __stdcall MockKernel32::SetFilePointerEx(
 }
 
 uint32_t __stdcall MockKernel32::GetFileAttributesW(void* lpFileName){
+	char* str = convert_wstr_to_str((char16_t*)lpFileName);
+	debug_log("<kernel32.dll!%s> called with %s\n", "GetFileAttributesW", str);
+	delete str;
+
 	//return FILE_ATTRIBUTE_ARCHIVE;
 	return FILE_ATTRIBUTE_NORMAL;
 }
 
 uint32_t __stdcall MockKernel32::GetFileAttributesExA(char* lpFileName, uint32_t fInfoLevelId, void* lpFileInformation) {
+	debug_log("<kernel32.dll!%s> called with %s\n", "GetFileAttributesExA", lpFileName);
+
 	memset(lpFileInformation, FILE_ATTRIBUTE_NORMAL, sizeof(void*));
 	return true;
 }
@@ -336,25 +389,29 @@ uint32_t __stdcall MockKernel32::GetFileAttributesExW(char16_t* lpFileName, uint
 
 
 bool __stdcall MockKernel32::SetProcessInformation(void* hProcess, PROCESS_INFORMATION_CLASS ProcessInformationClass, void* ProcessInformation, uint32_t ProcessInformationSize) {
-	
+	debug_log("<kernel32.dll!%s> called..\n", "SetProcessInformation");
 	return true;
 }
 
 bool __stdcall MockKernel32::GetThreadTimes(void* hThread, void* lpCreationTime, void* lpExitTime, void* lpKernelTime, void* lpUserTime) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetThreadTimes");
 	return true;
 }
 
 bool __stdcall MockKernel32::CreateTimerQueueTimer(void** phNewTimer, void* TimerQueue, void* Callback, void* Parameter, uint32_t DueTime, uint32_t Period, uint32_t Flags) {
+	debug_log("<kernel32.dll!%s> called..\n", "CreateTimerQueueTimer");
 	return true;
 }
 
 void __stdcall MockKernel32::GetSystemTime(PSYSTEMTIME lpSystemTime)
 {
+	debug_log("<kernel32.dll!%s> called..\n", "GetSystemTime");
 	memset(lpSystemTime, 0, sizeof(SYSTEMTIME));
 	return;
 }
 
 bool __stdcall MockKernel32::SystemTimeToFileTime(SYSTEMTIME *lpSystemTime, PFILETIME lpFileTime) {
+	debug_log("<kernel32.dll!%s> called..\n", "SystemTimeToFileTime");
 	memset(lpFileTime, 0, sizeof(FILETIME));
 	return TRUE;
 }
@@ -362,14 +419,17 @@ bool __stdcall MockKernel32::SystemTimeToFileTime(SYSTEMTIME *lpSystemTime, PFIL
 
 void __stdcall MockKernel32::GetSystemTimeAsFileTime(void* lpSystemTimeAsFileTime)
 {
+	debug_log("<kernel32.dll!%s> called..\n", "GetSystemTimeAsFileTime");
 	memset(lpSystemTimeAsFileTime, 0, sizeof(FILETIME));
 }
 
 void __stdcall MockKernel32::GetSystemTimePreciseAsFileTime(void* lpSystemTimeAsFileTime) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetSystemTimePreciseAsFileTime");
 	memset(lpSystemTimeAsFileTime, 0, sizeof(FILETIME));
 }
 
 uint32_t __stdcall MockKernel32::GetCurrentThreadID() {
+	debug_log("<kernel32.dll!%s> called..\n", "GetCurrentThreadID");
 	uint64_t tid;
 	
 #if defined(__WINDOWS__)	
@@ -383,6 +443,7 @@ uint32_t __stdcall MockKernel32::GetCurrentThreadID() {
 }
 
 uint32_t __stdcall MockKernel32::GetCurrentProcessID() {
+	debug_log("<kernel32.dll!%s> called..\n", "GetCurrentProcessID");
 	uint32_t pid = 0;
 #ifdef _WIN64
 	pid = GetCurrentProcessId();
@@ -393,6 +454,7 @@ uint32_t __stdcall MockKernel32::GetCurrentProcessID() {
 }
 
 bool __stdcall MockKernel32::QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount){
+	debug_log("<kernel32.dll!%s> called..\n", "QueryPerformanceCounter");
 	struct timespec tm;
 #ifdef _WIN64
 	timespec_get(&tm, clock());
@@ -406,6 +468,7 @@ bool __stdcall MockKernel32::QueryPerformanceCounter(LARGE_INTEGER *lpPerformanc
 }
 
 bool __stdcall MockKernel32::QueryPerformanceFrequency(LARGE_INTEGER *lpFrequency) {
+	debug_log("<kernel32.dll!%s> called..\n", "QueryPerformanceFrequency");
 #ifdef _WIN64
 	lpFrequency->QuadPart = 2433535;
 	lpFrequency->LowPart = 2433535;
@@ -422,14 +485,17 @@ bool __stdcall MockKernel32::QueryPerformanceFrequency(LARGE_INTEGER *lpFrequenc
 }
 
 void* __stdcall MockKernel32::GetCommandLineA() {
+	debug_log("<kernel32.dll!%s> called..\n", "GetCommandLineA");
 	return (void*)MockKernel32::commandline.c_str();
 }
 
 void* __stdcall MockKernel32::GetCommandLineW() {
+	debug_log("<kernel32.dll!%s> called..\n", "GetCommandLineW");
 	return (void*)MockKernel32::wcommandline.c_str();
 }
 
 void* __stdcall MockKernel32::GetStdHandle(uint32_t nStdHandle) {
+	debug_log("<kernel32.dll!%s> called with 0x%x\n", "GetStdHandle", nStdHandle);
 	void* ret_hndl = nullptr;
 	switch (nStdHandle)
 	{
@@ -450,21 +516,26 @@ void* __stdcall MockKernel32::GetStdHandle(uint32_t nStdHandle) {
 }
 
 uint32_t __stdcall MockKernel32::GetFileType(void* hFile) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetFileType");
 	return 0x2; // character file
 }
 
 void* __stdcall MockKernel32::DecodePointer(void* ptr) {
+	//debug_log("<kernel32.dll!%s> called..\n", "DecodePointer"); too many...
 	return ptr;
 }
 
 void* __stdcall MockKernel32::EncodePointer(void* ptr) {
-	return ptr;
+	//debug_log("<kernel32.dll!%s> called..\n", "EncodePointer"); too many...
+	return ptr; 
 }
 
 uint32_t MockKernel32::GetACP() {
+	debug_log("<kernel32.dll!%s> called..\n", "GetACP");
 	return 65001; //utf-8
 }
 bool __stdcall MockKernel32::GetCPInfo(int CodePage, LPCPINFO lpCPInfo){
+	debug_log("<kernel32.dll!%s> called..\n", "GetCPInfo");
 	//codepage is always utf-8
 	lpCPInfo->MaxCharSize = 1; // english ver
 	lpCPInfo->DefaultChar[0] = '?';
@@ -472,10 +543,12 @@ bool __stdcall MockKernel32::GetCPInfo(int CodePage, LPCPINFO lpCPInfo){
 }
 
 bool __stdcall MockKernel32::IsValidCodePage(uint32_t CodePage) {
+	debug_log("<kernel32.dll!%s> called..\n", "IsValidCodePage");
 	return true;
 }
 
 uint32_t __stdcall MockKernel32::TlsAlloc() {
+	debug_log("<kernel32.dll!%s> called..\n", "TlsAlloc");
 	if (MockKernel32::tls_index >= _ARRAYSIZE(MockKernel32::ThreadLocalStorage) - 1) {
 		return TLS_OUT_OF_INDEXES;
 	}
@@ -483,6 +556,7 @@ uint32_t __stdcall MockKernel32::TlsAlloc() {
 }
 
 bool __stdcall MockKernel32::TlsSetValue(uint32_t dwTlsIndex, void* lpTlsValue) {
+	debug_log("<kernel32.dll!%s> called..\n", "TlsSetValue");
 	if (dwTlsIndex < _ARRAYSIZE(MockKernel32::ThreadLocalStorage)) {
 		MockKernel32::ThreadLocalStorage[dwTlsIndex] = (uint64_t)lpTlsValue;
 		return true;
@@ -492,6 +566,7 @@ bool __stdcall MockKernel32::TlsSetValue(uint32_t dwTlsIndex, void* lpTlsValue) 
 }
 
 bool __stdcall MockKernel32::TlsFree(uint32_t dwTlsIndex) {
+	debug_log("<kernel32.dll!%s> called..\n", "TlsFree");
 	if (dwTlsIndex < _ARRAYSIZE(MockKernel32::ThreadLocalStorage)) {
 		MockKernel32::ThreadLocalStorage[dwTlsIndex] = NULL;
 		return true;
@@ -501,12 +576,14 @@ bool __stdcall MockKernel32::TlsFree(uint32_t dwTlsIndex) {
 }
 
 void* __stdcall MockKernel32::TlsGetValue(uint32_t dwTlsIndex) {
+	debug_log("<kernel32.dll!%s> called..\n", "TlsGetValue");
 	if (dwTlsIndex < _ARRAYSIZE(MockKernel32::ThreadLocalStorage))
 		return (void*)MockKernel32::ThreadLocalStorage[dwTlsIndex];
 	return 0;
 }
 
 uint32_t __stdcall MockKernel32::FlsAlloc(void* lpCallback) {
+	debug_log("<kernel32.dll!%s> called..\n", "FlsAlloc");
 	uint32_t cur_tls_idx = MockKernel32::TlsAlloc();
 	if (cur_tls_idx != TLS_OUT_OF_INDEXES)
 		FlsCallbacks[cur_tls_idx] = (PFLS_CALLBACK_FUNCTION)lpCallback;
@@ -514,21 +591,24 @@ uint32_t __stdcall MockKernel32::FlsAlloc(void* lpCallback) {
 }
 
 uint32_t __stdcall MockKernel32::FlsSetValue(uint32_t dwFlsIndex, void* lpFlsData) {
+	debug_log("<kernel32.dll!%s> called..\n", "FlsSetValue");
 	return MockKernel32::TlsSetValue(dwFlsIndex, lpFlsData);
 }
 
 void* __stdcall MockKernel32::FlsGetValue(uint32_t dwFlsIndex) {
+	debug_log("<kernel32.dll!%s> called..\n", "FlsGetValue");
 	return MockKernel32::TlsGetValue(dwFlsIndex);
 }
 
 bool MockKernel32::FlsFree(uint32_t dwFlsIndex) {
+	debug_log("<kernel32.dll!%s> called..\n", "FlsFree");
 	if (MockKernel32::FlsCallbacks[dwFlsIndex])
 		MockKernel32::FlsCallbacks[dwFlsIndex](MockKernel32::TlsGetValue(dwFlsIndex));
 	return MockKernel32::TlsFree(dwFlsIndex);
 }
 
 bool __stdcall MockKernel32::GetStringTypeA(uint32_t dwInfoType, char* lpSrcStr, int cchSrc, uint16_t* lpCharType) {
-	
+	debug_log("<kernel32.dll!%s> called with %s\n", "GetStringTypeA", lpSrcStr);
 	int idx = 0;
 	string input_str = string(lpSrcStr);
 	if (cchSrc <= 0) {
@@ -569,6 +649,10 @@ bool __stdcall MockKernel32::GetStringTypeA(uint32_t dwInfoType, char* lpSrcStr,
 }
 
 bool __stdcall MockKernel32::GetStringTypeW(uint32_t dwInfoType, char16_t* lpSrcStr, int cchSrc, uint16_t* lpCharType) {
+	char* str = convert_wstr_to_str(lpSrcStr);
+	debug_log("<kernel32.dll!%s> called with %s\n", "GetStringTypeW", str);
+	delete str;
+
 	int idx = 0;
 	u16string input_wstr = u16string(lpSrcStr);
 	if (cchSrc <= 0) {
@@ -609,6 +693,7 @@ bool __stdcall MockKernel32::GetStringTypeW(uint32_t dwInfoType, char16_t* lpSrc
 }
 
 int __stdcall MockKernel32::LCMapStringA(LCID Locale, uint32_t dwMapFlags, char* lpSrcStr, int cchSrc, char*  lpDestStr, int cchDest) {
+	debug_log("<kernel32.dll!%s> called with %s\n", "LCMapStringA", lpSrcStr);
 	if (lpDestStr == NULL || cchSrc == NULL)
 		return 0;
 	if (lpDestStr == NULL || cchDest == NULL)
@@ -618,6 +703,9 @@ int __stdcall MockKernel32::LCMapStringA(LCID Locale, uint32_t dwMapFlags, char*
 }
 
 int __stdcall MockKernel32::LCMapStringW(LCID Locale, uint32_t dwMapFlags, char16_t* lpSrcStr, int cchSrc, char16_t*  lpDestStr, int cchDest) {
+	char* str = convert_wstr_to_str(lpSrcStr);
+	debug_log("<kernel32.dll!%s> called with %s\n", "LCMapStringW", str);
+	delete str;
 	if (lpDestStr == NULL)
 		return 0;
 	memmove(lpDestStr, lpSrcStr, cchSrc);
@@ -625,6 +713,9 @@ int __stdcall MockKernel32::LCMapStringW(LCID Locale, uint32_t dwMapFlags, char1
  }
 
 int __stdcall MockKernel32::LCMapStringEx(char16_t* lpLocaleName, uint32_t dwMapFlags, char16_t* lpSrcStr, int cchSrc, char16_t* lpDestStr, int cchDest, void* lpVersionInformation, void* lpReserved, void* sortHandle) {
+	char* str = convert_wstr_to_str(lpSrcStr);
+	debug_log("<kernel32.dll!%s> called with %s\n", "LCMapStringEx", str);
+	delete str;
 	size_t cp_sz = cchDest > cchSrc ? cchSrc : cchDest;
 	if (cchSrc == 0)
 		return 0;
@@ -656,6 +747,10 @@ int __stdcall MockKernel32::LCMapStringEx(char16_t* lpLocaleName, uint32_t dwMap
 }
 
 int __stdcall MockKernel32::WideCharToMultiByte(uint32_t CodePage, uint32_t dwFlags, void* lpWideCharStr, int cchWideChar, void* lpMultiByteStr, int cbMultiByte, void* lpDefaultChar, void* lpUsedDefaultChar) {
+	char* str = convert_wstr_to_str((char16_t*)lpWideCharStr);
+	debug_log("<kernel32.dll!%s> called with %s\n", "WideCharToMultiByte", str);
+	delete str;
+
 	char *ansi = NULL;
 	if (cchWideChar == 0)
 		return 0;
@@ -690,6 +785,8 @@ int __stdcall MockKernel32::WideCharToMultiByte(uint32_t CodePage, uint32_t dwFl
 }
 
 int __stdcall MockKernel32::MultiByteToWideChar(uint32_t CodePage, uint32_t dwFlags, void* lpMultiByteStr, int cbMultiByte, void* lpWideCharStr, int cchWideChar) {
+	debug_log("<kernel32.dll!%s> called with %s\n", "MultiByteToWideChar", (char*)lpMultiByteStr);
+
 	size_t i;
 
 	if (cbMultiByte == 0)
@@ -720,39 +817,48 @@ int __stdcall MockKernel32::MultiByteToWideChar(uint32_t CodePage, uint32_t dwFl
 
 
 void __stdcall MockKernel32::InitializeSListHead(PSLIST_HEADER ListHead) {
+	debug_log("<kernel32.dll!%s> called..\n", "InitializeSListHead");
 	memset(ListHead, 0, sizeof(uint64_t) * 2);
 }
 
 bool __stdcall MockKernel32::InitializeCriticalSectionAndSpinCount(void* lpCriticalSection, uint32_t dwSpinCount) {
+	debug_log("<kernel32.dll!%s> called..\n", "InitializeCriticalSectionAndSpinCount");
 	return true;
 }
 
 bool __stdcall MockKernel32::InitializeCriticalSection(void* lpCriticalSection) {
+	debug_log("<kernel32.dll!%s> called..\n", "InitializeCriticalSection");
 	return true;
 }
 
 bool __stdcall MockKernel32::InitializeCriticalSectionEx(void* lpCriticalSection, uint32_t dwSpinCOunt, uint32_t Flags) {
+	debug_log("<kernel32.dll!%s> called..\n", "InitializeCriticalSectionEx");
 	return true;
 }
 
 void __stdcall MockKernel32::EnterCriticalSection(void* lpCriticalSection) {
+	debug_log("<kernel32.dll!%s> called..\n", "EnterCriticalSection");
 	return;
 }
 
 void __stdcall MockKernel32::DeleteCriticalSection(void* lpCriticalSection) {
+	debug_log("<kernel32.dll!%s> called..\n", "DeleteCriticalSection");
 	return;
 }
 
 void __stdcall MockKernel32::LeaveCriticalSection(void* lpCriticalSection) {
+	debug_log("<kernel32.dll!%s> called..\n", "LeaveCriticalSection");
 	return;
 }
 
 void __stdcall MockKernel32::InitializeConditionVariable(void* ConditionVariable) {
+	debug_log("<kernel32.dll!%s> called..\n", "InitializeConditionVariable");
 	return;
 }
 
 uint32_t __stdcall MockKernel32::GetEnvironmentVariableA(char* lpName, char* lpBuffer, uint32_t nSize) {
 	char *str = lpName;
+	debug_log("<kernel32.dll!%s> called with %s\n", "GetEnvironmentVariableA", str);
 	bool found = false;
 	memset(lpBuffer, 0, nSize);
 	for (auto const &v : MockNTKrnl::m_env_variable) {
@@ -771,6 +877,7 @@ uint32_t __stdcall MockKernel32::GetEnvironmentVariableA(char* lpName, char* lpB
 uint32_t __stdcall MockKernel32::GetEnvironmentVariableW(char16_t* lpName, char16_t* lpBuffer, uint32_t nSize)
 {
 	char *str = convert_wstr_to_str(lpName);
+	debug_log("<kernel32.dll!%s> called with %s\n", "GetEnvironmentVariableW", str);
 	bool found = false;
 	memset(lpBuffer, 0, nSize);
 	for (auto const &v : MockNTKrnl::m_env_variable) {
@@ -789,6 +896,8 @@ uint32_t __stdcall MockKernel32::GetEnvironmentVariableW(char16_t* lpName, char1
 }
 
 char* __stdcall MockKernel32::GetEnvironmentStrings() {
+	debug_log("<kernel32.dll!%s> called..\n", "GetEnvironmentStrings");
+
 	std::string env_str_tmp;
 	for (auto const &v : MockNTKrnl::m_env_variable) {
 		env_str_tmp += (v.first + std::string("=") + v.second);
@@ -796,12 +905,15 @@ char* __stdcall MockKernel32::GetEnvironmentStrings() {
 	}
 	env_str_tmp.pop_back();
 	char* env_str = new char[env_str_tmp.length()];
+
 	memmove(env_str, env_str_tmp.c_str(), env_str_tmp.length());
 
 	return env_str;
 }
 
 char16_t* __stdcall MockKernel32::GetEnvironmentStringsW() {
+	debug_log("<kernel32.dll!%s> called..\n", "GetEnvironmentStringsW");
+
 	std::u16string env_str_tmp;
 	for (auto const &v : MockNTKrnl::m_env_variable) {
 		std::u16string key;
@@ -821,6 +933,8 @@ char16_t* __stdcall MockKernel32::GetEnvironmentStringsW() {
 }
 
 uint32_t __stdcall MockKernel32::ExpandEnvironmentStringsW(char16_t* lpSrc, char16_t* lpDst, uint32_t nSize) {
+	debug_log("<kernel32.dll!%s> called..\n", "ExpandEnvironmentStringsW");
+
 	char* str = convert_wstr_to_str(lpSrc);
 	std::string src = std::string(str);
 	memset(lpDst, 0, nSize);
@@ -860,32 +974,46 @@ uint32_t __stdcall MockKernel32::ExpandEnvironmentStringsW(char16_t* lpSrc, char
 }
 
 bool __stdcall MockKernel32::FreeEnvironmentStringsA(char* penv) {
+	debug_log("<kernel32.dll!%s> called..\n", "FreeEnvironmentStringsA");
+
 	delete penv;
 	return true;
 }
 
 bool __stdcall MockKernel32::FreeEnvironmentStringsW(char16_t* penv) {
+	debug_log("<kernel32.dll!%s> called..\n", "FreeEnvironmentStringsW");
+
 	delete penv;
 	return true;
 }
 
 void __stdcall MockKernel32::AcquireSRWLockExclusive(PSRWLOCK SRWLock) {
+	debug_log("<kernel32.dll!%s> called..\n", "AcquireSRWLockExclusive");
+
 	return;
 }
 
 void __stdcall MockKernel32::ReleaseSRWLockExclusive(PSRWLOCK SRWLock) {
+	debug_log("<kernel32.dll!%s> called..\n", "ReleaseSRWLockExclusive");
+
 	return;
 }
 
 void __stdcall MockKernel32::InitializeSRWLock(PSRWLOCK SRWLock) {
+	debug_log("<kernel32.dll!%s> called..\n", "InitializeSRWLock");
+
 	return;
 }
 
 uint32_t __stdcall MockKernel32::GetTickCount() {
+	debug_log("<kernel32.dll!%s> called..\n", "GetTickCount");
+
 	return ++MockKernel32::tick_counter;
 }
 
 uint64_t __stdcall MockKernel32::GetTickCount64() {
+	debug_log("<kernel32.dll!%s> called..\n", "GetTickCount64");
+
 	return ++MockKernel32::tick_counter;
 }
 
@@ -899,25 +1027,35 @@ bool __stdcall MockKernel32::DeviceIoControl(
 	uint32_t* lpBytesReturend,
 	void* lpOverlapped
 ) {
+	debug_log("<kernel32.dll!%s> called..\n", "DeviceIoControl");
+
 	return false;
 }
 
 
 void* __stdcall MockKernel32::GetCurrentProcess(){
+	debug_log("<kernel32.dll!%s> called..\n", "GetCurrentProcess");
+
 	return INVALID_HANDLE_VALUE;
 }
 
 void* __stdcall MockKernel32::GetCurrentThread()
 {
+	debug_log("<kernel32.dll!%s> called..\n", "GetCurrentThread");
+
 	return INVALID_HANDLE_VALUE;
 }
 
 bool __stdcall MockKernel32::GetDiskFreeSpaceExW(char16_t* lpDirectoryName, void* lpFreeBytesAvailableToCaller, void* lpTotalNumberOfBytes, void* lpTotalNumberOfFreeBytes) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetDiskFreeSpaceExW");
+
 	*(uint64_t*)lpTotalNumberOfFreeBytes = 0x000000000ULL;
 	return false;
 }
 
 uint32_t __stdcall MockKernel32::GetSystemDirectoryA(char* lpBuffer, uint32_t uSize) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetSystemDirectoryA");
+
 	size_t buf_sz = sizeof("C:\\Windows\\System32");
 	char* system_dir = "C:\\Windows\\System32";
 	if (uSize == 0)
@@ -928,6 +1066,8 @@ uint32_t __stdcall MockKernel32::GetSystemDirectoryA(char* lpBuffer, uint32_t uS
 }
 
 uint32_t __stdcall MockKernel32::GetSystemDirectoryW(char16_t* lpBuffer, uint32_t uSize) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetSystemDirectoryW");
+
 	size_t buf_sz = sizeof(u"C:\\Windows\\System32");
 	char16_t* system_dir = (char16_t*)u"C:\\Windows\\System32";
 	if (uSize == 0)
@@ -938,6 +1078,8 @@ uint32_t __stdcall MockKernel32::GetSystemDirectoryW(char16_t* lpBuffer, uint32_
 }
 
 uint32_t __stdcall MockKernel32::GetSystemWindowsDirectoryW(char16_t* lpBuffer, uint32_t uSize) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetSystemWindowsDirectoryW");
+
 	size_t req_sz = sizeof(u"C:\\Windows");
 	if (uSize < req_sz) {
 		return req_sz + 2;
@@ -947,15 +1089,21 @@ uint32_t __stdcall MockKernel32::GetSystemWindowsDirectoryW(char16_t* lpBuffer, 
 }
 
 uint32_t __stdcall MockKernel32::GetSystemWow64DirectoryW(char16_t* lpBuffer, uint32_t uSize) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetSystemWow64DirectoryW");
+
 	return 0;
 }
 
 bool __stdcall MockKernel32::GetProductInfo(uint32_t dwOSMajorVersion, uint32_t dwOSMinorVersion, uint32_t dwSpMajorVersion, uint32_t dwSpMinorVersion, uint32_t * pdwReturnedProductType) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetProductInfo");
+
 	*pdwReturnedProductType = 0x65; //PRODUCT_CORE
 	return true;
 }
 
 void __stdcall MockKernel32::GetSystemInfo(LPSYSTEM_INFO lpSystemInfo) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetSystemInfo");
+
 #if defined(__WINDOWS__)
 	lpSystemInfo->wProcessorArchitecture = 9; //PROCESSOR_ARCHITECTURE_AMD64
 #else
@@ -969,10 +1117,14 @@ void __stdcall MockKernel32::GetSystemInfo(LPSYSTEM_INFO lpSystemInfo) {
 }
 
 uint32_t __stdcall MockKernel32::GetFullPathNameW(char16_t* lpFileName, uint32_t nBufferLength, char16_t* lpBuffer, char16_t** lpFilePart) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetFullPathNameW");
+
 	return 1;
 }
 
 uint32_t __stdcall MockKernel32::GetTempPathW(uint32_t nBufferLength, char16_t* lpBuffer) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetTempPathW");
+
 	size_t buf_sz = sizeof(u".\\TEMP");
 	char16_t* temp_dir = (char16_t*)u".\\TEMP";
 	if (nBufferLength == 0)
@@ -983,6 +1135,8 @@ uint32_t __stdcall MockKernel32::GetTempPathW(uint32_t nBufferLength, char16_t* 
 }
 
 bool __stdcall MockKernel32::GetComputerNameExW(uint32_t NameType, char16_t* lpBuffer, uint32_t* lpnSize) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetComputerNameExW");
+
 	if (lpBuffer == NULL)
 		return false;
 
@@ -993,26 +1147,32 @@ bool __stdcall MockKernel32::GetComputerNameExW(uint32_t NameType, char16_t* lpB
 }
 
 bool __stdcall MockKernel32::GetProcessTimes(void* hProcess, void* lpCreationTime, void* lpExitTime, void* lpKernelTime, void* lpUserTime) {
+	debug_log("<kernel32.dll!%s> called..\n", "GetProcessTimes");
+
 	MockKernel32::SetLastError(0);
 	return false;
 }
 
 bool __stdcall MockKernel32::ProcessIdToSessionId(uint32_t dwProcessId, uint32_t* pSessionId) {
+	debug_log("<kernel32.dll!%s> called..\n", "ProcessIdToSessionId");
+
 	return false;
 }
 
 
 uint32_t __stdcall MockKernel32::QueryDosDeviceA(void* lpDeviceName, void* lpTargetPath, uint32_t ucchMax) {
+	debug_log("<kernel32.dll!%s> called..\n", "QueryDosDeviceA");
 	return 0;
 }
 
 uint32_t __stdcall MockKernel32::QueryDosDeviceW(void* lpDeviceName, void* lpTargetPath, uint32_t ucchMax) {
+	debug_log("<kernel32.dll!%s> called..\n", "QueryDosDeviceW");
 	return 0;
 }
 
 
 void* __stdcall MockKernel32::VirtualAlloc(void* lpAddress, size_t dwSize, uint32_t flAllocationType, uint32_t flProtect) {
-	
+	//debug_log("<kernel32.dll!%s> called..\n", "VirtualAlloc"); too many
 	//if (flAllocationType & ~(MEM_COMMIT | MEM_RESERVE)) {
 	//	return NULL;
 	//}
@@ -1037,14 +1197,17 @@ void* __stdcall MockKernel32::VirtualAlloc(void* lpAddress, size_t dwSize, uint3
 }
 
 bool __stdcall MockKernel32::VirtualLock(void* lpAddress, size_t dwSize) {
+	//debug_log("<kernel32.dll!%s> called..\n", "VirtualLock"); too many
 	return true;
 }
 
 bool __stdcall MockKernel32::VirtualUnlock(void* lpAddress, size_t dwSize) {
+	//debug_log("<kernel32.dll!%s> called..\n", "VirtualUnlock"); too many
 	return true;
 }
 
 bool __stdcall MockKernel32::VirtualFree(void* lpAddress, size_t dwSize, uint32_t dwFreeType) {
+	//debug_log("<kernel32.dll!%s> called..\n", "VirtualFree"); too many
 	if (dwFreeType == MEM_RELEASE) {
 		if (dwSize != 0) return false;
 #if defined(__WINDOWS__)
@@ -1057,64 +1220,79 @@ bool __stdcall MockKernel32::VirtualFree(void* lpAddress, size_t dwSize, uint32_
 }
 
 bool __stdcall MockKernel32::MockVirtualProtect(void* lpAddress, size_t dwSize, uint32_t flNewProtect, void* lpflOldProtect) {
+	//debug_log("<kernel32.dll!%s> called..\n", "VirtualProtect"); too many
 	return true;
 	//return VirtualProtect(lpAddress, dwSize, flNewProtect, (PDWORD)lpflOldProtect);
 }
 
 void __stdcall MockKernel32::SetThreadpoolTimer(void* pfnti, void* pv, uint32_t msPeriod, uint32_t msWindowLength) {
+	debug_log("<kernel32.dll!%s> called..\n", "SetThreadpoolTimer");
 	return;
 }
 
 void __stdcall MockKernel32::WaitForThreadpoolTimerCallbacks(void* ptr, bool fCancelPendingCallbacks) {
+	debug_log("<kernel32.dll!%s> called..\n", "WaitForThreadpoolTimerCallbacks");
 	return;
 }
 
 void* __stdcall MockKernel32::CreateThreadpoolTimer(void* pfnti, void* pv, void* pcbe) {
+	debug_log("<kernel32.dll!%s> called..\n", "CreateThreadpoolTimer");
 	return (void*)0x41414141;
 }
 
 void __stdcall MockKernel32::CloseThreadpoolTimer(void* ptr) {
+	debug_log("<kernel32.dll!%s> called..\n", "CloseThreadpoolTimer");
 	return;
 }
 
 void __stdcall MockKernel32::WaitForThreadpoolWorkCallbacks(void* pwk, bool fCancelPendingCallbacks) {
+	debug_log("<kernel32.dll!%s> called..\n", "WaitForThreadpoolWorkCallbacks");
 	return;
 }
 
 void* __stdcall MockKernel32::CreateThreadpoolWork(void* pfnwk, void* pv, void* pcbe) {
+	debug_log("<kernel32.dll!%s> called..\n", "CreateThreadpoolWork");
 	return (void*)0x41414141;
 }
 
 void __stdcall MockKernel32::CloseThreadpoolWork(void* pfnwk) {
+	debug_log("<kernel32.dll!%s> called..\n", "CloseThreadpoolWork");
 	return;
 }
 
 void* __stdcall MockKernel32::CreateSemaphoreW(void* lpSemaphoreAttributes, long lInitialCount, long lMaximumCount, char16_t* lpName) {
+	debug_log("<kernel32.dll!%s> called..\n", "CreateSemaphoreW");
 	return (HANDLE) 'SEMA';
 }
 
 void* __stdcall MockKernel32::CreateEventW(void* lpEventAttributes, bool bManualReset, bool bInitialState, char16_t* lpName) {
+	debug_log("<kernel32.dll!%s> called..\n", "CreateEventW");
 	MockKernel32::SetLastError(0);
 	return (HANDLE) 'EVNT';
 }
 
 bool __stdcall MockKernel32::SetEvent(void* hEvent) {
+	debug_log("<kernel32.dll!%s> called..\n", "SetEvent");
 	return true;
 }
 
 bool __stdcall MockKernel32::ReSetEvent(void* hEvent) {
+	debug_log("<kernel32.dll!%s> called..\n", "ReSetEvent");
 	return true;
 }
 
 bool __stdcall MockKernel32::RegisterWaitForSingleObject(void** phNewWaitObject, void* hObject, void* Callback, void* Context, uint32_t dwMilliseconds, uint32_t dwFlags) {
+	debug_log("<kernel32.dll!%s> called..\n", "RegisterWaitForSingleObject");
 	return true;
 }
 
 uint32_t __stdcall MockKernel32::WaitForSingleObject(void* hHandle, uint32_t dwMilliseconds) {
+	debug_log("<kernel32.dll!%s> called..\n", "WaitForSingleObject");
 	return 0xFFFFFFFF;
 }
 
 void* __stdcall MockKernel32::GetProcessHeap() {
+	// debug_log("<kernel32.dll!%s> called..\n", "GetProcessHeap"); too many...
 	uint32_t proc_heap = (uint32_t)'NAHH';
 	/*
 	if (MockNTKrnl::m_heap_handle.find(proc_heap) == MockNTKrnl::m_heap_handle.end()) {
@@ -1131,6 +1309,7 @@ void* __stdcall MockKernel32::GetProcessHeap() {
 };
 
 void* __stdcall MockKernel32::HeapCreate(uint32_t flOptions, size_t dwInitialSize, size_t dwMaximumSize){
+	debug_log("<kernel32.dll!%s> called..\n", "HeapCreate");
 	bool isFixed = false;
 	if (dwMaximumSize != 0)
 		isFixed = true;
@@ -1139,6 +1318,7 @@ void* __stdcall MockKernel32::HeapCreate(uint32_t flOptions, size_t dwInitialSiz
 
 
 void* __stdcall MockKernel32::HeapAlloc(void* hHeap, uint32_t dwFlags, size_t dwBytes) {
+	// debug_log("<kernel32.dll!%s> called..\n", "HeapAlloc"); too many...
 	if (hHeap == (void*)'NAHH') {
 		if (dwFlags & HEAP_ZERO_MEMORY)
 			return calloc(dwBytes, 1);
@@ -1150,6 +1330,7 @@ void* __stdcall MockKernel32::HeapAlloc(void* hHeap, uint32_t dwFlags, size_t dw
 }
 
 void* __stdcall MockKernel32::HeapReAlloc(void* hHeap, uint32_t dwFlags, void* lpMem, size_t dwBytes) {
+	// debug_log("<kernel32.dll!%s> called..\n", "HeapReAlloc"); too many...
 	if (hHeap == (void*)'NAHH') {
 		void* mem_ptr = realloc(lpMem, dwBytes);
 		if (dwFlags & HEAP_ZERO_MEMORY)
@@ -1161,6 +1342,7 @@ void* __stdcall MockKernel32::HeapReAlloc(void* hHeap, uint32_t dwFlags, void* l
 }
 
 bool __stdcall MockKernel32::HeapFree(void* hHeap, uint32_t dwFlags, void* lpMem) {
+	// debug_log("<kernel32.dll!%s> called..\n", "HeapFree"); too many...
 	try {
 		if (hHeap == (void*)'NAHH') {
 			free(lpMem);
@@ -1173,10 +1355,12 @@ bool __stdcall MockKernel32::HeapFree(void* hHeap, uint32_t dwFlags, void* lpMem
 }
 
 bool __stdcall MockKernel32::HeapDestroy(void* hHeap) {
+	// debug_log("<kernel32.dll!%s> called..\n", "HeapDestroy"); too many...
 	return MockNTKrnl::DestroyHeap((uint64_t)hHeap);
 }
 
 size_t __stdcall MockKernel32::HeapSize(void* hHeap, uint32_t dwFlags, void* lpMem) {
+	// debug_log("<kernel32.dll!%s> called..\n", "HeapSize"); too many...
 	if (hHeap == (void*)'NAHH') {
 #if defined(__WINDOWS__)
 		return _msize(lpMem);
@@ -1199,6 +1383,7 @@ size_t __stdcall MockKernel32::HeapSize(void* hHeap, uint32_t dwFlags, void* lpM
 }
 
 void* __stdcall MockKernel32::LocalAlloc(uint32_t uFlags, size_t uBytes) {
+	// debug_log("<kernel32.dll!%s> called..\n", "LocalAlloc"); too many...
 	if (uFlags & LMEM_ZEROINIT) {
 		return calloc(uBytes, 1);
 	}
@@ -1208,6 +1393,7 @@ void* __stdcall MockKernel32::LocalAlloc(uint32_t uFlags, size_t uBytes) {
 }
 
 void* __stdcall MockKernel32::LocalFree(void* hMem) {
+	// debug_log("<kernel32.dll!%s> called..\n", "LocalFree"); too many...
 	if(hMem)
 		free(hMem);
 	return NULL;
@@ -1215,6 +1401,7 @@ void* __stdcall MockKernel32::LocalFree(void* hMem) {
 
 int __stdcall MockKernel32::CompareStringOrdinal(void* lpString1, int cchCount1, void* lpString2, int cchCount2, bool bIgnoreCase)
 {
+	debug_log("<kernel32.dll!%s> called..\n", "CompareStringOrdinal");
 	int Result;
 	int Length;
 	void* lpt1;
@@ -1255,12 +1442,13 @@ void* __stdcall MockKernel32::RaiseException(uint32_t dwExceptionCode, uint32_t 
 #if defined(__WINDOWS__)
 	__debugbreak();
 #elif defined(__APPLE__)
-    __builtin_trap();
+	__builtin_trap();
 #endif
 	return NULL;
 }
 
 bool __stdcall MockKernel32::MockIsProcessorFeaturePresent(uint32_t ProcessorFeature) {
+	debug_log("<kernel32.dll!%s> called..\n", "IsProcessorFeaturePresent");
 	switch (ProcessorFeature) {
 	case PF_XMMI64_INSTRUCTIONS_AVAILABLE:
 	case PF_FLOATING_POINT_PRECISION_ERRATA:
@@ -1273,5 +1461,6 @@ bool __stdcall MockKernel32::MockIsProcessorFeaturePresent(uint32_t ProcessorFea
 }
 
 bool __stdcall MockKernel32::IsDebuggerPresent() {
+	debug_log("<kernel32.dll!%s> called..\n", "IsDebuggerPresent");
 	return false;
 }

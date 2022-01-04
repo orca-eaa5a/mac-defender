@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <functional>
 #include "../exports.h"
+#include "../strutils.hpp"
 
 #if defined(__APPLE__) || defined(__LINUX__)
 #include "include/windows.h"

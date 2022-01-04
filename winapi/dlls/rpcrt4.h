@@ -2,6 +2,7 @@
 #ifndef _RPCRT4_H_
 #define _RPCRT4_H_
 #include "../exports.h"
+#include "../strutils.hpp"
 #if defined(__WINDOWS__)
 #include <windows.h>
 #else

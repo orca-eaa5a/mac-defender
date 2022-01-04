@@ -153,7 +153,7 @@ void debug_log(const char* fmt, ...) {
 	va_start(ap, fmt);
 	vsprintf(buf, fmt, ap);
 	va_end(ap);
-	fprintf(stdout, "%s: %s", __FUNCTION__, buf);
+	fprintf(stdout, "[%s] %s", __FUNCTION__, buf);
 #endif
 	return;
 }

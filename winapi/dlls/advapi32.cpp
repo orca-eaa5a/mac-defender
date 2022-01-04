@@ -5,14 +5,20 @@
 using namespace std;
 
 uint32_t __stdcall MockAdvapi::RegisterTraceGuidsW(void* RequestAddress, void* RequestContext, void* ControlGuid, uint32_t GuidCOunt, void* TraceGuidReg, char16_t* MofImagePath, char16_t* MofResourceName, void* RegistrationHandle) {
+	debug_log("<advapi.dll!%s> called..\n", "RegisterTraceGuidsW");
+
 	return 0;
 }
 
 uint32_t __stdcall MockAdvapi::EventSetInformation(void* RegHandle, uint32_t InformationClass, void* EventInformation, uint32_t InformationLength) {
+	debug_log("<advapi.dll!%s> called..\n", "EventSetInformation");
+
 	return 0;
 }
 
 bool __stdcall MockAdvapi::LookupPrivilegeValueA(char* lpSystemName, char* lpName, void* lpLuid) {
+	debug_log("<advapi.dll!%s> called with %s:%s\n", "LookupPrivilegeValueA", lpSystemName, lpName);
+
 	if (lpSystemName != NULL)
 		return false;
 	char* prv1 = "SeDebugPrivilege";
@@ -41,6 +47,7 @@ bool __stdcall MockAdvapi::LookupPrivilegeValueW(char16_t* lpSystemName, char16_
 }
 
 bool __stdcall MockAdvapi::AdjustTokenPrivileges(void* TokenHandle, bool DisableAllPrivileges, void* NewState, uint32_t BufferLength, void* PreviousState, uint32_t* ReturnLength) {
+	debug_log("<advapi.dll!%s> called..\n", "AdjustTokenPrivileges");
 	return true;
 }
 
@@ -85,6 +92,7 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 	vector<string> splitted = split_string((char*)sub_key_str.c_str(), '\\');
 	//Json::Value key = MockNTKrnl::mock_reg[hive];
 	if (!key) {
+		debug_log("<advapi.dll!%s> called with ERROR_FILE_NOT_FOUND\n", "RegOpenKeyExW");
 		return ERROR_FILE_NOT_FOUND;
 	}
 
@@ -99,9 +107,10 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 		}
 	}
 	
+	debug_log("<advapi.dll!%s> called with %s/%s\n", "RegCreateKeyExW", hive.c_str(), sub_key_str.c_str());
+
 	uint64_t new_k = MockNTKrnl::CreateNewRegHandle(hive, sub_key_str, key);
 	memmove(phkResult, &new_k, sizeof(new_k));
-	
 
 	return 0;
 }
@@ -132,6 +141,7 @@ long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, char16_t* lpSubKey, uint32_
 	vector<string> splitted = split_string((char*)sub_key_str.c_str(), '\\');
 	
 	if (!key) {
+		debug_log("<advapi.dll!%s> called with ERROR_FILE_NOT_FOUND\n", "RegOpenKeyExW");
 		return ERROR_FILE_NOT_FOUND;
 	}
 
@@ -141,10 +151,11 @@ long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, char16_t* lpSubKey, uint32_
 		if (key.isObject())
 			continue;
 		if (!key) {
+			debug_log("<advapi.dll!%s> called with ERROR_FILE_NOT_FOUND\n", "RegOpenKeyExW");
 			return ERROR_FILE_NOT_FOUND;
 		}
 	}
-	
+	debug_log("<advapi.dll!%s> called with %s>%s\n", "RegOpenKeyExW", hive.c_str(), sub_key_str.c_str());
 	uint64_t new_k = MockNTKrnl::CreateNewRegHandle(hive, sub_key_str, key);
 	memmove(phkResult, &new_k, sizeof(new_k));
 	
@@ -165,6 +176,8 @@ long __stdcall MockAdvapi::RegQueryInfoKeyW(
 	uint32_t* lpcbSecurityDescriptor,
 	void* lpftLastWriteTime
 ) {
+	debug_log("<advapi.dll!%s> called..\n", "RegQueryInfoKeyW");
+
 	string hive;
 	string key_str;
 	Json::Value key;
@@ -229,6 +242,8 @@ long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, char16_t* lpValueName, u
 	u16string value_w = u16string(lpValueName);
 	value.assign(value_w.begin(), value_w.end());
 
+	debug_log("<advapi.dll!%s> called with %s\n", "RegQueryValueExW", value.c_str());
+
 	switch ((uint64_t)hKey)
 	{
 	case HKEY_LOCAL_MACHINE:
@@ -273,6 +288,7 @@ long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, char16_t* lpValueName, u
 		
 	}
 	else {
+		debug_log("<advapi.dll!%s> called with ERROR_FILE_NOT_FOUND\n", "RegQueryValueExW");
 		return ERROR_FILE_NOT_FOUND;
 	}
 	return 0;
@@ -284,6 +300,9 @@ long __stdcall MockAdvapi::RegEnumKeyExW(void* hKey, uint32_t dwIndex, char16_t*
 	Json::Value key;
 	tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(uintptr_t)hKey];
 	
+	debug_log("<advapi.dll!%s> called..\n", "RegEnumKeyExW");
+
+
 	uint32_t idx = 0;
 	auto it = key.begin();
 	for (; it != key.end(); ++it) {
@@ -321,16 +340,22 @@ long __stdcall MockAdvapi::RegEnumKeyExW(void* hKey, uint32_t dwIndex, char16_t*
 
 
 long __stdcall MockAdvapi::RegCloseKey(void* hKey) {
+	debug_log("<advapi.dll!%s> called..\n", "RegCloseKey");
+
 	uintptr_t k = (uintptr_t)hKey;
 	MockNTKrnl::RemoveRegHandle(k);
 	return 0;
 }
 
 long __stdcall MockAdvapi::RegNotifyChangeKeyValue(void* hKey, bool bWatchSubtree, uint32_t dwNotifyFilter, void* hEvent, bool fAsynchronous) {
+	debug_log("<advapi.dll!%s> called..\n", "RegNotifyChangeKeyValue");
+
 	return 0;
 }
 
 uint32_t __stdcall MockAdvapi::LsaNtStatusToWinError(uint32_t Status) {
+	debug_log("<advapi.dll!%s> called..\n", "LsaNtStatusToWinError");
+
 	return Status;
 }
 
@@ -342,6 +367,8 @@ uint32_t __stdcall MockAdvapi::EventWriteEx(
 	void* RelatedActivityId,
 	uint32_t UserDataCount,
 	void* UserData) {
+	debug_log("<advapi.dll!%s> called..\n", "EventWriteEx");
+
 	return 0;
 }
 
@@ -353,6 +380,8 @@ uint32_t __stdcall MockAdvapi::EventWriteTransfer(
 	uint32_t UserDataCount,
 	void* UserData
 ) {
+	debug_log("<advapi.dll!%s> called..\n", "EventWriteTransfer");
+
 	return 0;
 }
 
@@ -360,6 +389,8 @@ uint32_t __stdcall MockAdvapi::MyEventActivityIdControl(
 	uint32_t ControlCode,
 	void* ActivityId
 ) {
+	debug_log("<advapi.dll!%s> called..\n", "MyEventActivityIdControl");
+
 	return 0;
 	//return 0;
 }
