@@ -18,9 +18,9 @@ public:
 
 	};
 #if defined(__WINDOWS__)
-	static bool __stdcall MockWofUtil::WofShouldCompressBinaries(WCHAR* Volume, uint32_t* Algorithm);
+	static bool __stdcall MockWofUtil::WofShouldCompressBinaries(char16_t* Volume, uint32_t* Algorithm);
 #else
-	static bool __stdcall WofShouldCompressBinaries(WCHAR* Volume, uint32_t* Algorithm);
+	static bool __stdcall WofShouldCompressBinaries(char16_t* Volume, uint32_t* Algorithm);
 #endif
 };
 #endif // !_WOFUTIL_H_

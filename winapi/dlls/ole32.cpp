@@ -33,7 +33,7 @@ uint32_t __stdcall MockOle32::CoSetProxyBlanket(
 	void* pProxy,
 	uint32_t dwAuthnSvc,
 	uint32_t dwAuthzSvc,
-	WCHAR *pServerPrincName,
+	char16_t* pServerPrincName,
 	uint32_t dwAuthnLevel,
 	uint32_t dwImpLevel,
 	void* pAuthInfo,

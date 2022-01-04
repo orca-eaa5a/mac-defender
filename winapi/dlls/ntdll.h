@@ -128,6 +128,7 @@ typedef struct _ScopeRecord
 	ULONG JumpTarget;
 } ScopeRecord, *PScopeRecord;
 
+#if defined(__LINUX__) || defined(__APPLE__)
 typedef struct _KNONVOLATILE_CONTEXT_POINTERS {
     union {
         PM128A FloatingContext[16];
@@ -248,7 +249,7 @@ typedef struct _DISPATCHER_CONTEXT
     uint32_t ScopeIndex;
     uint32_t Fill0;
 } DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
-
+#endif
 class MockNtdll {
 public:
 	function<void(void)> set_ntdll_hookaddr = [](void) {
@@ -327,7 +328,7 @@ public:
 	);
 	static void* __stdcall MockNtdll::RtlCreateHeap(uint32_t Flags, void* HeapBase, size_t ReserveSize, size_t CommitSize, void* Lock, void* Parameters);
 	static void* __stdcall MockNtdll::RtlAllocateHeap(void* HeapHandle, uint32_t Flags, size_t Size);
-	static void __stdcall MockNtdll::RtlInitUnicodeString(PUNICODE_STRING DestinationString, WCHAR* SourceString);
+	static void __stdcall MockNtdll::RtlInitUnicodeString(PUNICODE_STRING DestinationString, char16_t* SourceString);
 	static void* __stdcall MockNtdll::RtlImageNtHeader(void* ModuleAddress);
 	static uint32_t __stdcall MockNtdll::RtlImageNtHeaderEx(uint32_t Flags, void* base, uint64_t Size, PIMAGE_NT_HEADERS * OutHeaders);
 	static bool __stdcall MockNtdll::RtlAddFunctionTable(void* FunctionTable, uint32_t EntryCount, uint64_t BaseAddress);
@@ -336,7 +337,7 @@ public:
 	static PRUNTIME_FUNCTION __stdcall MockNtdll::RtlLookupFunctionTable(uint64_t ControlPc, uint64_t* ImageBase, uint32_t* Length);
 	static WCHAR __stdcall MockNtdll::RtlpUpcaseUnicodeChar(WCHAR Source);
 	static bool __stdcall MockNtdll::RtlPrefixUnicodeString(PUNICODE_STRING String1, PUNICODE_STRING String2, bool CaseInSensitive);
-	static WCHAR* __stdcall MockNtdll::RtlIpv4AddressToStringW(in_addr *Addr, WCHAR* S);
+	static char16_t* __stdcall MockNtdll::RtlIpv4AddressToStringW(in_addr *Addr, char16_t* S);
 	static void* __stdcall MockNtdll::RtlPcToFileHeader(void* PcValue, void** BaseOfImage);
 	static void* __stdcall MockNtdll::RtlImageDirectoryEntryToData(void* BaseAddress, bool MappedAsImage, uint16_t Directory, uint32_t* Size);
 	static void __stdcall MockNtdll::MockRtlCaptureContext(void* ContextRecord);
@@ -386,7 +387,7 @@ public:
 	);
 	static void* __stdcall RtlCreateHeap(uint32_t Flags, void* HeapBase, size_t ReserveSize, size_t CommitSize, void* Lock, void* Parameters);
 	static void* __stdcall RtlAllocateHeap(void* HeapHandle, uint32_t Flags, size_t Size);
-	static void __stdcall RtlInitUnicodeString(PUNICODE_STRING DestinationString, WCHAR* SourceString);
+	static void __stdcall RtlInitUnicodeString(PUNICODE_STRING DestinationString, char16_t* SourceString);
 	static void* __stdcall RtlImageNtHeader(void* ModuleAddress);
 	static uint32_t __stdcall RtlImageNtHeaderEx(uint32_t Flags, void* base, uint64_t Size, PIMAGE_NT_HEADERS * OutHeaders);
 	static bool __stdcall RtlAddFunctionTable(void* FunctionTable, uint32_t EntryCount, uint64_t BaseAddress);
@@ -395,7 +396,7 @@ public:
 	static PRUNTIME_FUNCTION __stdcall RtlLookupFunctionTable(uint64_t ControlPc, uint64_t* ImageBase, uint32_t* Length);
 	static WCHAR __stdcall RtlpUpcaseUnicodeChar(WCHAR Source);
 	static bool __stdcall RtlPrefixUnicodeString(PUNICODE_STRING String1, PUNICODE_STRING String2, bool CaseInSensitive);
-	static WCHAR* __stdcall RtlIpv4AddressToStringW(in_addr *Addr, WCHAR* S);
+	static char16_t* __stdcall RtlIpv4AddressToStringW(in_addr *Addr, char16_t* S);
 	static void* __stdcall RtlPcToFileHeader(void* PcValue, void** BaseOfImage);
 	static void* __stdcall RtlImageDirectoryEntryToData(void* BaseAddress, bool MappedAsImage, uint16_t Directory, uint32_t* Size);
 	static void __stdcall MockRtlCaptureContext(void* ContextRecord);

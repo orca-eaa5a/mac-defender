@@ -102,7 +102,7 @@ typedef struct _USERDEFINED_STREAMBUFFER_DESCRIPTOR { // size of StreamBufferDes
 	uint32_t(*Write)(uint32_t fd, uint32_t Offset, void* Buffer, uint32_t Size, uint32_t* TotalWritten);
 	uint32_t(*GetSize)(uint32_t fd, uint32_t *FileSize);
 	uint32_t(*SetSize)(uint32_t fd, uint32_t *FileSize);
-	const WCHAR*(*GetName)(void* streambuffer_disc);
+	const char16_t*(*GetName)(void* streambuffer_disc);
 	uint32_t(*SetAttributes)(uint32_t fd, uint32_t Attribute, void* Data, uint32_t DataSize);
 	uint32_t(*GetAttributes)(uint32_t fd, uint32_t Attribute, void* Data, uint32_t DataSize, uint32_t* DataSizeWritten);
 } StreamBufferDescriptor, *PStreamBufferDescriptor;
@@ -113,7 +113,7 @@ typedef struct _USERDEFINED_STREAMBUFFER_DESCRIPTOR { // size of StreamBufferDes
 	uint64_t(*Write)(uint64_t fd, uint64_t Offset, void* Buffer, uint64_t Size, uint64_t* TotalWritten);
 	uint64_t(*GetSize)(uint64_t fd, uint64_t *FileSize);
 	uint64_t(*SetSize)(uint64_t fd, uint64_t *FileSize);
-	const WCHAR*(*GetName)(void* streambuffer_disc);
+	const char16_t*(*GetName)(void* streambuffer_disc);
 	uint64_t(*SetAttributes)(uint64_t fd, uint64_t Attribute, void* Data, uint64_t DataSize);
 	uint64_t(*GetAttributes)(uint64_t fd, uint64_t Attribute, void* Data, uint64_t DataSize, uint64_t* DataSizeWritten);
 } StreamBufferDescriptor, *PStreamBufferDescriptor;

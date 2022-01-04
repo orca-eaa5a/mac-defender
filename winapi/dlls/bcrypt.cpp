@@ -1,6 +1,6 @@
 #include "bcrypt.h"
 
-NTSTATUS __stdcall MockBcrypt::BCryptOpenAlgorithmProvider(void* phAlgorithm, WCHAR* pszAlgId, WCHAR* pszImplementation, uint32_t dwFlags){
+NTSTATUS __stdcall MockBcrypt::BCryptOpenAlgorithmProvider(void* phAlgorithm, char16_t* pszAlgId, char16_t* pszImplementation, uint32_t dwFlags){
 	return 0;
 }
 

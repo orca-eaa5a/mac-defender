@@ -153,12 +153,12 @@ uint64_t ReadBufferCb(void* src, uint64_t Offset, void* Buffer, uint32_t* Size, 
 }
 #endif // _X86
 
-const WCHAR* GetStreamNameCb(void* self) {
-	WCHAR* fname = new WCHAR[260];
-	memset(fname, '\0', sizeof(fname));
+const char16_t* GetStreamNameCb(void* self) {
+	char16_t* fname = new char16_t[260];
+	memset(fname, '\0', 260);
 #if defined(__WINDOWS__)
 	HANDLE hFile = (HANDLE)_get_osfhandle((uint32_t)self);
-	GetFinalPathNameByHandleW(hFile, (WCHAR*)fname, MAX_PATH, VOLUME_NAME_DOS);
+	GetFinalPathNameByHandleW(hFile, (wchar_t*)fname, MAX_PATH, VOLUME_NAME_DOS);
 	std::u16string target_path(fname);
 	if (target_path.substr(0, 8).compare(u"\\\\?\\UNC\\") == 0)
 	{
@@ -170,12 +170,14 @@ const WCHAR* GetStreamNameCb(void* self) {
 		// In case of a local path, crop `\\?\`.
 		target_path = target_path.substr(4);
 	}
-	lstrcpyW(fname, target_path.c_str());
+	memset(fname, '\0', 260);
+	memmove(fname, target_path.c_str(), target_path.length()*sizeof(char16_t));
+	
 #else
 	char* fname_str = new char[260];
 	memset(fname_str, '\0', sizeof(fname_str));
 	if (fcntl((intptr_t)self, F_GETPATH, fname_str) != -1)
-    	copy_str_to_wstr(fname_str, fname, strlen(fname_str));
+		copy_str_to_wstr(fname_str, fname, strlen(fname_str));
 	delete fname_str;
 #endif
 	return fname;

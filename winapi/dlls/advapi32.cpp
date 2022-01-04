@@ -4,7 +4,7 @@
 
 using namespace std;
 
-uint32_t __stdcall MockAdvapi::RegisterTraceGuidsW(void* RequestAddress, void* RequestContext, void* ControlGuid, uint32_t GuidCOunt, void* TraceGuidReg, WCHAR* MofImagePath, WCHAR* MofResourceName, void* RegistrationHandle) {
+uint32_t __stdcall MockAdvapi::RegisterTraceGuidsW(void* RequestAddress, void* RequestContext, void* ControlGuid, uint32_t GuidCOunt, void* TraceGuidReg, char16_t* MofImagePath, char16_t* MofResourceName, void* RegistrationHandle) {
 	return 0;
 }
 
@@ -24,7 +24,7 @@ bool __stdcall MockAdvapi::LookupPrivilegeValueA(char* lpSystemName, char* lpNam
 	return true;
 }
 
-bool __stdcall MockAdvapi::LookupPrivilegeValueW(WCHAR* lpSystemName, WCHAR* lpName, void* lpLuid) {
+bool __stdcall MockAdvapi::LookupPrivilegeValueW(char16_t* lpSystemName, char16_t* lpName, void* lpLuid) {
 	char* system_name = nullptr;
 	char* name = nullptr;
 	if (!lpName)
@@ -51,7 +51,7 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 	Note that key names are not case sensitive.
 	*/
 	void* hKey, 
-	WCHAR* lpSubKey, 
+	char16_t* lpSubKey,
 	uint32_t Reserved,
 	void* lpClass, 
 	uint32_t dwOptions,
@@ -106,7 +106,7 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 	return 0;
 }
 
-long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, WCHAR* lpSubKey, uint32_t ulOptions, uint32_t samDesired, void** phkResult) {
+long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, char16_t* lpSubKey, uint32_t ulOptions, uint32_t samDesired, void** phkResult) {
 	u16string wstr = u16string(lpSubKey);
 	string hive;
 	string sub_key_str;
@@ -153,7 +153,7 @@ long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, WCHAR* lpSubKey, uint32_t u
 
 long __stdcall MockAdvapi::RegQueryInfoKeyW(
 	void* hKey,
-	WCHAR* lpClass,
+	char16_t* lpClass,
 	uint32_t* lpcClass,
 	uint32_t* lpReserved,
 	uint32_t* lpcSubKeys,
@@ -221,7 +221,7 @@ long __stdcall MockAdvapi::RegQueryInfoKeyW(
 	return 0;
 }
 
-long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, WCHAR* lpValueName, uint32_t* lpReserved, uint32_t* lpType, uint8_t*  lpData, uint32_t* lpcbData) {
+long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, char16_t* lpValueName, uint32_t* lpReserved, uint32_t* lpType, uint8_t*  lpData, uint32_t* lpcbData) {
 	string hive;
 	string key_str;
 	Json::Value key;
@@ -278,7 +278,7 @@ long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, WCHAR* lpValueName, uint
 	return 0;
 }
 
-long __stdcall MockAdvapi::RegEnumKeyExW(void* hKey, uint32_t dwIndex, WCHAR* lpName, uint32_t* lpcchName, void* lpReserved, WCHAR* lpClass, uint32_t* lpcchClass, void* lpftLastWriteTime) {
+long __stdcall MockAdvapi::RegEnumKeyExW(void* hKey, uint32_t dwIndex, char16_t* lpName, uint32_t* lpcchName, void* lpReserved, char16_t* lpClass, uint32_t* lpcchClass, void* lpftLastWriteTime) {
 	string hive;
 	string key_str;
 	Json::Value key;

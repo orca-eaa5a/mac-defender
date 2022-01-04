@@ -1,6 +1,10 @@
+#if defined(__WINDOWS__)
+#pragma warning(disable: 4996)
+#endif
+
+#include <cassert>
 #include "ntdll.h"
 #include "../ntoskrnl.h"
-#include <cassert>
 
 NTSTATUS __stdcall MockNtdll::RtlGetVersion(PRTL_OSVERSIONINFOW lpVersionInformation) {
 	lpVersionInformation->dwMajorVersion = MockNTKrnl::major;
@@ -68,7 +72,7 @@ NTSTATUS __stdcall MockNtdll::NtEnumerateValueKey(void* KeyHandle, uint32_t Inde
 		kvinfo->Type = regtype;
 		kvinfo->NameLength = 0;
 		buf_sz = key_str.length() * sizeof(WCHAR) + sizeof(KEY_VALUE_BASIC_INFORMATION);
-		copy_str_to_wstr((char*)key_str.c_str(), kvinfo->Name, key_str.length());
+		copy_str_to_wstr((char*)key_str.c_str(), (char16_t*)kvinfo->Name, key_str.length());
 		kvinfo->NameLength = key_str.length() * sizeof(WCHAR);
 		*ResultLength = buf_sz;
 		if (buf_sz > Length) {
@@ -93,7 +97,7 @@ NTSTATUS __stdcall MockNtdll::NtQueryValueKey(void* KeyHandle, void* ValueName, 
 	PUNICODE_STRING ustr = (PUNICODE_STRING)ValueName;
 	
 	tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(uint64_t)KeyHandle];
-	WCHAR* wstr = read_widestring(ustr->Buffer, ustr->Length);
+	char16_t* wstr = read_widestring(ustr->Buffer, ustr->Length);
 	char* subkey_str = str_tolower(convert_wstr_to_str(wstr));
 	auto subkey = key[subkey_str];
 	delete wstr;
@@ -212,11 +216,15 @@ void* __stdcall MockNtdll::RtlAllocateHeap(void* HeapHandle, uint32_t Flags, siz
 	return NULL;
 }
 
-void __stdcall MockNtdll::RtlInitUnicodeString(PUNICODE_STRING DestinationString, WCHAR* SourceString) {
+void __stdcall MockNtdll::RtlInitUnicodeString(PUNICODE_STRING DestinationString, char16_t* SourceString) {
 	size_t wstr_len = 0;
 	for (; SourceString[wstr_len] != '\0'; wstr_len++) {}
 	DestinationString->Length = wstr_len * sizeof(WCHAR);
+#if defined(__WINDOWS__)
+	DestinationString->Buffer = (wchar_t*)SourceString;
+#else
 	DestinationString->Buffer = SourceString;
+#endif
 	DestinationString->MaximumLength = (wstr_len + 1) * sizeof(WCHAR);
 }
 
@@ -373,16 +381,16 @@ WCHAR __stdcall MockNtdll::RtlpUpcaseUnicodeChar(WCHAR Source){
 }
 
 bool __stdcall MockNtdll::RtlPrefixUnicodeString(PUNICODE_STRING String1, PUNICODE_STRING String2, bool CaseInSensitive) {
-	WCHAR* pc1;
-	WCHAR* pc2;
+	char16_t* pc1;
+	char16_t* pc2;
 	uint32_t  NumChars;
 
 	if (String2->Length < String1->Length)
 		return false;
 
 	NumChars = String1->Length / sizeof(WCHAR);
-	pc1 = String1->Buffer;
-	pc2 = String2->Buffer;
+	pc1 = (char16_t*)String1->Buffer;
+	pc2 = (char16_t*)String2->Buffer;
 
 	if (pc1 && pc2){
 		if (CaseInSensitive){
@@ -403,21 +411,17 @@ bool __stdcall MockNtdll::RtlPrefixUnicodeString(PUNICODE_STRING String1, PUNICO
 	return false;
 }
 
-WCHAR* __stdcall MockNtdll::RtlIpv4AddressToStringW(in_addr *Addr, WCHAR* S) {
+char16_t* __stdcall MockNtdll::RtlIpv4AddressToStringW(in_addr *Addr, char16_t* S) {
 	NTSTATUS Status;
-	WCHAR* End;
+	char16_t* End;
 	uint32_t end_offset = 0;
-    char mb_ipaddr[32];
+	char mb_ipaddr[32];
 	if (!S)
-		return (PWSTR)~0;
-    
-    sprintf(mb_ipaddr, "%u.%u.%u.%u", Addr->S_un.S_un_b.s_b1, Addr->S_un.S_un_b.s_b2, Addr->S_un.S_un_b.s_b3, Addr->S_un.S_un_b.s_b4);
-#if defined(__APPLE__)
-    S = convert_str_to_wstr(mb_ipaddr);
-    end_offset = get_wide_string_length((void*)S);
-#else
-	end_offset = lstrlenW(S);
-#endif
+		return (char16_t*)~0;
+	
+	sprintf(mb_ipaddr, "%u.%u.%u.%u", Addr->S_un.S_un_b.s_b1, Addr->S_un.S_un_b.s_b2, Addr->S_un.S_un_b.s_b3, Addr->S_un.S_un_b.s_b4);
+	S = convert_str_to_wstr(mb_ipaddr);
+	end_offset = get_wide_string_length((void*)S);
 	End = &S[end_offset];
 	
 	return End;
@@ -439,7 +443,7 @@ void* __stdcall MockNtdll::RtlPcToFileHeader(void* PcValue, void** BaseOfImage) 
 #if defined(__WINDOWS__)
 		*BaseOfImage = (void*)GetModuleHandle(NULL); //self
 #elif defined(__APPLE__)
-        *BaseOfImage = NULL; //this is error...
+		*BaseOfImage = NULL; //this is error...
 #endif
 	return *BaseOfImage;
 }
@@ -546,7 +550,7 @@ void* GetStackBase()
 	return (void*)pTIB->StackBase;
 #elif defined(__APPLE__)
 	void* pBase;
-    if (get_pthread_stack_info(&pBase, NULL))
+	if (get_pthread_stack_info(&pBase, NULL))
 		return pBase;
 	return NULL; // error...
 #else
@@ -578,10 +582,10 @@ void SetRegFromStackValue(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS Conte
 	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a80af791c0ec8007aaf5bd7b4b7581021
 	SetReg(Context, Reg, *ValuePointer);
 	if (ContextPointers != NULL)
-#if defined(__WINDOWS)
+#if defined(__WINDOWS__)
 		ContextPointers->IntegerContext[Reg] = ValuePointer;
 #else
-        ContextPointers->DUMMYUNIONNAME2.IntegerContext[Reg] = ValuePointer;
+		ContextPointers->DUMMYUNIONNAME2.IntegerContext[Reg] = ValuePointer;
 #endif
 }
 
@@ -593,7 +597,7 @@ void SetXmmRegFromStackValue(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS Co
 #if defined(__WINDOWS__)
 		ContextPointers->FloatingContext[Reg] = ValuePointer;
 #else
-        ContextPointers->DUMMYUNIONNAME.FloatingContext[Reg] = ValuePointer;
+		ContextPointers->DUMMYUNIONNAME.FloatingContext[Reg] = ValuePointer;
 #endif
 }
 

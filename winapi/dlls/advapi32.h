@@ -41,15 +41,15 @@ class MockAdvapi {
 		};
 
 #if defined(__WINDOWS__)
-		static uint32_t __stdcall MockAdvapi::RegisterTraceGuidsW(void* RequestAddress, void* RequestContext, void* ControlGuid, uint32_t GuidCOunt, void* TraceGuidReg, WCHAR* MofImagePath, WCHAR* MofResourceName, void* RegistrationHandle);
+		static uint32_t __stdcall MockAdvapi::RegisterTraceGuidsW(void* RequestAddress, void* RequestContext, void* ControlGuid, uint32_t GuidCOunt, void* TraceGuidReg, char16_t* MofImagePath, char16_t* MofResourceName, void* RegistrationHandle);
 		static uint32_t __stdcall MockAdvapi::EventSetInformation(void* RegHandle, uint32_t InformationClass, void* EventInformation, uint32_t InformationLength);
 		static bool __stdcall MockAdvapi::LookupPrivilegeValueA(char* lpSystemName, char* lpName, void* lpLuid);
-		static bool __stdcall MockAdvapi::LookupPrivilegeValueW(WCHAR* lpSystemName, WCHAR* lpName, void* lpLuid);
+		static bool __stdcall MockAdvapi::LookupPrivilegeValueW(char16_t* lpSystemName, char16_t* lpName, void* lpLuid);
 		static bool __stdcall MockAdvapi::AdjustTokenPrivileges(void* TokenHandle, bool DisableAllPrivileges, void* NewState, uint32_t BufferLength, void* PreviousState, uint32_t* ReturnLength);
 
 		static long __stdcall MockAdvapi::RegCreateKeyExW(
 			void* hKey,
-			WCHAR* lpSubKey,
+			char16_t* lpSubKey,
 			uint32_t Reserved,
 			void* lpClass,
 			uint32_t dwOptions,
@@ -57,11 +57,11 @@ class MockAdvapi {
 			void* lpSecurityAttributes,
 			void* phkResult,
 			uint32_t* lpdwDisposition);
-		static long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, WCHAR* lpSubKey, uint32_t ulOptions, uint32_t samDesired, void** phkResult);
+		static long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, char16_t* lpSubKey, uint32_t ulOptions, uint32_t samDesired, void** phkResult);
 		static long __stdcall MockAdvapi::RegCloseKey(void* hKey);
 		static long __stdcall MockAdvapi::RegQueryInfoKeyW(
 			void* hKey,
-			WCHAR* lpClass,
+			char16_t* lpClass,
 			uint32_t* lpcClass,
 			uint32_t* lpReserved,
 			uint32_t* lpcSubKeys,
@@ -73,8 +73,8 @@ class MockAdvapi {
 			uint32_t* lpcbSecurityDescriptor,
 			void* lpftLastWriteTime
 		);
-		static long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, WCHAR* lpValueName, uint32_t* lpReserved, uint32_t* lpType, uint8_t*  lpData, uint32_t* lpcbData);
-		static long __stdcall MockAdvapi::RegEnumKeyExW(void* hkey, uint32_t dwIndex, WCHAR* lpName, uint32_t* lpcchName, void* lpReserved, WCHAR* lpClass, uint32_t* lpcchClass, void* lpftLastWriteTime);
+		static long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, char16_t* lpValueName, uint32_t* lpReserved, uint32_t* lpType, uint8_t*  lpData, uint32_t* lpcbData);
+		static long __stdcall MockAdvapi::RegEnumKeyExW(void* hkey, uint32_t dwIndex, char16_t* lpName, uint32_t* lpcchName, void* lpReserved, char16_t* lpClass, uint32_t* lpcchClass, void* lpftLastWriteTime);
 		static long __stdcall MockAdvapi::RegNotifyChangeKeyValue(void* hKey, bool bWatchSubtree, uint32_t dwNotifyFilter, void* hEvent, bool fAsynchronous);
 
 		static uint32_t __stdcall MockAdvapi::LsaNtStatusToWinError(uint32_t Status);
@@ -99,15 +99,15 @@ class MockAdvapi {
 			void* ActivityId
 		);
 #else
-		static uint32_t __stdcall RegisterTraceGuidsW(void* RequestAddress, void* RequestContext, void* ControlGuid, uint32_t GuidCOunt, void* TraceGuidReg, WCHAR* MofImagePath, WCHAR* MofResourceName, void* RegistrationHandle);
+		static uint32_t __stdcall RegisterTraceGuidsW(void* RequestAddress, void* RequestContext, void* ControlGuid, uint32_t GuidCOunt, void* TraceGuidReg, char16_t* MofImagePath, char16_t* MofResourceName, void* RegistrationHandle);
 		static uint32_t __stdcall EventSetInformation(void* RegHandle, uint32_t InformationClass, void* EventInformation, uint32_t InformationLength);
 		static bool __stdcall LookupPrivilegeValueA(char* lpSystemName, char* lpName, void* lpLuid);
-		static bool __stdcall LookupPrivilegeValueW(WCHAR* lpSystemName, WCHAR* lpName, void* lpLuid);
+		static bool __stdcall LookupPrivilegeValueW(char16_t* lpSystemName, char16_t* lpName, void* lpLuid);
 		static bool __stdcall AdjustTokenPrivileges(void* TokenHandle, bool DisableAllPrivileges, void* NewState, uint32_t BufferLength, void* PreviousState, uint32_t* ReturnLength);
 		
 		static long __stdcall RegCreateKeyExW(
 			void* hKey,
-			WCHAR* lpSubKey,
+			char16_t* lpSubKey,
 			uint32_t Reserved,
 			void* lpClass,
 			uint32_t dwOptions,
@@ -115,11 +115,11 @@ class MockAdvapi {
 			void* lpSecurityAttributes,
 			void* phkResult,
 			uint32_t* lpdwDisposition);
-		static long __stdcall RegOpenKeyExW(void* hKey, WCHAR* lpSubKey, uint32_t ulOptions, uint32_t samDesired, void** phkResult);
+		static long __stdcall RegOpenKeyExW(void* hKey, char16_t* lpSubKey, uint32_t ulOptions, uint32_t samDesired, void** phkResult);
 		static long __stdcall RegCloseKey(void* hKey);
 		static long __stdcall RegQueryInfoKeyW(
 			void* hKey,
-			WCHAR* lpClass,
+			char16_t* lpClass,
 			uint32_t* lpcClass,
 			uint32_t* lpReserved,
 			uint32_t* lpcSubKeys,
@@ -131,8 +131,8 @@ class MockAdvapi {
 			uint32_t* lpcbSecurityDescriptor,
 			void* lpftLastWriteTime
 		);
-		static long __stdcall RegQueryValueExW(void* hKey, WCHAR* lpValueName, uint32_t* lpReserved, uint32_t* lpType, uint8_t*  lpData, uint32_t* lpcbData);
-		static long __stdcall RegEnumKeyExW(void* hkey, uint32_t dwIndex, WCHAR* lpName, uint32_t* lpcchName, void* lpReserved, WCHAR* lpClass, uint32_t* lpcchClass, void* lpftLastWriteTime);
+		static long __stdcall RegQueryValueExW(void* hKey, char16_t* lpValueName, uint32_t* lpReserved, uint32_t* lpType, uint8_t*  lpData, uint32_t* lpcbData);
+		static long __stdcall RegEnumKeyExW(void* hkey, uint32_t dwIndex, char16_t* lpName, uint32_t* lpcchName, void* lpReserved, char16_t* lpClass, uint32_t* lpcchClass, void* lpftLastWriteTime);
 		static long __stdcall RegNotifyChangeKeyValue(void* hKey, bool bWatchSubtree, uint32_t dwNotifyFilter, void* hEvent, bool fAsynchronous);
 
 		static uint32_t __stdcall LsaNtStatusToWinError(uint32_t Status);

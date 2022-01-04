@@ -218,35 +218,35 @@ public:
 	
 	static void* __stdcall MockKernel32::GetStdHandle(uint32_t nStdHandle);
 	//static void* __stdcall MockKernel32::LoadLibraryA(char* lpLibFileName);
-	static void* __stdcall MockKernel32::LoadLibraryW(WCHAR* lpLibFileName);
-	static void* __stdcall MockKernel32::LoadLibraryExW(WCHAR* lpLibFileName, void* hFile, uint32_t dwFlags);
+	static void* __stdcall MockKernel32::LoadLibraryW(char16_t* lpLibFileName);
+	static void* __stdcall MockKernel32::LoadLibraryExW(char16_t* lpLibFileName, void* hFile, uint32_t dwFlags);
 	static bool __stdcall MockKernel32::FreeLibrary(void* hLibModule);
 	static void* __stdcall MockKernel32::MockGetModuleHandleA(char* lpModuleName);
-	static void* __stdcall MockKernel32::GetModuleHandleW(WCHAR* lpModuleName);
+	static void* __stdcall MockKernel32::GetModuleHandleW(char16_t* lpModuleName);
 	static bool __stdcall MockKernel32::GetModuleHandleExA(uint32_t dwFlags, char* lpModuleName, void* phModule);
-	static bool __stdcall MockKernel32::GetModuleHandleExW(uint32_t dwFlags, WCHAR* lpModuleName, void* phModule);
+	static bool __stdcall MockKernel32::GetModuleHandleExW(uint32_t dwFlags, char16_t* lpModuleName, void* phModule);
 	static void* __stdcall MockKernel32::MockGetProcAddress(void* hModule, char* lpProcName);
 	static uint32_t __stdcall MockKernel32::GetModuleFileNameA(void* hModule, char* lpFilename, uint32_t nSize);
-	static uint32_t __stdcall MockKernel32::GetModuleFileNameW(void* hModule, WCHAR* lpFilename, uint32_t nSize);
+	static uint32_t __stdcall MockKernel32::GetModuleFileNameW(void* hModule, char16_t* lpFilename, uint32_t nSize);
 	
 	static uint32_t __stdcall MockKernel32::SetFilePointer(void* hFile, long lDistanceToMove, long* lpDistanceToMoveHigh, uint32_t dwMoveMethod);
 	static bool __stdcall MockKernel32::SetFilePointerEx(void* hFile, uint64_t liDistanceToMove, uint64_t* lpNewFilePointer, uint32_t dwMoveMethod);
 	static uint32_t __stdcall MockKernel32::GetFileAttributesW(void* lpFileName);
 	static uint32_t __stdcall MockKernel32::GetFileAttributesExA(char* lpFileName, uint32_t fInfoLevelId, void* lpFileInformation);
-	static uint32_t __stdcall MockKernel32::GetFileAttributesExW(WCHAR* lpFileName, uint32_t fInfoLevelId, void* lpFileInformation);
+	static uint32_t __stdcall MockKernel32::GetFileAttributesExW(char16_t* lpFileName, uint32_t fInfoLevelId, void* lpFileInformation);
 	static void* __stdcall MockKernel32::CreateFileA(char* lpFileName, uint32_t dwDesiredAccess, uint32_t dwShareMode, void* lpSecurityAttributes, uint32_t dwCreationDisposition, uint32_t dwFlagsAndAttributes, void* hTemplateFile);
-	static void* __stdcall MockKernel32::CreateFileW(WCHAR* lpFileName, uint32_t dwDesiredAccess, uint32_t dwShareMode, void* lpSecurityAttributes, uint32_t dwCreationDisposition, uint32_t dwFlagsAndAttributes, void* hTemplateFile);
+	static void* __stdcall MockKernel32::CreateFileW(char16_t* lpFileName, uint32_t dwDesiredAccess, uint32_t dwShareMode, void* lpSecurityAttributes, uint32_t dwCreationDisposition, uint32_t dwFlagsAndAttributes, void* hTemplateFile);
 	static bool __stdcall MockKernel32::ReadFile(void* hFile, void* lpBuffer, uint32_t nNumberOfBytesToRead, uint32_t* lpNumberOfBytesRead, void* lpOverlapped);
 	static bool __stdcall MockKernel32::WriteFile(void* hFile, void* lpBuffer, uint32_t nNumberOfBytesToWrite, uint32_t* lpNumberOfBytesWritten, void* lpOverlapped);
 	static bool __stdcall MockKernel32::DeleteFileA(char* lpFileName);
-	static bool __stdcall MockKernel32::DeleteFileW(WCHAR* lpFileName);
+	static bool __stdcall MockKernel32::DeleteFileW(char16_t* lpFileName);
 	static bool __stdcall MockKernel32::CloseHandle(void* hObject);
-	static void* __stdcall MockKernel32::FindFirstFileW(WCHAR* lpFileName, void* lpFindFileData);
+	static void* __stdcall MockKernel32::FindFirstFileW(char16_t* lpFileName, void* lpFindFileData);
 
 	static bool __stdcall MockKernel32::DuplicateHandle(void* hSourceProcessHandle, void* hSourceHandle, void* hTargetProcessHandle, void** lpTargetHandle, uint32_t dwDesiredAccess, bool bInheritHandle, uint32_t dwOptions);
 	static uint32_t __stdcall MockKernel32::GetFileType(void* hFile);
 	static uint32_t __stdcall MockKernel32::GetDriveTypeA(char* lpRootPathName);
-	static uint32_t __stdcall MockKernel32::GetDriveTypeW(WCHAR* lpRootPathName);
+	static uint32_t __stdcall MockKernel32::GetDriveTypeW(char16_t* lpRootPathName);
 	static uint32_t __stdcall MockKernel32::GetLogicalDrives();
 	static uint32_t __stdcall MockKernel32::GetSystemDefaultLCID();
 	static uint32_t __stdcall MockKernel32::GetFileSizeEx(void* hFile, PLARGE_INTEGER lpFileSize);
@@ -298,10 +298,10 @@ public:
 	static bool __stdcall MockKernel32::FlsFree(uint32_t dwFlsIndex);
 	
 	static bool __stdcall MockKernel32::GetStringTypeA(uint32_t dwInfoType, char* lpSrcStr, int cchSrc, uint16_t* lpCharType);
-	static bool __stdcall MockKernel32::GetStringTypeW(uint32_t dwInfoType, WCHAR* lpSrcStr, int cchSrc, uint16_t* lpCharType);
+	static bool __stdcall MockKernel32::GetStringTypeW(uint32_t dwInfoType, char16_t* lpSrcStr, int cchSrc, uint16_t* lpCharType);
 	static int __stdcall MockKernel32::LCMapStringA(LCID Locale, uint32_t dwMapFlags, char* lpSrcStr, int cchSrc, char*  lpDestStr, int cchDest);
-	static int __stdcall MockKernel32::LCMapStringW(LCID Locale, uint32_t dwMapFlags, WCHAR* lpSrcStr, int cchSrc, WCHAR*  lpDestStr, int cchDest);
-	static int __stdcall MockKernel32::LCMapStringEx(WCHAR* lpLocaleName, uint32_t dwMapFlags, WCHAR* lpSrcStr, int cchSrc, WCHAR* lpDestStr, int cchDest, void* lpVersionInformation, void* lpReserved, void* sortHandle);
+	static int __stdcall MockKernel32::LCMapStringW(LCID Locale, uint32_t dwMapFlags, char16_t* lpSrcStr, int cchSrc, char16_t*  lpDestStr, int cchDest);
+	static int __stdcall MockKernel32::LCMapStringEx(char16_t* lpLocaleName, uint32_t dwMapFlags, char16_t* lpSrcStr, int cchSrc, char16_t* lpDestStr, int cchDest, void* lpVersionInformation, void* lpReserved, void* sortHandle);
 	
 	static int __stdcall MockKernel32::WideCharToMultiByte(uint32_t CodePage, uint32_t dwFlags, void* lpWideCharStr, int cchWideChar, void* lpMultiByteStr, int cbMultiByte, void* lpDefaultChar, void* lpUsedDefaultChar);
 	static int __stdcall MockKernel32::MultiByteToWideChar(uint32_t CodePage, uint32_t dwFlags, void* lpMultiByteStr, int cbMultiByte, void* lpWideCHarStr, int cchWideChar);
@@ -316,13 +316,13 @@ public:
 	static void __stdcall MockKernel32::DeleteCriticalSection(void* lpCriticalSection);
 	static void __stdcall MockKernel32::LeaveCriticalSection(void* lpCriticalSection);
 
-	static uint32_t __stdcall MockKernel32::ExpandEnvironmentStringsW(WCHAR* lpSrc, WCHAR* lpDst, uint32_t nSize);
+	static uint32_t __stdcall MockKernel32::ExpandEnvironmentStringsW(char16_t* lpSrc, char16_t* lpDst, uint32_t nSize);
 	static uint32_t __stdcall MockKernel32::GetEnvironmentVariableA(char* lpName, char* lpBuffer, uint32_t nSize);
-	static uint32_t __stdcall MockKernel32::GetEnvironmentVariableW(WCHAR* lpName, WCHAR* lpBuffer, uint32_t nSize);
+	static uint32_t __stdcall MockKernel32::GetEnvironmentVariableW(char16_t* lpName, char16_t* lpBuffer, uint32_t nSize);
 	static char* __stdcall MockKernel32::GetEnvironmentStrings();
-	static WCHAR* __stdcall MockKernel32::GetEnvironmentStringsW();
+	static char16_t* __stdcall MockKernel32::GetEnvironmentStringsW();
 	static bool __stdcall MockKernel32::FreeEnvironmentStringsA(char* penv);
-	static bool __stdcall MockKernel32::FreeEnvironmentStringsW(WCHAR* penv);
+	static bool __stdcall MockKernel32::FreeEnvironmentStringsW(char16_t* penv);
 
 	static void __stdcall MockKernel32::AcquireSRWLockExclusive(PSRWLOCK SRWLock);
 	static void __stdcall MockKernel32::ReleaseSRWLockExclusive(PSRWLOCK SRWLock);
@@ -331,14 +331,14 @@ public:
 	static void* __stdcall MockKernel32::GetCurrentProcess();
 	static void* __stdcall MockKernel32::GetCurrentThread();
 
-	static bool __stdcall MockKernel32::GetDiskFreeSpaceExW(WCHAR* lpDirectoryName, void* lpFreeBytesAvailableToCaller, void* lpTotalNumberOfBytes, void* lpTotalNumberOfFreeBytes);
-	static uint32_t __stdcall MockKernel32::GetSystemWindowsDirectoryW(WCHAR* lpBuffer, uint32_t uSize);
-	static uint32_t __stdcall MockKernel32::GetSystemWow64DirectoryW(WCHAR* lpBuffer, uint32_t uSize);
+	static bool __stdcall MockKernel32::GetDiskFreeSpaceExW(char16_t* lpDirectoryName, void* lpFreeBytesAvailableToCaller, void* lpTotalNumberOfBytes, void* lpTotalNumberOfFreeBytes);
+	static uint32_t __stdcall MockKernel32::GetSystemWindowsDirectoryW(char16_t* lpBuffer, uint32_t uSize);
+	static uint32_t __stdcall MockKernel32::GetSystemWow64DirectoryW(char16_t* lpBuffer, uint32_t uSize);
 	static uint32_t __stdcall MockKernel32::GetSystemDirectoryA(char* lpBuffer, uint32_t uSize);
-	static uint32_t __stdcall MockKernel32::GetSystemDirectoryW(WCHAR* lpBuffer, uint32_t uSize);
-	static uint32_t __stdcall MockKernel32::GetFullPathNameW(WCHAR* lpFileName, uint32_t nBufferLength, WCHAR* lpBuffer, WCHAR** lpFilePart);
-	static uint32_t __stdcall MockKernel32::GetTempPathW(uint32_t nBufferLength, WCHAR* lpBuffer);
-	static bool __stdcall MockKernel32::GetComputerNameExW(uint32_t NameType, WCHAR* lpBuffer, uint32_t* lpnSize);
+	static uint32_t __stdcall MockKernel32::GetSystemDirectoryW(char16_t* lpBuffer, uint32_t uSize);
+	static uint32_t __stdcall MockKernel32::GetFullPathNameW(char16_t* lpFileName, uint32_t nBufferLength, char16_t* lpBuffer, char16_t** lpFilePart);
+	static uint32_t __stdcall MockKernel32::GetTempPathW(uint32_t nBufferLength, char16_t* lpBuffer);
+	static bool __stdcall MockKernel32::GetComputerNameExW(uint32_t NameType, char16_t* lpBuffer, uint32_t* lpnSize);
 	static bool __stdcall MockKernel32::ProcessIdToSessionId(uint32_t dwProcessId, uint32_t* pSessionId);
 	static bool __stdcall MockKernel32::GetProcessTimes(void* hProcess, void* lpCreationTime, void* lpExitTime, void* lpKernelTime, void* lpUserTime);
 	static uint32_t __stdcall MockKernel32::QueryDosDeviceA(void* lpDeviceName, void* lpTargetPath, uint32_t ucchMax);
@@ -359,8 +359,8 @@ public:
 	static void __stdcall MockKernel32::CloseThreadpoolWork(void* pfnwk);
 	static void __stdcall MockKernel32::WaitForThreadpoolWorkCallbacks(void* pwk, bool fCancelPendingCallbacks);
 
-	static void* __stdcall MockKernel32::CreateSemaphoreW(void* lpSemaphoreAttributes, long lInitialCount, long lMaximumCount, WCHAR* lpName);
-	static void* __stdcall MockKernel32::CreateEventW(void* lpEventAttributes, bool bManualReset, bool bInitialState, WCHAR* lpName);
+	static void* __stdcall MockKernel32::CreateSemaphoreW(void* lpSemaphoreAttributes, long lInitialCount, long lMaximumCount, char16_t* lpName);
+	static void* __stdcall MockKernel32::CreateEventW(void* lpEventAttributes, bool bManualReset, bool bInitialState, char16_t* lpName);
 	static bool __stdcall MockKernel32::SetEvent(void* hEvent);
 	static bool __stdcall MockKernel32::ReSetEvent(void* hEvent);
 	static bool __stdcall MockKernel32::RegisterWaitForSingleObject(void** phNewWaitObject, void* hObject, void* Callback, void* Context, uint32_t dwMilliseconds, uint32_t dwFlags);
@@ -391,36 +391,36 @@ public:
 
 	static void* __stdcall GetStdHandle(uint32_t nStdHandle);
 	//static void* __stdcall LoadLibraryA(char* lpLibFileName);
-	static void* __stdcall LoadLibraryW(WCHAR* lpLibFileName);
-	static void* __stdcall LoadLibraryExW(WCHAR* lpLibFileName, void* hFile, uint32_t dwFlags);
+	static void* __stdcall LoadLibraryW(char16_t* lpLibFileName);
+	static void* __stdcall LoadLibraryExW(char16_t* lpLibFileName, void* hFile, uint32_t dwFlags);
 	static bool __stdcall FreeLibrary(void* hLibModule);
 	static void* __stdcall MockGetModuleHandleA(char* lpModuleName);
-	static void* __stdcall GetModuleHandleW(WCHAR* lpModuleName);
+	static void* __stdcall GetModuleHandleW(char16_t* lpModuleName);
 	static bool __stdcall GetModuleHandleExA(uint32_t dwFlags, char* lpModuleName, void* phModule);
-	static bool __stdcall GetModuleHandleExW(uint32_t dwFlags, WCHAR* lpModuleName, void* phModule);
+	static bool __stdcall GetModuleHandleExW(uint32_t dwFlags, char16_t* lpModuleName, void* phModule);
 	static void* __stdcall MockGetProcAddress(void* hModule, char* lpProcName);
 	static uint32_t __stdcall GetModuleFileNameA(void* hModule, char* lpFilename, uint32_t nSize);
-	static uint32_t __stdcall GetModuleFileNameW(void* hModule, WCHAR* lpFilename, uint32_t nSize);
+	static uint32_t __stdcall GetModuleFileNameW(void* hModule, char16_t* lpFilename, uint32_t nSize);
 
 	static uint32_t __stdcall SetFilePointer(void* hFile, long lDistanceToMove, long* lpDistanceToMoveHigh, uint32_t dwMoveMethod);
 	static bool __stdcall SetFilePointerEx(void* hFile, uint64_t liDistanceToMove, uint64_t* lpNewFilePointer, uint32_t dwMoveMethod);
 	static uint32_t __stdcall GetFileAttributesW(void* lpFileName);
 	static uint32_t __stdcall GetFileAttributesExA(char* lpFileName, uint32_t fInfoLevelId, void* lpFileInformation);
-	static uint32_t __stdcall GetFileAttributesExW(WCHAR* lpFileName, uint32_t fInfoLevelId, void* lpFileInformation);
+	static uint32_t __stdcall GetFileAttributesExW(char16_t* lpFileName, uint32_t fInfoLevelId, void* lpFileInformation);
 	static void* __stdcall CreateFileA(char* lpFileName, uint32_t dwDesiredAccess, uint32_t dwShareMode, void* lpSecurityAttributes, uint32_t dwCreationDisposition, uint32_t dwFlagsAndAttributes, void* hTemplateFile);
-	static void* __stdcall CreateFileW(WCHAR* lpFileName, uint32_t dwDesiredAccess, uint32_t dwShareMode, void* lpSecurityAttributes, uint32_t dwCreationDisposition, uint32_t dwFlagsAndAttributes, void* hTemplateFile);
+	static void* __stdcall CreateFileW(char16_t* lpFileName, uint32_t dwDesiredAccess, uint32_t dwShareMode, void* lpSecurityAttributes, uint32_t dwCreationDisposition, uint32_t dwFlagsAndAttributes, void* hTemplateFile);
 	static bool __stdcall ReadFile(void* hFile, void* lpBuffer, uint32_t nNumberOfBytesToRead, uint32_t* lpNumberOfBytesRead, void* lpOverlapped);
 	static bool __stdcall WriteFile(void* hFile, void* lpBuffer, uint32_t nNumberOfBytesToWrite, uint32_t* lpNumberOfBytesWritten, void* lpOverlapped);
 	static bool __stdcall DeleteFileA(char* lpFileName);
-	static bool __stdcall DeleteFileW(WCHAR* lpFileName);
-	static void* __stdcall FindFirstFileW(WCHAR* lpFileName, void* lpFindFileData);
+	static bool __stdcall DeleteFileW(char16_t* lpFileName);
+	static void* __stdcall FindFirstFileW(char16_t* lpFileName, void* lpFindFileData);
 
 	static bool __stdcall CloseHandle(void* hObject);
 	static bool __stdcall DuplicateHandle(void* hSourceProcessHandle, void* hSourceHandle, void* hTargetProcessHandle, void** lpTargetHandle, uint32_t dwDesiredAccess, bool bInheritHandle, uint32_t dwOptions);
 	
 	static uint32_t __stdcall GetFileType(void* hFile);
 	static uint32_t __stdcall GetDriveTypeA(char* lpRootPathName);
-	static uint32_t __stdcall GetDriveTypeW(WCHAR* lpRootPathName);
+	static uint32_t __stdcall GetDriveTypeW(char16_t* lpRootPathName);
 	static uint32_t __stdcall GetLogicalDrives();
 	static uint32_t __stdcall GetSystemDefaultLCID();
 	static uint32_t __stdcall GetFileSizeEx(void* hFile, PLARGE_INTEGER lpFileSize);
@@ -472,10 +472,10 @@ public:
 	static bool __stdcall FlsFree(uint32_t dwFlsIndex);
 
 	static bool __stdcall GetStringTypeA(uint32_t dwInfoType, char* lpSrcStr, int cchSrc, uint16_t* lpCharType);
-	static bool __stdcall GetStringTypeW(uint32_t dwInfoType, WCHAR* lpSrcStr, int cchSrc, uint16_t* lpCharType);
+	static bool __stdcall GetStringTypeW(uint32_t dwInfoType, char16_t* lpSrcStr, int cchSrc, uint16_t* lpCharType);
 	static int __stdcall LCMapStringA(LCID Locale, uint32_t dwMapFlags, char* lpSrcStr, int cchSrc, char*  lpDestStr, int cchDest);
-	static int __stdcall LCMapStringW(LCID Locale, uint32_t dwMapFlags, WCHAR* lpSrcStr, int cchSrc, WCHAR*  lpDestStr, int cchDest);
-	static int __stdcall LCMapStringEx(WCHAR* lpLocaleName, uint32_t dwMapFlags, WCHAR* lpSrcStr, int cchSrc, WCHAR* lpDestStr, int cchDest, void* lpVersionInformation, void* lpReserved, void* sortHandle);
+	static int __stdcall LCMapStringW(LCID Locale, uint32_t dwMapFlags, char16_t* lpSrcStr, int cchSrc, char16_t*  lpDestStr, int cchDest);
+	static int __stdcall LCMapStringEx(char16_t* lpLocaleName, uint32_t dwMapFlags, char16_t* lpSrcStr, int cchSrc, char16_t* lpDestStr, int cchDest, void* lpVersionInformation, void* lpReserved, void* sortHandle);
 
 	static int __stdcall WideCharToMultiByte(uint32_t CodePage, uint32_t dwFlags, void* lpWideCharStr, int cchWideChar, void* lpMultiByteStr, int cbMultiByte, void* lpDefaultChar, void* lpUsedDefaultChar);
 	static int __stdcall MultiByteToWideChar(uint32_t CodePage, uint32_t dwFlags, void* lpMultiByteStr, int cbMultiByte, void* lpWideCHarStr, int cchWideChar);
@@ -490,13 +490,13 @@ public:
 	static void __stdcall DeleteCriticalSection(void* lpCriticalSection);
 	static void __stdcall LeaveCriticalSection(void* lpCriticalSection);
 
-	static uint32_t __stdcall ExpandEnvironmentStringsW(WCHAR* lpSrc, WCHAR* lpDst, uint32_t nSize);
+	static uint32_t __stdcall ExpandEnvironmentStringsW(char16_t* lpSrc, char16_t* lpDst, uint32_t nSize);
 	static uint32_t __stdcall GetEnvironmentVariableA(char* lpName, char* lpBuffer, uint32_t nSize);
-	static uint32_t __stdcall GetEnvironmentVariableW(WCHAR* lpName, WCHAR* lpBuffer, uint32_t nSize);
+	static uint32_t __stdcall GetEnvironmentVariableW(char16_t* lpName, char16_t* lpBuffer, uint32_t nSize);
 	static char* __stdcall GetEnvironmentStrings();
-	static WCHAR* __stdcall GetEnvironmentStringsW();
+	static char16_t* __stdcall GetEnvironmentStringsW();
 	static bool __stdcall FreeEnvironmentStringsA(char* penv);
-	static bool __stdcall FreeEnvironmentStringsW(WCHAR* penv);
+	static bool __stdcall FreeEnvironmentStringsW(char16_t* penv);
 
 	static void __stdcall AcquireSRWLockExclusive(PSRWLOCK SRWLock);
 	static void __stdcall ReleaseSRWLockExclusive(PSRWLOCK SRWLock);
@@ -505,14 +505,14 @@ public:
 	static void* __stdcall GetCurrentProcess();
 	static void* __stdcall GetCurrentThread();
 
-	static bool __stdcall GetDiskFreeSpaceExW(WCHAR* lpDirectoryName, void* lpFreeBytesAvailableToCaller, void* lpTotalNumberOfBytes, void* lpTotalNumberOfFreeBytes);
-	static uint32_t __stdcall GetSystemWindowsDirectoryW(WCHAR* lpBuffer, uint32_t uSize);
-	static uint32_t __stdcall GetSystemWow64DirectoryW(WCHAR* lpBuffer, uint32_t uSize);
+	static bool __stdcall GetDiskFreeSpaceExW(char16_t* lpDirectoryName, void* lpFreeBytesAvailableToCaller, void* lpTotalNumberOfBytes, void* lpTotalNumberOfFreeBytes);
+	static uint32_t __stdcall GetSystemWindowsDirectoryW(char16_t* lpBuffer, uint32_t uSize);
+	static uint32_t __stdcall GetSystemWow64DirectoryW(char16_t* lpBuffer, uint32_t uSize);
 	static uint32_t __stdcall GetSystemDirectoryA(char* lpBuffer, uint32_t uSize);
-	static uint32_t __stdcall GetSystemDirectoryW(WCHAR* lpBuffer, uint32_t uSize);
-	static uint32_t __stdcall GetFullPathNameW(WCHAR* lpFileName, uint32_t nBufferLength, WCHAR* lpBuffer, WCHAR** lpFilePart);
-	static uint32_t __stdcall GetTempPathW(uint32_t nBufferLength, WCHAR* lpBuffer);
-	static bool __stdcall GetComputerNameExW(uint32_t NameType, WCHAR* lpBuffer, uint32_t* lpnSize);
+	static uint32_t __stdcall GetSystemDirectoryW(char16_t* lpBuffer, uint32_t uSize);
+	static uint32_t __stdcall GetFullPathNameW(char16_t* lpFileName, uint32_t nBufferLength, char16_t* lpBuffer, char16_t** lpFilePart);
+	static uint32_t __stdcall GetTempPathW(uint32_t nBufferLength, char16_t* lpBuffer);
+	static bool __stdcall GetComputerNameExW(uint32_t NameType, char16_t* lpBuffer, uint32_t* lpnSize);
 	static bool __stdcall ProcessIdToSessionId(uint32_t dwProcessId, uint32_t* pSessionId);
 	static bool __stdcall GetProcessTimes(void* hProcess, void* lpCreationTime, void* lpExitTime, void* lpKernelTime, void* lpUserTime);
 	static uint32_t __stdcall QueryDosDeviceA(void* lpDeviceName, void* lpTargetPath, uint32_t ucchMax);
@@ -532,8 +532,8 @@ public:
 	static void __stdcall CloseThreadpoolWork(void* pfnwk);
 	static void __stdcall WaitForThreadpoolWorkCallbacks(void* pwk, bool fCancelPendingCallbacks);
 
-	static void* __stdcall CreateSemaphoreW(void* lpSemaphoreAttributes, long lInitialCount, long lMaximumCount, WCHAR* lpName);
-	static void* __stdcall CreateEventW(void* lpEventAttributes, bool bManualReset, bool bInitialState, WCHAR* lpName);
+	static void* __stdcall CreateSemaphoreW(void* lpSemaphoreAttributes, long lInitialCount, long lMaximumCount, char16_t* lpName);
+	static void* __stdcall CreateEventW(void* lpEventAttributes, bool bManualReset, bool bInitialState, char16_t* lpName);
 	static bool __stdcall SetEvent(void* hEvent);
 	static bool __stdcall ReSetEvent(void* hEvent);
 	static bool __stdcall RegisterWaitForSingleObject(void** phNewWaitObject, void* hObject, void* Callback, void* Context, uint32_t dwMilliseconds, uint32_t dwFlags);

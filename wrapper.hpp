@@ -44,7 +44,7 @@ public:
 	};
 	function<void(std::string)> set_vdm_location = [this](string loc) {
 		this->signature_location.assign(loc.begin(), loc.end());
-		this->boot_params.SignatureLocation = (WCHAR*)signature_location.c_str();
+		this->boot_params.SignatureLocation = (char16_t*)signature_location.c_str();
 	};
 
 	function<void(void)> rsig_boot_engine = [this]() {
