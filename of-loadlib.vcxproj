@@ -134,6 +134,7 @@
     <ClCompile Include="winapi\dlls\advapi32.cpp" />
     <ClCompile Include="winapi\dlls\bcrypt.cpp" />
     <ClCompile Include="winapi\dlls\crypt32.cpp" />
+    <ClCompile Include="winapi\dlls\dxgi.cpp" />
     <ClCompile Include="winapi\dlls\ole32.cpp" />
     <ClCompile Include="winapi\dlls\rpcrt4.cpp" />
     <ClCompile Include="winapi\dlls\version.cpp" />
@@ -152,6 +153,7 @@
     <ClInclude Include="winapi\dlls\advapi32.h" />
     <ClInclude Include="winapi\dlls\bcrypt.h" />
     <ClInclude Include="winapi\dlls\crypt32.h" />
+    <ClInclude Include="winapi\dlls\dxgi.h" />
     <ClInclude Include="winapi\dlls\kernel32.h" />
     <ClInclude Include="winapi\dlls\ole32.h" />
     <ClInclude Include="winapi\dlls\rpcrt4.h" />

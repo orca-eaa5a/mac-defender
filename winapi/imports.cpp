@@ -10,9 +10,9 @@ void ImportDLLs::setup_dlls() {
 	this->crypt32.set_crypt32_hookaddr();
 	this->wofutil.set_wofutil_hookaddr();
 	this->wintrust.set_wintrust_hookaddr();
-
 	this->ole32.set_ole32_hookaddr();
 	this->rpcrt4.set_rpcrt4_hookaddr();
+	this->dxgi.set_dxgi_hookaddr();
 	
 }
 

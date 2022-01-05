@@ -15,8 +15,9 @@ using namespace std;
 string MockKernel32::commandline;
 u16string MockKernel32::wcommandline;
 uint64_t MockKernel32::ThreadLocalStorage[1024];
+//uint64_t* MockKernel32::ThreadLocalStorage = nullptr;
 PFLS_CALLBACK_FUNCTION MockKernel32::FlsCallbacks[1024];
-uint32_t MockKernel32::tls_index = 2;
+uint32_t MockKernel32::tls_index = 3;
 uint32_t MockKernel32::tick_counter = 0;
 static uint32_t errcode = 0;
 
@@ -101,6 +102,8 @@ void* __stdcall MockKernel32::MockGetModuleHandleA(char* lpModuleName) {
 		mock_mod = (void*)'vers';
 	else if (lpModuleName && strstr(lpModuleName, "crypt32.dll"))
 		mock_mod = (void*)'cryp';
+	else if(lpModuleName && strstr(lpModuleName, "dxgi.dll"))
+		mock_mod = (void*)'dxgi';
 	else
 		return (void*)NULL;
 	return mock_mod;
@@ -146,8 +149,9 @@ void* __stdcall MockKernel32::MockGetProcAddress(void* hModule, char* lpProcName
 
 
 	debug_log("<kernel32.dll!%s> failed to get %s\n", "GetProcAddress", lpProcName);
+
 	uint32_t i = rand();
-	//printf("%s --> 0x%x\n", lpProcName, i);
+	printf("%s --> 0x%x\n", lpProcName, i);
 	return (void*)i;
 }
 
@@ -549,37 +553,48 @@ bool __stdcall MockKernel32::IsValidCodePage(uint32_t CodePage) {
 
 uint32_t __stdcall MockKernel32::TlsAlloc() {
 	debug_log("<kernel32.dll!%s> called..\n", "TlsAlloc");
-	if (MockKernel32::tls_index >= _ARRAYSIZE(MockKernel32::ThreadLocalStorage) - 1) {
+	
+	if (MockKernel32::tls_index >= MAXIMUM_TLS_SLOTS - 1) {
 		return TLS_OUT_OF_INDEXES;
 	}
+	
 	return MockKernel32::tls_index++;
 }
 
 bool __stdcall MockKernel32::TlsSetValue(uint32_t dwTlsIndex, void* lpTlsValue) {
 	debug_log("<kernel32.dll!%s> called..\n", "TlsSetValue");
-	if (dwTlsIndex < _ARRAYSIZE(MockKernel32::ThreadLocalStorage)) {
+	
+	if (dwTlsIndex < MAXIMUM_TLS_SLOTS) {
 		MockKernel32::ThreadLocalStorage[dwTlsIndex] = (uint64_t)lpTlsValue;
 		return true;
 	}
 	else
 		return false;
+	
+	return true;
 }
 
 bool __stdcall MockKernel32::TlsFree(uint32_t dwTlsIndex) {
 	debug_log("<kernel32.dll!%s> called..\n", "TlsFree");
-	if (dwTlsIndex < _ARRAYSIZE(MockKernel32::ThreadLocalStorage)) {
+	MockKernel32::ThreadLocalStorage[dwTlsIndex] = NULL;
+	
+	if (dwTlsIndex < MAXIMUM_TLS_SLOTS) {
 		MockKernel32::ThreadLocalStorage[dwTlsIndex] = NULL;
 		return true;
 	}
 	else
 		return false;
+	
+	return true;
 }
 
 void* __stdcall MockKernel32::TlsGetValue(uint32_t dwTlsIndex) {
 	debug_log("<kernel32.dll!%s> called..\n", "TlsGetValue");
-	if (dwTlsIndex < _ARRAYSIZE(MockKernel32::ThreadLocalStorage))
+	
+	if (dwTlsIndex < MAXIMUM_TLS_SLOTS)
 		return (void*)MockKernel32::ThreadLocalStorage[dwTlsIndex];
 	return 0;
+	
 }
 
 uint32_t __stdcall MockKernel32::FlsAlloc(void* lpCallback) {
@@ -832,22 +847,22 @@ bool __stdcall MockKernel32::InitializeCriticalSection(void* lpCriticalSection) 
 }
 
 bool __stdcall MockKernel32::InitializeCriticalSectionEx(void* lpCriticalSection, uint32_t dwSpinCOunt, uint32_t Flags) {
-	debug_log("<kernel32.dll!%s> called..\n", "InitializeCriticalSectionEx");
+	//debug_log("<kernel32.dll!%s> called..\n", "InitializeCriticalSectionEx"); // too many ..
 	return true;
 }
 
 void __stdcall MockKernel32::EnterCriticalSection(void* lpCriticalSection) {
-	debug_log("<kernel32.dll!%s> called..\n", "EnterCriticalSection");
+	//debug_log("<kernel32.dll!%s> called..\n", "EnterCriticalSection"); // too many ..
 	return;
 }
 
 void __stdcall MockKernel32::DeleteCriticalSection(void* lpCriticalSection) {
-	debug_log("<kernel32.dll!%s> called..\n", "DeleteCriticalSection");
+	//debug_log("<kernel32.dll!%s> called..\n", "DeleteCriticalSection"); // too many..
 	return;
 }
 
 void __stdcall MockKernel32::LeaveCriticalSection(void* lpCriticalSection) {
-	debug_log("<kernel32.dll!%s> called..\n", "LeaveCriticalSection");
+	// debug_log("<kernel32.dll!%s> called..\n", "LeaveCriticalSection"); // too many..
 	return;
 }
 
@@ -1346,6 +1361,7 @@ bool __stdcall MockKernel32::HeapFree(void* hHeap, uint32_t dwFlags, void* lpMem
 	try {
 		if (hHeap == (void*)'NAHH') {
 			free(lpMem);
+			return true;
 		}
 		return MockNTKrnl::FreeHeap((uint64_t)hHeap, lpMem);
 	}

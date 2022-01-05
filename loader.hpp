@@ -63,6 +63,7 @@ auto call_dllmain = [](void* imgbase) -> bool {
 	if (platform == PLATFORM::X64_PLATFORM) {
 		IMAGE_NT_HEADERS64* nt_header = (IMAGE_NT_HEADERS64*)(_imgbase + dos_header->e_lfanew);
 		d_main = (dllMain)(_imgbase + nt_header->OptionalHeader.AddressOfEntryPoint);
+		//d_main = (dllMain)(_imgbase + 0x37FD18); 2019 ver
 	}
 	else {
 		console_log(MSGTYPE::CRIT, "target module is unsupported platform binary");
@@ -363,6 +364,7 @@ auto winmap = [](string lib_name) -> void* {
 	reloc_pe_image(img_base);
 	return img_base;
 };
+
 #endif
 
 auto of_loadlibraryX64 = [](string libname) {

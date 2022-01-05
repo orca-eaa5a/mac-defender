@@ -24,6 +24,8 @@
 #include "include/windows.h"
 #endif
 
+#define MAXIMUM_TLS_SLOTS 1088
+
 typedef void (__stdcall *PFLS_CALLBACK_FUNCTION) (void*);
 
 class MockKernel32 {
@@ -33,6 +35,7 @@ public:
 	static std::u16string wcommandline;	
 	
 	static uint64_t ThreadLocalStorage[1024]; // 64bit
+	//static uint64_t* ThreadLocalStorage;
 	static PFLS_CALLBACK_FUNCTION FlsCallbacks[1024];
 	static uint32_t tls_index;
 	static uint32_t tick_counter;
@@ -54,6 +57,7 @@ public:
 		APIExports::add_hook_info("kernel32.dll", "GetStringTypeA", (void*)GetStringTypeA);
 		APIExports::add_hook_info("kernel32.dll", "GetStringTypeW", (void*)GetStringTypeW);
 		APIExports::add_hook_info("kernel32.dll", "GetModuleFileNameA", (void*)GetModuleFileNameA);
+		APIExports::add_hook_info("kernel32.dll", "GetModuleFileNameW", (void*)GetModuleFileNameW);
 
 		APIExports::add_hook_info("kernel32.dll", "GetStdHandle", (void*)GetStdHandle);
 		//APIExports::add_hook_info("kernel32.dll", "LoadLibraryA", (void*)LoadLibraryA);
@@ -111,7 +115,7 @@ public:
 		APIExports::add_hook_info("kernel32.dll", "GetACP", (void*)GetACP);
 		APIExports::add_hook_info("kernel32.dll", "IsValidCodePage", (void*)IsValidCodePage);
 		APIExports::add_hook_info("kernel32.dll", "GetCPInfo", (void*)GetCPInfo);
-
+		
 		APIExports::add_hook_info("kernel32.dll", "TlsAlloc", (void*)TlsAlloc);
 		APIExports::add_hook_info("kernel32.dll", "TlsGetValue", (void*)TlsGetValue);
 		APIExports::add_hook_info("kernel32.dll", "TlsSetValue", (void*)TlsSetValue);
@@ -120,7 +124,7 @@ public:
 		APIExports::add_hook_info("kernel32.dll", "FlsGetValue", (void*)FlsGetValue);
 		APIExports::add_hook_info("kernel32.dll", "FlsSetValue", (void*)FlsSetValue);
 		APIExports::add_hook_info("kernel32.dll", "FlsFree", (void*)FlsFree);
-
+		
 		APIExports::add_hook_info("kernel32.dll", "LCMapStringA", (void*)LCMapStringA);
 		APIExports::add_hook_info("kernel32.dll", "LCMapStringW", (void*)LCMapStringW);
 		APIExports::add_hook_info("kernel32.dll", "LCMapStringEx", (void*)LCMapStringEx);
