@@ -25,6 +25,11 @@ git clone https://github.com/orca-eaa5a/mac-defender.git
 ./mac-defender $target_file
 ```
 
+## Notice
+- This project only for __mpengine version 1.1.14405.2__
+- other version maybe not working and lastest version will crushed..
+ 
+
 ## Reference
 1. https://github.com/taviso/loadlibrary
 2. https://github.com/reactos/reactos
@@ -34,4 +39,4 @@ git clone https://github.com/orca-eaa5a/mac-defender.git
 
 
 ## License
-[GNU](https://choosealicense.com/licenses/mit/)
+[GPL](https://choosealicense.com/licenses/mit/) License
