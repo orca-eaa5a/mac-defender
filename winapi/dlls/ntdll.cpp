@@ -1,8 +1,13 @@
+#if defined(__WINDOWS__)
+#pragma warning(disable: 4996)
+#endif
+
+#include <cassert>
 #include "ntdll.h"
 #include "../ntoskrnl.h"
-#include <cassert>
 
 NTSTATUS __stdcall MockNtdll::RtlGetVersion(PRTL_OSVERSIONINFOW lpVersionInformation) {
+	debug_log("<ntdll.dll!%s> called..\n", "RtlGetVersion");
 	lpVersionInformation->dwMajorVersion = MockNTKrnl::major;
 	lpVersionInformation->dwMinorVersion = MockNTKrnl::minor;
 	lpVersionInformation->dwBuildNumber = MockNTKrnl::build_version;
@@ -11,27 +16,32 @@ NTSTATUS __stdcall MockNtdll::RtlGetVersion(PRTL_OSVERSIONINFOW lpVersionInforma
 }
 
 NTSTATUS __stdcall MockNtdll::EtwRegister(void* ProviderId, void* EnableCallback, void* CallbackContext, void* RegHandle) {
+	debug_log("<ntdll.dll!%s> called..\n", "EtwRegister");
 	return 0;
 }
 
 NTSTATUS __stdcall MockNtdll::EtwUnregister(void* RegHandle){
+	debug_log("<ntdll.dll!%s> called..\n", "EtwUnregister");
 	return -1;
 }
 
 NTSTATUS __stdcall MockNtdll::NtEnumerateSystemEnvironmentValuesEx(uint32_t InformationClass, void* Buffer, uint32_t* BufferLength) {
+	debug_log("<ntdll.dll!%s> called..\n", "NtEnumerateSystemEnvironmentValuesEx");
 	return 0xC0000002; //STATUS_NOT_IMPLEMENTED
 }
 
 NTSTATUS __stdcall MockNtdll::NtEnumerateValueKey(void* KeyHandle, uint32_t Index, KEY_VALUE_INFORMATION_CLASS KeyValueInformationClass, void* KeyValueInformation, uint32_t Length, uint32_t* ResultLength) {
 	KEY_VALUE_BASIC_INFORMATION* kvinfo = nullptr;
-
 	string hive;
 	string key_str;
 	Json::Value key;
 	memset(KeyValueInformation, 0, Length);
-	uintptr_t h = (uintptr_t)KeyHandle;
+	uint64_t h = (uint64_t)KeyHandle;
 	tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[h];
 	uint32_t idx = 0;
+    
+    debug_log("<ntdll.dll!%s> called..\n", "NtEnumerateValueKey");
+    
 	auto it = key.begin();
 	for (; it != key.end(); ++it){
 		if (key[it.key().asString()].isObject())
@@ -67,9 +77,9 @@ NTSTATUS __stdcall MockNtdll::NtEnumerateValueKey(void* KeyHandle, uint32_t Inde
 		kvinfo->TitleIndex = 0;
 		kvinfo->Type = regtype;
 		kvinfo->NameLength = 0;
-		buf_sz = key_str.length() * sizeof(wchar_t) + sizeof(KEY_VALUE_BASIC_INFORMATION);
-		copy_str_to_wstr((char*)key_str.c_str(), kvinfo->Name, key_str.length());
-		kvinfo->NameLength = key_str.length() * sizeof(wchar_t);
+		buf_sz = key_str.length() * sizeof(WCHAR) + sizeof(KEY_VALUE_BASIC_INFORMATION);
+		copy_str_to_wstr((char*)key_str.c_str(), (char16_t*)kvinfo->Name, key_str.length());
+		kvinfo->NameLength = key_str.length() * sizeof(WCHAR);
 		*ResultLength = buf_sz;
 		if (buf_sz > Length) {
 			return 0x80000005; //STATUS_BUFFER_OVERFLOW
@@ -93,8 +103,11 @@ NTSTATUS __stdcall MockNtdll::NtQueryValueKey(void* KeyHandle, void* ValueName, 
 	PUNICODE_STRING ustr = (PUNICODE_STRING)ValueName;
 	
 	tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(uint64_t)KeyHandle];
-	wchar_t* wstr = read_widestring(ustr->Buffer, ustr->Length);
+	char16_t* wstr = read_widestring(ustr->Buffer, ustr->Length);
 	char* subkey_str = str_tolower(convert_wstr_to_str(wstr));
+
+	debug_log("<ntdll.dll!%s> called with %s\n", "NtQueryValueKey", subkey_str);
+
 	auto subkey = key[subkey_str];
 	delete wstr;
 	delete subkey_str;
@@ -154,28 +167,34 @@ NTSTATUS __stdcall MockNtdll::NtQueryValueKey(void* KeyHandle, void* ValueName, 
 
 
 NTSTATUS __stdcall MockNtdll::NtQueryInformationProcess(void* ProcessHandle, uint32_t ProcessInformationClass, void* ProcessInformation, uint32_t ProcessInformationLength, uint32_t* ReturnLength) {
+	debug_log("<ntdll.dll!%s> called..\n", "NtQueryInformationProcess");
 	return 0;
 }
 
 NTSTATUS __stdcall MockNtdll::NtQueryInformationThread(void* ThreadHandle, uint32_t ThreadInformationClass, void* ThreadInformation, uint32_t ThreadInformationLength, uint32_t* ReturnLength) {
+	debug_log("<ntdll.dll!%s> called..\n", "NtQueryInformationThread");
 	return 0;
 }
 
 NTSTATUS __stdcall MockNtdll::NtQueryInformationFile(void* FileHandle, void* IoStatusBlock, void* FileInformation, uint32_t Length, uint32_t FileInformationClass) {
+	debug_log("<ntdll.dll!%s> called..\n", "NtQueryInformationFile");
 	return 0;
 }
 
 NTSTATUS __stdcall MockNtdll::NtQuerySystemInformation(uint32_t SystemInformationClass, void* SystemInformation, uint32_t SystemInformationLength, uint32_t* ReturnLength) {
+	debug_log("<ntdll.dll!%s> called..\n", "NtQuerySystemInformation");
 	return -1;
 }
 
 NTSTATUS __stdcall MockNtdll::NtOpenSymbolicLinkObject(void** LinkHandle, uint32_t DesiredAccess, void* ObjectAttributes) {
+	debug_log("<ntdll.dll!%s> called..\n", "NtOpenSymbolicLinkObject");
 	// this is unsafe
 	*LinkHandle = (void*)'swc';
 	return 0;
 }
 
 NTSTATUS __stdcall MockNtdll::NtQuerySymbolicLinkObject(void* LinkHandle, UNICODE_STRING* LinkTarget, uint32_t* ReturnedLength) {
+	debug_log("<ntdll.dll!%s> called..\n", "NtQuerySymbolicLinkObject");
 	if (LinkHandle == (void*)INVALID_HANDLE_VALUE)
 		return 0xC0000008;
 	return 0;
@@ -194,11 +213,13 @@ NTSTATUS __stdcall MockNtdll::NtQueryDirectoryFile(
 	PUNICODE_STRING FileName,
 	bool RestartScan
 ) {
+	debug_log("<ntdll.dll!%s> called..\n", "NtQueryDirectoryFile");
 	return 0; // unsafe
 }
 
 
 NTSTATUS __stdcall MockNtdll::NtClose(void* Handle) {
+	debug_log("<ntdll.dll!%s> called..\n", "NtClose");
 	if (Handle == (void*)INVALID_HANDLE_VALUE)
 		return 0xC0000008;
 	return 0;
@@ -212,24 +233,31 @@ void* __stdcall MockNtdll::RtlAllocateHeap(void* HeapHandle, uint32_t Flags, siz
 	return NULL;
 }
 
-void __stdcall MockNtdll::RtlInitUnicodeString(PUNICODE_STRING DestinationString, wchar_t* SourceString) {
+void __stdcall MockNtdll::RtlInitUnicodeString(PUNICODE_STRING DestinationString, char16_t* SourceString) {
+	debug_log("<ntdll.dll!%s> called..\n", "RtlInitUnicodeString");
 	size_t wstr_len = 0;
 	for (; SourceString[wstr_len] != '\0'; wstr_len++) {}
-	DestinationString->Length = wstr_len * sizeof(wchar_t);
+	DestinationString->Length = wstr_len * sizeof(WCHAR);
+#if defined(__WINDOWS__)
+	DestinationString->Buffer = (wchar_t*)SourceString;
+#else
 	DestinationString->Buffer = SourceString;
-	DestinationString->MaximumLength = (wstr_len + 1) * sizeof(wchar_t);
+#endif
+	DestinationString->MaximumLength = (wstr_len + 1) * sizeof(WCHAR);
 }
 
 
 #define RTL_IMAGE_NT_HEADER_EX_FLAG_NO_RANGE_CHECK 1
 
 void* __stdcall MockNtdll::RtlImageNtHeader(void* ModuleAddress) {
+	debug_log("<ntdll.dll!%s> called..\n", "RtlImageNtHeader");
 	PIMAGE_NT_HEADERS NtHeaders = NULL;
 	MockNtdll::RtlImageNtHeaderEx(RTL_IMAGE_NT_HEADER_EX_FLAG_NO_RANGE_CHECK, ModuleAddress, 0, &NtHeaders);
 	return NtHeaders;
 }
 
 uint32_t __stdcall MockNtdll::RtlImageNtHeaderEx(uint32_t Flags, void* Base, uint64_t Size, PIMAGE_NT_HEADERS * OutHeaders) {
+	debug_log("<ntdll.dll!%s> called..\n", "RtlImageNtHeaderEx");
 	PIMAGE_NT_HEADERS NtHeaders = 0;
 	ULONG e_lfanew = 0;
 	BOOLEAN RangeCheck = 0;
@@ -291,6 +319,7 @@ Exit:
 }
 
 PRUNTIME_FUNCTION __stdcall MockNtdll::RtlLookupFunctionTable(uint64_t ControlPc, uint64_t* ImageBase, uint32_t* Length) {
+	debug_log("<ntdll.dll!%s> called..\n", "RtlLookupFunctionTable");
 	void* Table;
 	uint32_t Size;
 
@@ -308,14 +337,17 @@ PRUNTIME_FUNCTION __stdcall MockNtdll::RtlLookupFunctionTable(uint64_t ControlPc
 }
 
 bool __stdcall MockNtdll::RtlAddFunctionTable(void* FunctionTable, uint32_t EntryCount, uint64_t BaseAddress) {
+	debug_log("<ntdll.dll!%s> called..\n", "RtlAddFunctionTable");
 	return true;
 }
 
 bool __stdcall MockNtdll::RtlDeleteFunctionTable(void* FunctionTable) {
+	debug_log("<ntdll.dll!%s> called..\n", "RtlDeleteFunctionTable");
 	return true;
 }
 
 PRUNTIME_FUNCTION __stdcall MockNtdll::RtlLookupFunctionEntry(uint64_t ControlPc, uint64_t* ImageBase, void* HistoryTable) {
+	debug_log("<ntdll.dll!%s> called..\n", "RtlLookupFunctionEntry");
 	PRUNTIME_FUNCTION FunctionTable, FunctionEntry;
 	uint32_t TableLength;
 	uint32_t IndexLo, IndexHi, IndexMid;
@@ -360,7 +392,8 @@ PRUNTIME_FUNCTION __stdcall MockNtdll::RtlLookupFunctionEntry(uint64_t ControlPc
 	return NULL;
 }
 
-wchar_t __stdcall MockNtdll::RtlpUpcaseUnicodeChar(wchar_t Source){
+WCHAR __stdcall MockNtdll::RtlpUpcaseUnicodeChar(WCHAR Source){
+	debug_log("<ntdll.dll!%s> called..\n", "RtlpUpcaseUnicodeChar");
 	uint16_t Offset;
 
 	if (Source < 'a')
@@ -373,16 +406,18 @@ wchar_t __stdcall MockNtdll::RtlpUpcaseUnicodeChar(wchar_t Source){
 }
 
 bool __stdcall MockNtdll::RtlPrefixUnicodeString(PUNICODE_STRING String1, PUNICODE_STRING String2, bool CaseInSensitive) {
-	wchar_t* pc1;
-	wchar_t* pc2;
+	debug_log("<ntdll.dll!%s> called..\n", "RtlPrefixUnicodeString");
+
+	char16_t* pc1;
+	char16_t* pc2;
 	uint32_t  NumChars;
 
 	if (String2->Length < String1->Length)
 		return false;
 
-	NumChars = String1->Length / sizeof(wchar_t);
-	pc1 = String1->Buffer;
-	pc2 = String2->Buffer;
+	NumChars = String1->Length / sizeof(WCHAR);
+	pc1 = (char16_t*)String1->Buffer;
+	pc2 = (char16_t*)String2->Buffer;
 
 	if (pc1 && pc2){
 		if (CaseInSensitive){
@@ -403,24 +438,27 @@ bool __stdcall MockNtdll::RtlPrefixUnicodeString(PUNICODE_STRING String1, PUNICO
 	return false;
 }
 
-wchar_t* __stdcall MockNtdll::RtlIpv4AddressToStringW(in_addr *Addr, wchar_t* S) {
+char16_t* __stdcall MockNtdll::RtlIpv4AddressToStringW(in_addr *Addr, char16_t* S) {
+	debug_log("<ntdll.dll!%s> called..\n", "RtlIpv4AddressToStringW");
+
 	NTSTATUS Status;
-	wchar_t* End;
+	char16_t* End;
 	uint32_t end_offset = 0;
+	char mb_ipaddr[32];
 	if (!S)
-		return (PWSTR)~0;
-	swprintf(S, 32, L"%u.%u.%u.%u", Addr->S_un.S_un_b.s_b1, Addr->S_un.S_un_b.s_b2, Addr->S_un.S_un_b.s_b3, Addr->S_un.S_un_b.s_b4);
-#if defined(__APPLE__)
-    end_offset = get_wide_string_length((void*)S);
-#else
-	end_offset = lstrlenW(S);
-#endif
+		return (char16_t*)~0;
+	
+	sprintf(mb_ipaddr, "%u.%u.%u.%u", Addr->S_un.S_un_b.s_b1, Addr->S_un.S_un_b.s_b2, Addr->S_un.S_un_b.s_b3, Addr->S_un.S_un_b.s_b4);
+	S = convert_str_to_wstr(mb_ipaddr);
+	end_offset = get_wide_string_length((void*)S);
 	End = &S[end_offset];
 	
 	return End;
 }
 
 void* __stdcall MockNtdll::RtlPcToFileHeader(void* PcValue, void** BaseOfImage) {
+	debug_log("<ntdll.dll!%s> called..\n", "RtlPcToFileHeader");
+
 	PIMAGE_DOS_HEADER dos_header = nullptr;
 	PIMAGE_NT_HEADERS64 nt_header = nullptr;
 	PIMAGE_OPTIONAL_HEADER64 opt_header = nullptr;
@@ -436,12 +474,14 @@ void* __stdcall MockNtdll::RtlPcToFileHeader(void* PcValue, void** BaseOfImage) 
 #if defined(__WINDOWS__)
 		*BaseOfImage = (void*)GetModuleHandle(NULL); //self
 #elif defined(__APPLE__)
-        *BaseOfImage = NULL; //this is error...
+		*BaseOfImage = NULL; //this is error...
 #endif
 	return *BaseOfImage;
 }
 
 void* __stdcall MockNtdll::RtlImageDirectoryEntryToData(void* BaseAddress, bool MappedAsImage, uint16_t Directory, uint32_t* Size) {
+	debug_log("<ntdll.dll!%s> called..\n", "RtlImageDirectoryEntryToData");
+
 	PIMAGE_NT_HEADERS nt_header;
 	IMAGE_DOS_HEADER* dos_hdr;
 	PIMAGE_OPTIONAL_HEADER64 opt_hdr;
@@ -479,6 +519,8 @@ void* __stdcall MockNtdll::RtlImageDirectoryEntryToData(void* BaseAddress, bool 
 }
 
 void __stdcall MockNtdll::MockRtlCaptureContext(void* ContextRecord) {
+	debug_log("<ntdll.dll!%s> called..\n", "MockRtlCaptureContext");
+
 #if defined (__WINDOWS__) //testing
 	RtlCaptureContext((PCONTEXT)ContextRecord);
 #else
@@ -489,6 +531,8 @@ void __stdcall MockNtdll::MockRtlCaptureContext(void* ContextRecord) {
 }
 
 void __stdcall MockNtdll::MockRtlRestoreContext(void* ContextRecord, PEXCEPTION_RECORD ExceptionRecord) {
+	debug_log("<ntdll.dll!%s> called..\n", "MockRtlRestoreContext");
+
 #if defined (__WINDOWS__) //testing
 	RtlRestoreContext((PCONTEXT)ContextRecord, NULL);
 #else
@@ -500,7 +544,7 @@ void __stdcall MockNtdll::MockRtlRestoreContext(void* ContextRecord, PEXCEPTION_
 
 
 #if defined(__APPLE__)
-bool get_pthread_stack_info(void** pBase, void** pLimit)
+bool __stdcall get_pthread_stack_info(void** pBase, void** pLimit)
 {
 	pthread_t thread = pthread_self();
 	void*     pBaseTemp = pthread_get_stackaddr_np(thread);
@@ -521,29 +565,30 @@ bool get_pthread_stack_info(void** pBase, void** pLimit)
 #endif
 
 
-void* GetStackLimit()
+void* __stdcall GetStackLimit()
 {
 #if defined (__WINDOWS__)
 	NT_TIB64* pTIB = (NT_TIB64*)NtCurrentTeb(); // NtCurrentTeb is defined in <WinNT.h> as an inline call to __readgsqword
 	return (void*)pTIB->StackLimit;
 #elif defined (__APPLE__)
-	void* pBase;
-	if (get_pthread_stack_info(&pBase, NULL))
-		return pBase;
+	void* pLimit;
+    if (get_pthread_stack_info(NULL, &pLimit))
+		return pLimit;
 	void* pStack = __builtin_frame_address(0);
 	return (void*)((uintptr_t)pStack & ~4095); // Round down to nearest page.
 #else
 #endif
 }
 
-void* GetStackBase()
+void* __stdcall GetStackBase()
 {
+
 #if defined (__WINDOWS__)
 	NT_TIB64* pTIB = (NT_TIB64*)NtCurrentTeb(); // NtCurrentTeb is defined in <WinNT.h> as an inline call to __readgsqword
 	return (void*)pTIB->StackBase;
 #elif defined(__APPLE__)
 	void* pBase;
-    if (get_pthread_stack_info(&pBase, NULL))
+	if (get_pthread_stack_info(&pBase, NULL))
 		return pBase;
 	return NULL; // error...
 #else
@@ -551,56 +596,56 @@ void* GetStackBase()
 }
 
 
-void RtlpGetStackLimits(uint64_t* StackBase, uint64_t* StackLimit) {
+void __stdcall RtlpGetStackLimits(uint64_t* StackBase, uint64_t* StackLimit) {
 	*StackBase = (uint64_t)GetStackBase();
 	*StackLimit = (uint64_t)GetStackLimit();
 }
 
-uint64_t GetReg(PCONTEXT Context, uint8_t Reg){
+uint64_t __stdcall GetReg(PCONTEXT Context, uint8_t Reg){
 	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a9ace9ccebdf63147ae998d2680681b7f
 	return ((uint64_t*)(&Context->Rax))[Reg];
 }
 
-void SetReg(PCONTEXT Context, uint8_t Reg, uint64_t Value){
+void __stdcall SetReg(PCONTEXT Context, uint8_t Reg, uint64_t Value){
 	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a78b2ccd05096b35688393fd4bdc25832
 	((uint64_t*)(&Context->Rax))[Reg] = Value;
 }
 
-void SetXmmReg(PCONTEXT Context, uint8_t Reg, M128A Value) {
+void __stdcall SetXmmReg(PCONTEXT Context, uint8_t Reg, M128A Value) {
 	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a785da3a689cdb0b585a3e189e239bf46
 	((M128A*)(&Context->Xmm0))[Reg] = Value;
 }
 
-void SetRegFromStackValue(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, BYTE Reg, uint64_t* ValuePointer) {
+void __stdcall SetRegFromStackValue(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, BYTE Reg, uint64_t* ValuePointer) {
 	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a80af791c0ec8007aaf5bd7b4b7581021
 	SetReg(Context, Reg, *ValuePointer);
 	if (ContextPointers != NULL)
-#if defined(__WINDOWS)
+#if defined(__WINDOWS__)
 		ContextPointers->IntegerContext[Reg] = ValuePointer;
 #else
-        ContextPointers->DUMMYUNIONNAME2.IntegerContext[Reg] = ValuePointer;
+		ContextPointers->DUMMYUNIONNAME2.IntegerContext[Reg] = ValuePointer;
 #endif
 }
 
 
-void SetXmmRegFromStackValue(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, uint8_t Reg, M128A* ValuePointer) {
+void __stdcall SetXmmRegFromStackValue(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, uint8_t Reg, M128A* ValuePointer) {
 	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#abf1d715b64bc14cafc7b227fd9d16f04
 	SetXmmReg(Context, Reg, *ValuePointer);
 	if (ContextPointers != NULL)
 #if defined(__WINDOWS__)
 		ContextPointers->FloatingContext[Reg] = ValuePointer;
 #else
-        ContextPointers->DUMMYUNIONNAME.FloatingContext[Reg] = ValuePointer;
+		ContextPointers->DUMMYUNIONNAME.FloatingContext[Reg] = ValuePointer;
 #endif
 }
 
-void PopReg(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, uint8_t Reg){
+void __stdcall PopReg(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, uint8_t Reg){
 	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a1544fd53fb72c4ac529d9a5b9c0cd28e
 	SetRegFromStackValue(Context, ContextPointers, Reg, (uint64_t*)Context->Rsp);
 	Context->Rsp += sizeof(uint64_t);
 }
 
-uint32_t UnwindOpSlots(UNWIND_CODE UnwindCode){
+uint32_t __stdcall UnwindOpSlots(UNWIND_CODE UnwindCode){
 	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a966d8765847156957762a8a74b411e06
 	uint8_t UnwindOpExtraSlotTable[] = {
 		0, // UWOP_PUSH_NONVOL
@@ -623,7 +668,7 @@ uint32_t UnwindOpSlots(UNWIND_CODE UnwindCode){
 		return UnwindOpExtraSlotTable[UnwindCode.UnwindOp] + 1;
 }
 
-uint64_t GetEstablisherFrame(PCONTEXT Context, PUNWIND_INFO UnwindInfo, uint64_t CodeOffset) {
+uint64_t __stdcall GetEstablisherFrame(PCONTEXT Context, PUNWIND_INFO UnwindInfo, uint64_t CodeOffset) {
 	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a57ef599c611dcdefb93d5bda32af4819
 	uint32_t i;
 	if (UnwindInfo->FrameRegister == 0)
@@ -645,7 +690,7 @@ void __stdcall MockNtdll::MockRtlUnwind(void* TargetFrame, PVOID TargetIp, PEXCE
 	// this is wrapper of MockRtlUnwindEx
 }
 
-bool RtlpTryToUnwindEpilog(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, uint64_t ImageBase, PRUNTIME_FUNCTION FunctionEntry) {
+bool __stdcall RtlpTryToUnwindEpilog(PCONTEXT Context, PKNONVOLATILE_CONTEXT_POINTERS ContextPointers, uint64_t ImageBase, PRUNTIME_FUNCTION FunctionEntry) {
 	// ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#ab1254c449095abb6946019d9f3a00fd7
 	CONTEXT LocalContext;
 	uint8_t *InstrPtr;
@@ -727,6 +772,8 @@ PEXCEPTION_ROUTINE __stdcall MockNtdll::RtlVirtualUnwind(
 )
 // ref : https://doxygen.reactos.org/d8/d2f/unwind_8c.html#a03c91b6c437066272ebc2c2fff051a4c
 	{
+	debug_log("<ntdll.dll!%s> called..\n", "RtlVirtualUnwind");
+
 		PUNWIND_INFO UnwindInfo;
 		uint64_t CodeOffset;
 		uint32_t i, Offset;
@@ -857,7 +904,7 @@ Exit:
 		return NULL;
 }
 
-void RtlpUnwindInternal(
+void __stdcall RtlpUnwindInternal(
 	// ref : https://doxygen.reactos.org/d6/dea/sdk_2lib_2rtl_2amd64_2except_8c.html#abfbd00808c64b2e9fd3b0b63dd181135
 	void* 	TargetFrame,
 	void* 	TargetIp,
@@ -984,26 +1031,45 @@ void RtlpUnwindInternal(
 
 bool __stdcall MockNtdll::MockRtlUnwindEx(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue, void* ContextRecord, void* HistoryTable) {
 	//it is directly called, not called by RtlDispatchException
+    debug_log("<ntdll.dll!%s> called..\n", "MockRtlUnwindEx");
+    EXCEPTION_RECORD LocalExceptionRecord;
 #if defined(__WINDOWS__)
 	PCONTEXT ctx = (PCONTEXT)ContextRecord;
-	EXCEPTION_RECORD LocalExceptionRecord;
 	MockNtdll::MockRtlCaptureContext(ctx);
-	if (ExceptionRecord == NULL){
-		/* No exception record was passed, so set up a local one */
-		LocalExceptionRecord.ExceptionCode = 0xC0000028;
-		LocalExceptionRecord.ExceptionAddress = (PVOID)ctx->Rip;
-		LocalExceptionRecord.ExceptionRecord = NULL;
-		LocalExceptionRecord.NumberParameters = 0;
-		ExceptionRecord = &LocalExceptionRecord;
-	}
-	RtlpUnwindInternal(TargetFrame, TargetIp, (EXCEPTION_RECORD*)ExceptionRecord, ReturnValue, (PCONTEXT)ContextRecord, (_UNWIND_HISTORY_TABLE*)HistoryTable, UNW_FLAG_UHANDLER);
 	
+#elif defined(__APPLE__)
+    #define GET_RSP(sp) __asm__ __volatile__("movq %%rsp,%0": "=r" (sp));
+    #define GET_RBP(sp) __asm__ __volatile__("movq %%rbp,%0": "=r" (sp));
+    PCONTEXT ctx = (PCONTEXT)ContextRecord;
+    void* _rsp;
+    void* _rbp;
+    uint64_t prev_rbp;
+    uint64_t prev_rsp;
+    uint64_t ret_val;
+    GET_RSP(_rsp);
+    GET_RBP(_rbp);
+    prev_rsp = (uint64_t)_rsp + 0x1F0;
+    prev_rbp = prev_rsp + 0x610;
+    ret_val = *(uint64_t*)((uint64_t)_rbp+0x8) - 0x5;
 #else
-	
 #endif
+    if (ExceptionRecord == NULL){
+        /* No exception record was passed, so set up a local one */
+        LocalExceptionRecord.ExceptionCode = 0xC0000028;
+        LocalExceptionRecord.ExceptionAddress = (PVOID)ctx->Rip;
+        LocalExceptionRecord.ExceptionRecord = NULL;
+        LocalExceptionRecord.NumberParameters = 0;
+        ExceptionRecord = &LocalExceptionRecord;
+    }
+    ctx->Rsp = (uint64_t)prev_rsp;
+    ctx->Rbp = (uint64_t)prev_rbp;
+    ctx->Rip = ret_val;
+    RtlpUnwindInternal(TargetFrame, TargetIp, (EXCEPTION_RECORD*)ExceptionRecord, ReturnValue, (PCONTEXT)ContextRecord, (_UNWIND_HISTORY_TABLE*)HistoryTable, UNW_FLAG_UHANDLER);
 	return true;
 }
 
 uint32_t __stdcall MockNtdll::RtlNtStatusToDosError(NTSTATUS Status) {
+	debug_log("<ntdll.dll!%s> called..\n", "RtlNtStatusToDosError");
+    
 	return 0x13D; //ERROR_MR_MID_NOT_FOUND
 }

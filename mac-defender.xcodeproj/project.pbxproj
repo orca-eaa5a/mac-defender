@@ -27,6 +27,7 @@
 		2414B8B0277DF7120074F04B /* crypt32.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2414B8A6277DF7120074F04B /* crypt32.cpp */; };
 		2414B8B2277DF72B0074F04B /* jsoncpp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2414B8B1277DF72B0074F04B /* jsoncpp.cpp */; };
 		2414B8B4277DF7410074F04B /* cb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2414B8B3277DF7410074F04B /* cb.cpp */; };
+		246143D32785F81600AA3151 /* dxgi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 246143D22785F81600AA3151 /* dxgi.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -75,6 +76,7 @@
 		2414B8A6277DF7120074F04B /* crypt32.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = crypt32.cpp; path = winapi/dlls/crypt32.cpp; sourceTree = "<group>"; };
 		2414B8B1277DF72B0074F04B /* jsoncpp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = jsoncpp.cpp; path = include/jsoncpp/jsoncpp.cpp; sourceTree = "<group>"; };
 		2414B8B3277DF7410074F04B /* cb.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = cb.cpp; path = cb/cb.cpp; sourceTree = "<group>"; };
+		246143D22785F81600AA3151 /* dxgi.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = dxgi.cpp; path = winapi/dlls/dxgi.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,6 +93,7 @@
 		2414B859277DD97B0074F04B = {
 			isa = PBXGroup;
 			children = (
+				246143D22785F81600AA3151 /* dxgi.cpp */,
 				2414B8B3277DF7410074F04B /* cb.cpp */,
 				2414B8B1277DF72B0074F04B /* jsoncpp.cpp */,
 				2414B8A5277DF7120074F04B /* advapi32.cpp */,
@@ -192,6 +195,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				246143D32785F81600AA3151 /* dxgi.cpp in Sources */,
 				2414B8B4277DF7410074F04B /* cb.cpp in Sources */,
 				2414B8B2277DF72B0074F04B /* jsoncpp.cpp in Sources */,
 				2414B8A7277DF7120074F04B /* wintrust.cpp in Sources */,
@@ -261,6 +265,13 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
+				);
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = (
+					"DEBUG=1",
+					"$(inherited)",
+					__APPLE__,
+					_X64,
+					_XOPEN_SOURCE,
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -334,9 +345,10 @@
 				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = (
 					"DEBUG=1",
 					"$(inherited)",
-					"_X64=1",
-					"__APPLE__=1",
-					"_XOPEN_SOURCE=1",
+					__APPLE__,
+					_X64,
+					_DEBUG_,
+					_XOPEN_SOURCE,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

@@ -66,6 +66,9 @@
     <ClCompile Include="winapi\dlls\rpcrt4.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="winapi\dlls\dxgi.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="loader.hpp">
@@ -117,6 +120,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="winapi\dlls\rpcrt4.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="winapi\dlls\dxgi.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

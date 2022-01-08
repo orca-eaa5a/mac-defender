@@ -1,6 +1,6 @@
 #if defined(__APPLE__) || defined(__LINUX__)
 typedef uint8_t BYTE;
-typedef int16_t WCHAR;
+typedef char16_t WCHAR;
 typedef uint32_t DWORD;
 typedef bool BOOL;
 typedef BOOL *PBOOL,*LPBOOL;

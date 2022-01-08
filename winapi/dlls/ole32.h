@@ -2,6 +2,7 @@
 #ifndef _OLE32_H_
 #define _OLE32_H_
 #include "../exports.h"
+#include "../strutils.hpp"
 class MockOle32 {
 public:
 	function<void(void)> set_ole32_hookaddr = [](void) {
@@ -24,7 +25,7 @@ public:
 		void* pProxy,
 		uint32_t dwAuthnSvc,
 		uint32_t dwAuthzSvc,
-		wchar_t* pServerPrincName,
+		char16_t* pServerPrincName,
 		uint32_t dwAuthnLevel,
 		uint32_t dwImpLevel,
 		void* pAuthInfo,
@@ -40,7 +41,7 @@ public:
 		void* pProxy,
 		uint32_t dwAuthnSvc,
 		uint32_t dwAuthzSvc,
-		wchar_t* pServerPrincName,
+		char16_t* pServerPrincName,
 		uint32_t dwAuthnLevel,
 		uint32_t dwImpLevel,
 		void* pAuthInfo,

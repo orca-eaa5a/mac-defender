@@ -1,8 +1,8 @@
 #ifndef _WINDOWS_H_
 #define _WINDOWS_H_
 #if defined(__APPLE__)
-#define __stdcall __attribute__((__stdcall__)) __attribute__((__force_align_arg_pointer__))
-#define __cdecl __attribute__((__cdecl__)) __attribute__((__force_align_arg_pointer__))
+#define __stdcall __attribute__((ms_abi))
+#define __cdecl __stdcall
 #include "ntstatus.h"
 #include "wintype.h"
 #elif defined(__LINUX__)
@@ -80,7 +80,7 @@ typedef struct _KEY_VALUE_BASIC_INFORMATION {
 	uint32_t TitleIndex;
 	uint32_t Type;
 	uint32_t NameLength;
-	wchar_t Name[1];
+	WCHAR Name[1];
 } KEY_VALUE_BASIC_INFORMATION, *PKEY_VALUE_BASIC_INFORMATION;
 
 typedef struct _KEY_VALUE_PARTIAL_INFORMATION {
@@ -93,7 +93,7 @@ typedef struct _KEY_VALUE_PARTIAL_INFORMATION {
 typedef struct _UNICODE_STRING {
 	uint16_t Length;
 	uint16_t MaximumLength;
-	wchar_t*  Buffer;
+	WCHAR*  Buffer;
 } UNICODE_STRING, *PUNICODE_STRING;
 
 typedef struct _OSVERSIONINFOW {
@@ -102,7 +102,7 @@ typedef struct _OSVERSIONINFOW {
   uint32_t dwMinorVersion;
   uint32_t dwBuildNumber;
   uint32_t dwPlatformId;
-  wchar_t szCSDVersion[128];
+  WCHAR szCSDVersion[128];
 } OSVERSIONINFOW, *POSVERSIONINFOW, *LPOSVERSIONINFOW, RTL_OSVERSIONINFOW, *PRTL_OSVERSIONINFOW;
 
 typedef struct _IMAGE_DOS_HEADER {
@@ -507,9 +507,9 @@ typedef struct _STARTUPINFOA {
 
 typedef struct _STARTUPINFOW {
   uint32_t  cb;
-  wchar_t*  lpReserved;
-  wchar_t*  lpDesktop;
-  wchar_t*  lpTitle;
+  WCHAR*  lpReserved;
+  WCHAR*  lpDesktop;
+  WCHAR*  lpTitle;
   uint32_t  dwX;
   uint32_t  dwY;
   uint32_t  dwXSize;
@@ -529,13 +529,13 @@ typedef struct _STARTUPINFOW {
 typedef union _LARGE_INTEGER {
   struct {
 	uint32_t LowPart;
-	long  HighPart;
+	uint32_t  HighPart;
   } DUMMYSTRUCTNAME;
   struct {
 	uint32_t LowPart;
-	long  HighPart;
+	uint32_t  HighPart;
   } u;
-  long long QuadPart;
+  int64_t QuadPart;
 } LARGE_INTEGER, *PLARGE_INTEGER;
 
 typedef struct _SYSTEM_INFO {
@@ -658,7 +658,7 @@ typedef struct in_addr {
 	union {
 		struct { UCHAR s_b1, s_b2, s_b3, s_b4; } S_un_b;
 		struct { USHORT s_w1, s_w2; } S_un_w;
-		ULONG S_addr;
+		uint32_t S_addr;
 	} S_un;
 #define s_addr  S_un.S_addr /* can be used for most tcp & ip code */
 #define s_host  S_un.S_un_b.s_b2    // host on imp
@@ -672,8 +672,8 @@ typedef struct in_addr {
 #define DECLSPEC_ALIGN(x) __attribute__ ((aligned (x)))
 
 typedef struct DECLSPEC_ALIGN(16) _M128A {
-	ULONGLONG Low;
-	LONGLONG High;
+	uint64_t Low;
+	int64_t High;
 } M128A, *PM128A;
 
 typedef struct DECLSPEC_ALIGN(16) _CONTEXT {

@@ -6,6 +6,7 @@
 #define _WOFUTIL_H_
 #include <functional>
 #include "../exports.h"
+#include "../strutils.hpp"
 
 #if defined(__APPLE__) || defined(__LINUX__)
 #include "include/windows.h"
@@ -18,9 +19,9 @@ public:
 
 	};
 #if defined(__WINDOWS__)
-	static bool __stdcall MockWofUtil::WofShouldCompressBinaries(wchar_t* Volume, uint32_t* Algorithm);
+	static bool __stdcall MockWofUtil::WofShouldCompressBinaries(char16_t* Volume, uint32_t* Algorithm);
 #else
-	static bool __stdcall WofShouldCompressBinaries(wchar_t* Volume, uint32_t* Algorithm);
+	static bool __stdcall WofShouldCompressBinaries(char16_t* Volume, uint32_t* Algorithm);
 #endif
 };
 #endif // !_WOFUTIL_H_

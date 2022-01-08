@@ -15,6 +15,7 @@
 #include "dlls/wintrust.h"
 #include "dlls/ole32.h"
 #include "dlls/rpcrt4.h"
+#include "dlls/dxgi.h"
 #include "ntoskrnl.h"
 #include "exports.h"
 
@@ -45,6 +46,8 @@ private:
 	MockWintrust wintrust;
 	MockOle32 ole32;
 	MockRpcrt4 rpcrt4;
+	MockDxgi dxgi;
+	
 	void* engine_base;
 
 };

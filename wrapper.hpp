@@ -33,7 +33,7 @@ private:
 public:
 	__rsignal _rsignal = nullptr;
 	notify_cb cb = nullptr;
-	wstring signature_location;
+	u16string signature_location;
 	void* kernel_handle;
 	function<void(void*)> set_notify_cb = [this](void* cb) {
 		this->cb = (notify_cb)cb;
@@ -44,7 +44,7 @@ public:
 	};
 	function<void(std::string)> set_vdm_location = [this](string loc) {
 		this->signature_location.assign(loc.begin(), loc.end());
-		this->boot_params.SignatureLocation = (wchar_t*)signature_location.c_str();
+		this->boot_params.SignatureLocation = (char16_t*)signature_location.c_str();
 	};
 
 	function<void(void)> rsig_boot_engine = [this]() {
@@ -52,22 +52,26 @@ public:
 			console_log(MSGTYPE::CRIT, "Please set signature location first, show RsignalWrapper::set_vdm_location");
 			return false;
 		}
-	
-		uint32_t res = this->_rsignal(
+        
+        console_log(MSGTYPE::INFO, "now.. engine will boot..");
+		
+        uint32_t res = this->_rsignal(
 			&this->kernel_handle,
 			RSIG_BOOTENGINE,
 			&this->boot_params,
 			sizeof(BOOTENGINE_PARAMS)
 		);
+        
+        console_log(MSGTYPE::INFO, "engine boot success!!");
 
 		if (res) {
 			if (res >= 32700 && res < 40000) {
-				console_log(MSGTYPE::ERR, "Error occured by invalid parameter");
-				console_log(MSGTYPE::INFO, "Check the parameter version or it's structure");
+				console_log(MSGTYPE::INFO, "Error occured by invalid parameter\n");
+				console_log(MSGTYPE::ERR, "Check the parameter version or it's structure\n");
 			}
 			else if (res >= 40000) {
-				console_log(MSGTYPE::ERR, "Error occured by invalid mpengine core version");
-				console_log(MSGTYPE::INFO, "Check that mpengine and signature database version match correctly");
+				console_log(MSGTYPE::INFO, "Error occured by invalid mpengine core version\n");
+				console_log(MSGTYPE::ERR, "Check that mpengine and signature database version match correctly\n");
 			}
 			else {
 				console_log(MSGTYPE::ERR, "Unknown error");
