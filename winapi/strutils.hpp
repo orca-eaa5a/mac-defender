@@ -11,7 +11,7 @@
 #include <vector>
 
 #if defined(__APPLE__) || defined(__LINUX__)
-#include "dlls/include/wintype.h"
+#include "dlls/include/windows.h"
 #else
 #include <windows.h>
 #endif

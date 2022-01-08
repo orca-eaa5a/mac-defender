@@ -103,8 +103,8 @@ typedef struct _SCAN_REPLY { // very very important structure!!
 	/*0x5C*/    void* UserPtr;
 	/*0x64*/    uint32_t field_5C;
 	/*0x68*/    char* MaybeFileName2;
-	/*0x70*/    WCHAR* StreamName1;
-	/*0x78*/    WCHAR* StreamName2;
+	/*0x70*/    char16_t* StreamName1;
+	/*0x78*/    char16_t* StreamName2;
 	/*0x80*/    uint32_t field_6C;
 	/*0x84*/    uint32_t ThreatId;             // Can be passed back to GetThreatInfo
 	/*0x88*/    uint32_t Reserved1;

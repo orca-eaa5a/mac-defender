@@ -146,12 +146,8 @@ void* __stdcall MockKernel32::MockGetProcAddress(void* hModule, char* lpProcName
 			}
 		}
 	}
-
-
-	debug_log("<kernel32.dll!%s> failed to get %s\n", "GetProcAddress", lpProcName);
-
 	uint32_t i = rand();
-	printf("%s --> 0x%x\n", lpProcName, i);
+	debug_log("<kernel32.dll!%s> failed to get %s -- > 0x%x\n", "GetProcAddress", lpProcName, i);
 	return (void*)i;
 }
 
@@ -185,12 +181,9 @@ void* __stdcall MockKernel32::CreateFileA(char* lpFileName, uint32_t dwDesiredAc
 	//UNIX
 		//while (strchr(filename, '\\'))
 		//	*strchr(filename, '\\') = '/';
-	debug_log("<%s> called with %s\n", "CreateFileA", lpFileName);
 	FILE *FileHandle;
 	FILE* tmp;
-
 #ifdef _WIN64
-	//convert_winpath_to_unixpath(lpFileName);
 	convert_unixpath_to_winpath(lpFileName);
 	switch (dwCreationDisposition) {
 	case OPEN_EXISTING:
@@ -211,18 +204,23 @@ void* __stdcall MockKernel32::CreateFileA(char* lpFileName, uint32_t dwDesiredAc
 	default:
 		abort();
 	}
+    debug_log("<%s> called with %s\n", "CreateFileA", lpFileName);
 #else
+    char* lpFileName_tmp = new char[strlen(lpFileName)+1];
+    memset(lpFileName_tmp, '\0', strlen(lpFileName)+1);
+    memmove(lpFileName_tmp, lpFileName, strlen(lpFileName));
+    convert_winpath_to_unixpath(lpFileName_tmp);
 	switch (dwCreationDisposition) {
 	case OPEN_EXISTING:
-		FileHandle = fopen(lpFileName, "r");
+		FileHandle = fopen(lpFileName_tmp, "r");
 		break;
 	case CREATE_ALWAYS:
 		FileHandle = fopen("/dev/null", "w");
 		break;
 	case CREATE_NEW:
-		if (strstr(lpFileName, "/faketemp/")) {
-			FileHandle = fopen(lpFileName, "w");
-			unlink(lpFileName);
+		if (strstr(lpFileName_tmp, "/faketemp/")) {
+			FileHandle = fopen(lpFileName_tmp, "w");
+			unlink(lpFileName_tmp);
 		}
 		else {
 			FileHandle = fopen("/dev/null", "w");
@@ -231,14 +229,16 @@ void* __stdcall MockKernel32::CreateFileA(char* lpFileName, uint32_t dwDesiredAc
 	default:
 		abort();
 	}
+    debug_log("<%s> called with %s\n", "CreateFileA", lpFileName_tmp);
+    delete lpFileName_tmp;
 #endif
+    
 	MockKernel32::SetLastError(ERROR_FILE_NOT_FOUND); // I don't know why this way is working
 	return FileHandle ? FileHandle : INVALID_HANDLE_VALUE;
 }
 
 void* __stdcall MockKernel32::CreateFileW(char16_t* lpFileName, uint32_t dwDesiredAccess, uint32_t dwShareMode, void* lpSecurityAttributes, uint32_t dwCreationDisposition, uint32_t dwFlagsAndAttributes, void* hTemplateFile) {
 	char *filename = convert_wstr_to_str(lpFileName);
-	debug_log("<kernel32.dll!%s> called with %s\n", "CreateFileW", filename);
 
 	void* ret = MockKernel32::CreateFileA(filename, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 	delete filename;
@@ -552,7 +552,7 @@ bool __stdcall MockKernel32::IsValidCodePage(uint32_t CodePage) {
 }
 
 uint32_t __stdcall MockKernel32::TlsAlloc() {
-	debug_log("<kernel32.dll!%s> called..\n", "TlsAlloc");
+	// debug_log("<kernel32.dll!%s> called..\n", "TlsAlloc"); too many...
 	
 	if (MockKernel32::tls_index >= MAXIMUM_TLS_SLOTS - 1) {
 		return TLS_OUT_OF_INDEXES;
@@ -562,7 +562,7 @@ uint32_t __stdcall MockKernel32::TlsAlloc() {
 }
 
 bool __stdcall MockKernel32::TlsSetValue(uint32_t dwTlsIndex, void* lpTlsValue) {
-	debug_log("<kernel32.dll!%s> called..\n", "TlsSetValue");
+	// debug_log("<kernel32.dll!%s> called..\n", "TlsSetValue"); too many..
 	
 	if (dwTlsIndex < MAXIMUM_TLS_SLOTS) {
 		MockKernel32::ThreadLocalStorage[dwTlsIndex] = (uint64_t)lpTlsValue;
@@ -575,7 +575,7 @@ bool __stdcall MockKernel32::TlsSetValue(uint32_t dwTlsIndex, void* lpTlsValue) 
 }
 
 bool __stdcall MockKernel32::TlsFree(uint32_t dwTlsIndex) {
-	debug_log("<kernel32.dll!%s> called..\n", "TlsFree");
+	// debug_log("<kernel32.dll!%s> called..\n", "TlsFree"); too many..
 	MockKernel32::ThreadLocalStorage[dwTlsIndex] = NULL;
 	
 	if (dwTlsIndex < MAXIMUM_TLS_SLOTS) {
@@ -589,7 +589,7 @@ bool __stdcall MockKernel32::TlsFree(uint32_t dwTlsIndex) {
 }
 
 void* __stdcall MockKernel32::TlsGetValue(uint32_t dwTlsIndex) {
-	debug_log("<kernel32.dll!%s> called..\n", "TlsGetValue");
+	// debug_log("<kernel32.dll!%s> called..\n", "TlsGetValue"); too many..
 	
 	if (dwTlsIndex < MAXIMUM_TLS_SLOTS)
 		return (void*)MockKernel32::ThreadLocalStorage[dwTlsIndex];
@@ -598,7 +598,7 @@ void* __stdcall MockKernel32::TlsGetValue(uint32_t dwTlsIndex) {
 }
 
 uint32_t __stdcall MockKernel32::FlsAlloc(void* lpCallback) {
-	debug_log("<kernel32.dll!%s> called..\n", "FlsAlloc");
+	// debug_log("<kernel32.dll!%s> called..\n", "FlsAlloc"); too many..
 	uint32_t cur_tls_idx = MockKernel32::TlsAlloc();
 	if (cur_tls_idx != TLS_OUT_OF_INDEXES)
 		FlsCallbacks[cur_tls_idx] = (PFLS_CALLBACK_FUNCTION)lpCallback;
@@ -606,17 +606,17 @@ uint32_t __stdcall MockKernel32::FlsAlloc(void* lpCallback) {
 }
 
 uint32_t __stdcall MockKernel32::FlsSetValue(uint32_t dwFlsIndex, void* lpFlsData) {
-	debug_log("<kernel32.dll!%s> called..\n", "FlsSetValue");
+	// debug_log("<kernel32.dll!%s> called..\n", "FlsSetValue"); too many..
 	return MockKernel32::TlsSetValue(dwFlsIndex, lpFlsData);
 }
 
 void* __stdcall MockKernel32::FlsGetValue(uint32_t dwFlsIndex) {
-	debug_log("<kernel32.dll!%s> called..\n", "FlsGetValue");
+	// debug_log("<kernel32.dll!%s> called..\n", "FlsGetValue"); too many..
 	return MockKernel32::TlsGetValue(dwFlsIndex);
 }
 
 bool MockKernel32::FlsFree(uint32_t dwFlsIndex) {
-	debug_log("<kernel32.dll!%s> called..\n", "FlsFree");
+	// debug_log("<kernel32.dll!%s> called..\n", "FlsFree"); too many..
 	if (MockKernel32::FlsCallbacks[dwFlsIndex])
 		MockKernel32::FlsCallbacks[dwFlsIndex](MockKernel32::TlsGetValue(dwFlsIndex));
 	return MockKernel32::TlsFree(dwFlsIndex);
@@ -837,12 +837,12 @@ void __stdcall MockKernel32::InitializeSListHead(PSLIST_HEADER ListHead) {
 }
 
 bool __stdcall MockKernel32::InitializeCriticalSectionAndSpinCount(void* lpCriticalSection, uint32_t dwSpinCount) {
-	debug_log("<kernel32.dll!%s> called..\n", "InitializeCriticalSectionAndSpinCount");
+	//debug_log("<kernel32.dll!%s> called..\n", "InitializeCriticalSectionAndSpinCount");
 	return true;
 }
 
 bool __stdcall MockKernel32::InitializeCriticalSection(void* lpCriticalSection) {
-	debug_log("<kernel32.dll!%s> called..\n", "InitializeCriticalSection");
+	//debug_log("<kernel32.dll!%s> called..\n", "InitializeCriticalSection");
 	return true;
 }
 
@@ -1427,7 +1427,7 @@ int __stdcall MockKernel32::CompareStringOrdinal(void* lpString1, int cchCount1,
 		cchCount1 = (int)get_wide_string_length(lpString1);
 
 	if (cchCount2 == -1)
-		cchCount1 = (int)get_wide_string_length(lpString2);
+		cchCount2 = (int)get_wide_string_length(lpString2);
 
 	lpt1 = calloc(cchCount1 + 1, sizeof(WCHAR));
 	lpt2 = calloc(cchCount2 + 1, sizeof(WCHAR));
@@ -1438,8 +1438,8 @@ int __stdcall MockKernel32::CompareStringOrdinal(void* lpString1, int cchCount1,
 		return 0;
 	}
 
-	memcpy(lpt1, lpString1, cchCount1 * 2);
-	memcpy(lpt2, lpString2, cchCount2 * 2);
+	memcpy(lpt1, lpString1, cchCount1*sizeof(WCHAR));
+	memcpy(lpt2, lpString2, cchCount2*sizeof(WCHAR));
 
 	Result = bIgnoreCase ? compare_wstr((char16_t*)lpt1, (char16_t*)lpt2) : compare_wstr((char16_t*)lpt1, (char16_t*)lpt2);
 

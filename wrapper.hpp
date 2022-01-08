@@ -52,22 +52,26 @@ public:
 			console_log(MSGTYPE::CRIT, "Please set signature location first, show RsignalWrapper::set_vdm_location");
 			return false;
 		}
-	
-		uint32_t res = this->_rsignal(
+        
+        console_log(MSGTYPE::INFO, "now.. engine will boot..");
+		
+        uint32_t res = this->_rsignal(
 			&this->kernel_handle,
 			RSIG_BOOTENGINE,
 			&this->boot_params,
 			sizeof(BOOTENGINE_PARAMS)
 		);
+        
+        console_log(MSGTYPE::INFO, "engine boot success!!");
 
 		if (res) {
 			if (res >= 32700 && res < 40000) {
-				console_log(MSGTYPE::ERR, "Error occured by invalid parameter\n");
-				console_log(MSGTYPE::INFO, "Check the parameter version or it's structure\n");
+				console_log(MSGTYPE::INFO, "Error occured by invalid parameter\n");
+				console_log(MSGTYPE::ERR, "Check the parameter version or it's structure\n");
 			}
 			else if (res >= 40000) {
-				console_log(MSGTYPE::ERR, "Error occured by invalid mpengine core version\n");
-				console_log(MSGTYPE::INFO, "Check that mpengine and signature database version match correctly\n");
+				console_log(MSGTYPE::INFO, "Error occured by invalid mpengine core version\n");
+				console_log(MSGTYPE::ERR, "Check that mpengine and signature database version match correctly\n");
 			}
 			else {
 				console_log(MSGTYPE::ERR, "Unknown error");

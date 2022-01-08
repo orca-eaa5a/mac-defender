@@ -20,6 +20,8 @@
 #include <string>
 #include "cb.h"
 
+static char16_t target_file[260] = {'\0',};
+
 #ifdef _X86
 
 uint32_t BufferSize = 0;
@@ -85,7 +87,7 @@ uint32_t ReadBufferCb(void* src, unsigned long long Offset, void* Buffer, uint32
 
 uint64_t BufferSize = 0;
 
-uint64_t FullScanNotifyCallback(PSCAN_REPLY Scan)
+uint64_t __stdcall FullScanNotifyCallback(PSCAN_REPLY Scan)
 {
 	void* _this = NULL;
 
@@ -115,7 +117,7 @@ uint64_t FullScanNotifyCallback(PSCAN_REPLY Scan)
 	return 0;
 }
 
-uint64_t ReadStreamCb(uint64_t fd, uint64_t Offset, void* Buffer, uint64_t Size, uint64_t* SizeRead)
+uint64_t __stdcall ReadStreamCb(uint64_t fd, uint64_t Offset, void* Buffer, uint64_t Size, uint64_t* SizeRead)
 {
 #if defined(__WINDOWS__)
 	_lseek(fd, Offset, SEEK_SET);
@@ -127,7 +129,7 @@ uint64_t ReadStreamCb(uint64_t fd, uint64_t Offset, void* Buffer, uint64_t Size,
 	return 1;
 }
 
-uint64_t GetStreamSizeCb(uint64_t fd, uint64_t* FileSize)
+uint64_t __stdcall GetStreamSizeCb(uint64_t fd, uint64_t* FileSize)
 {
 #if defined(__WINDOWS__)
 	_lseek(fd, 0, SEEK_END);
@@ -139,27 +141,25 @@ uint64_t GetStreamSizeCb(uint64_t fd, uint64_t* FileSize)
 	return 1;
 }
 
-uint64_t GetIncremBufferSizeCb(void* buf, uint64_t* BufSize) {
+uint64_t __stdcall GetIncremBufferSizeCb(void* buf, uint64_t* BufSize) {
 	BufferSize += 0x1000;
 	*BufSize = BufferSize;
 
 	return 1;
 }
 
-uint64_t ReadBufferCb(void* src, uint64_t Offset, void* Buffer, uint32_t* Size, uint32_t* SizeRead) {
+uint64_t __stdcall ReadBufferCb(void* src, uint64_t Offset, void* Buffer, uint32_t* Size, uint32_t* SizeRead) {
 	memcpy(Buffer, (void*)((uint8_t*)src + Offset), *Size);
 	*SizeRead = *Size;
 	return 1;
 }
 #endif // _X86
 
-const char16_t* GetStreamNameCb(void* self) {
-	char16_t* fname = new char16_t[260];
-	memset(fname, '\0', 260);
+char16_t* __stdcall GetStreamNameCb(void* self) {
 #if defined(__WINDOWS__)
 	HANDLE hFile = (HANDLE)_get_osfhandle((uint32_t)self);
-	GetFinalPathNameByHandleW(hFile, (wchar_t*)fname, MAX_PATH, VOLUME_NAME_DOS);
-	std::u16string target_path(fname);
+	GetFinalPathNameByHandleW(hFile, (wchar_t*)target_file, MAX_PATH, VOLUME_NAME_DOS);
+	std::u16string target_path(target_file);
 	if (target_path.substr(0, 8).compare(u"\\\\?\\UNC\\") == 0)
 	{
 		// In case of a network path, replace `\\?\UNC\` with `\\`.
@@ -170,15 +170,14 @@ const char16_t* GetStreamNameCb(void* self) {
 		// In case of a local path, crop `\\?\`.
 		target_path = target_path.substr(4);
 	}
-	memset(fname, '\0', 260);
-	memmove(fname, target_path.c_str(), target_path.length()*sizeof(char16_t));
+	memset(target_file, '\0', 260*sizeof(char16_t));
+	memmove(target_file, target_path.c_str(), target_path.length()*sizeof(char16_t));
 	
 #else
 	char* fname_str = new char[260];
-	memset(fname_str, '\0', sizeof(fname_str));
+	memset(fname_str, '\0', 260);
 	if (fcntl((intptr_t)self, F_GETPATH, fname_str) != -1)
-		copy_str_to_wstr(fname_str, fname, strlen(fname_str));
-	delete fname_str;
+		copy_str_to_wstr(fname_str, target_file, strlen(fname_str));
 #endif
-	return fname;
+    return target_file;
 }

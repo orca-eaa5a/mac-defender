@@ -71,9 +71,11 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 	string sub_key_str;
 	string key_str;
 	Json::Value key;
-
+    uintptr_t HKEY = (uintptr_t)hKey;
+    HKEY = HKEY & 0x00000000ffffffff;
+    
 	sub_key_str.assign(wstr.begin(), wstr.end());
-	switch ((uint64_t)hKey)
+	switch (HKEY)
 	{
 	case HKEY_LOCAL_MACHINE:
 		hive = "hklm";
@@ -92,7 +94,7 @@ long __stdcall MockAdvapi::RegCreateKeyExW(
 	vector<string> splitted = split_string((char*)sub_key_str.c_str(), '\\');
 	//Json::Value key = MockNTKrnl::mock_reg[hive];
 	if (!key) {
-		debug_log("<advapi.dll!%s> called with ERROR_FILE_NOT_FOUND\n", "RegOpenKeyExW");
+		debug_log("<advapi.dll!%s> called with ERROR_FILE_NOT_FOUND\n", "RegCreateKeyExW");
 		return ERROR_FILE_NOT_FOUND;
 	}
 
@@ -122,7 +124,10 @@ long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, char16_t* lpSubKey, uint32_
 	string key_str;
 	sub_key_str.assign(wstr.begin(), wstr.end());
 	Json::Value key;
-	switch ((uint64_t)hKey)
+    uintptr_t HKEY = (uintptr_t)hKey;
+    HKEY = HKEY & 0x00000000ffffffff;
+    
+	switch ((uint64_t)HKEY)
 	{
 	case HKEY_LOCAL_MACHINE:
 		hive = "hklm";
@@ -135,7 +140,7 @@ long __stdcall MockAdvapi::RegOpenKeyExW(void* hKey, char16_t* lpSubKey, uint32_
 		hive = "not imp";
 		break;
 	default:
-		tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[(uintptr_t)hKey];
+		tie(hive, key_str, key) = MockNTKrnl::m_reg_handle[HKEY];
 		break;
 	}
 	vector<string> splitted = split_string((char*)sub_key_str.c_str(), '\\');
@@ -243,8 +248,10 @@ long __stdcall MockAdvapi::RegQueryValueExW(void* hKey, char16_t* lpValueName, u
 	value.assign(value_w.begin(), value_w.end());
 
 	debug_log("<advapi.dll!%s> called with %s\n", "RegQueryValueExW", value.c_str());
-
-	switch ((uint64_t)hKey)
+    uintptr_t HKEY = (uintptr_t)hKey;
+    HKEY = HKEY & 0x00000000ffffffff;
+    
+	switch (HKEY)
 	{
 	case HKEY_LOCAL_MACHINE:
 		hive = "hklm";

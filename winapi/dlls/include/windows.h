@@ -529,13 +529,13 @@ typedef struct _STARTUPINFOW {
 typedef union _LARGE_INTEGER {
   struct {
 	uint32_t LowPart;
-	long  HighPart;
+	uint32_t  HighPart;
   } DUMMYSTRUCTNAME;
   struct {
 	uint32_t LowPart;
-	long  HighPart;
+	uint32_t  HighPart;
   } u;
-  long long QuadPart;
+  int64_t QuadPart;
 } LARGE_INTEGER, *PLARGE_INTEGER;
 
 typedef struct _SYSTEM_INFO {
@@ -658,7 +658,7 @@ typedef struct in_addr {
 	union {
 		struct { UCHAR s_b1, s_b2, s_b3, s_b4; } S_un_b;
 		struct { USHORT s_w1, s_w2; } S_un_w;
-		ULONG S_addr;
+		uint32_t S_addr;
 	} S_un;
 #define s_addr  S_un.S_addr /* can be used for most tcp & ip code */
 #define s_host  S_un.S_un_b.s_b2    // host on imp
@@ -672,8 +672,8 @@ typedef struct in_addr {
 #define DECLSPEC_ALIGN(x) __attribute__ ((aligned (x)))
 
 typedef struct DECLSPEC_ALIGN(16) _M128A {
-	ULONGLONG Low;
-	LONGLONG High;
+	uint64_t Low;
+	int64_t High;
 } M128A, *PM128A;
 
 typedef struct DECLSPEC_ALIGN(16) _CONTEXT {

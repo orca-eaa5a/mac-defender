@@ -113,8 +113,10 @@ int compare_wstr(char16_t* targ1, char16_t* targ2){
 		if(delta == 0){
 			if(s1 == '\0' && s2 == '\0')
 				return 0;
-			else
+            else{
+                idx++;
 				continue;
+            }
 		}
 		else{
 			return delta;
@@ -146,7 +148,7 @@ size_t get_wide_string_length(void* ptr) {
 }
 
 void debug_log(const char* fmt, ...) {
-#if defined(_DEBUG_)
+#if defined(__LOG__)
 	#define MAX_BUF_SIZE    4096
 	va_list ap;
 	char buf[MAX_BUF_SIZE];

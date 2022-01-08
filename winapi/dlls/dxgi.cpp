@@ -1,5 +1,4 @@
 #include "dxgi.h"
-#include <dxgi.h>
 
 
 typedef bool(*enumAdapter)(void*, uint32_t, void*);

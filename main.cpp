@@ -34,7 +34,6 @@ using namespace std;
 string engine_path;
 void* engine_base = nullptr;
 
-
 int main(int argc, char** argv) {
 	int fd = 0;
 	char cur_dir[260];
@@ -66,9 +65,7 @@ int main(int argc, char** argv) {
 		console_log(MSGTYPE::CRIT, "Unable to load mpengine.dll");
 	}
 
-	//of_rewrite_iat(engine_base);
 	dlls = new ImportDLLs(engine_base);
-
 	dlls->set_ported_apis();
 	bool res = call_dllmain(engine_base);
 	void* rsig_addr = (void*)of_getprocaddress(engine_base, (char*)"__rsignal");
@@ -92,6 +89,6 @@ int main(int argc, char** argv) {
 	rsignal_wrapper->set_vdm_location(string(cur_dir) + "/engine");
 	rsignal_wrapper->rsig_boot_engine();
 	rsignal_wrapper->rsig_scan_stream(fd);
-	system("pause");
 
+    console_log(MSGTYPE::INFO, "bye~!");
 }

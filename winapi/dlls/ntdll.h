@@ -113,20 +113,20 @@ typedef struct _UNWIND_INFO {
 	UNWIND_CODE MoreUnwindCode[1];
 	union
 	{
-		ULONG ExceptionHandler;
-		ULONG FunctionEntry;
+		uint32_t ExceptionHandler;
+		uint32_t FunctionEntry;
 	};
-	ULONG ExceptionData[];
+	uint32_t ExceptionData[];
 
 } UNWIND_INFO, *PUNWIND_INFO;
 
 
 typedef struct _ScopeRecord
 {
-	ULONG BeginAddress;
-	ULONG EndAddress;
-	ULONG HandlerAddress;
-	ULONG JumpTarget;
+	uint32_t BeginAddress;
+	uint32_t EndAddress;
+	uint32_t HandlerAddress;
+	uint32_t JumpTarget;
 } ScopeRecord, *PScopeRecord;
 
 #if defined(__LINUX__) || defined(__APPLE__)
@@ -154,24 +154,24 @@ typedef struct _KNONVOLATILE_CONTEXT_POINTERS {
 	} DUMMYUNIONNAME;
 
 	union {
-		PULONG64 IntegerContext[16];
+		uint64_t* IntegerContext[16];
 		struct {
-			PULONG64 Rax;
-			PULONG64 Rcx;
-			PULONG64 Rdx;
-			PULONG64 Rbx;
-			PULONG64 Rsp;
-			PULONG64 Rbp;
-			PULONG64 Rsi;
-			PULONG64 Rdi;
-			PULONG64 R8;
-			PULONG64 R9;
-			PULONG64 R10;
-			PULONG64 R11;
-			PULONG64 R12;
-			PULONG64 R13;
-			PULONG64 R14;
-			PULONG64 R15;
+			uint64_t* Rax;
+			uint64_t* Rcx;
+			uint64_t* Rdx;
+			uint64_t* Rbx;
+			uint64_t* Rsp;
+			uint64_t* Rbp;
+			uint64_t* Rsi;
+			uint64_t* Rdi;
+			uint64_t* R8;
+			uint64_t* R9;
+			uint64_t* R10;
+			uint64_t* R11;
+			uint64_t* R12;
+			uint64_t* R13;
+			uint64_t* R14;
+			uint64_t* R15;
 		} DUMMYSTRUCTNAME;
 	} DUMMYUNIONNAME2;
 } KNONVOLATILE_CONTEXT_POINTERS, *PKNONVOLATILE_CONTEXT_POINTERS;
